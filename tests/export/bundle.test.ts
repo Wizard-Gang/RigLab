@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { blankAnimation, restPose, templateDocument } from "../../src/editor/animations";
+import { blankAnimation, restPose } from "../../src/editor/animations";
+import { templateDocument } from "../../src/editor/templates";
 import { setKeyPose } from "../../src/editor/poseEdits";
 import { bakeAnimation, frameCount } from "../../src/export/bake";
 import { buildBundle, EXPORT_ROOT, readBundle } from "../../src/export/bundle";

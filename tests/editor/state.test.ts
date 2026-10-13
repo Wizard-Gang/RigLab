@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { templateDocument } from "../../src/editor/animations";
+import { templateDocument } from "../../src/editor/templates";
 import { HISTORY_LIMIT } from "../../src/editor/history";
 import { activeAnimationOf, documentOf, editorReducer, initialState, isDirty } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";

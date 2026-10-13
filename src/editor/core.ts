@@ -1,6 +1,6 @@
 // Starting state, recording edits, and keeping the editor pointed at things the document still has.
 import type { RigLabDocument } from "../format/document";
-import { templateDocument } from "./animations";
+import { templateDocument } from "./templates";
 import { record, startHistory } from "./history";
 import { documentOf } from "./types";
 import type { EditorState } from "./types";

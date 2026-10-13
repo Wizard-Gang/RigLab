@@ -4,7 +4,7 @@ import { constraintsAt, NO_CONSTRAINTS, samplePose } from "../solve";
 import { constraintGeometry } from "../viewer/constraintGeometry";
 import { ArtLayer } from "../viewer/ArtLayer";
 import { artPlacements } from "../hexframe/art";
-import { HEXFRAME_PARTS } from "../hexframe/parts";
+import { ART_PARTS } from "../editor/templates";
 import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
 import { activeAnimationOf, documentOf, editorReducer, initialState, isDirty } from "../editor/state";
@@ -59,7 +59,7 @@ export function App() {
     [posed, document.rig, pose, drags.constraints],
   );
   const art = useMemo(
-    () => (state.art ? artPlacements(drags.rig, rig, skeleton.placed, HEXFRAME_PARTS, state.activeAnimation) : null),
+    () => (state.art ? artPlacements(drags.rig, rig, skeleton.placed, ART_PARTS, state.activeAnimation) : null),
     [state.art, drags.rig, rig, skeleton.placed, state.activeAnimation],
   );
   const ghosts = useMemo(() => {
@@ -105,6 +105,7 @@ export function App() {
         mode={state.mode}
         onMode={(mode) => dispatch({ type: "setMode", mode })}
         onCommand={run}
+        onNew={(template) => files.newDocument(template)}
         canUndo={state.history.past.length > 0}
         canRedo={state.history.future.length > 0}
         title={state.fileName ?? "Untitled"}

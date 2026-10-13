@@ -1,5 +1,5 @@
 // The editor's pure state machine. Document edits go through the undo history; view and selection do not.
-import { templateDocument } from "./animations";
+import { templateDocument } from "./templates";
 import { initialState, reconcile } from "./core";
 import { animationEdit, poseEdit, rigEdit, timelineEdit } from "./documentEdits";
 import { redo, undo } from "./history";
@@ -22,7 +22,7 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
   const keep = { mode: state.mode, grid: state.grid, snap: state.snap, rotationSnap: state.rotationSnap, onion: state.onion, art: state.art };
   switch (action.type) {
     case "new":
-      return { ...initialState(templateDocument()), ...keep, status: info("New document") };
+      return { ...initialState(templateDocument(action.template)), ...keep, status: info(`New ${action.template ?? "humanoid"} document`) };
     case "open":
       return { ...initialState(action.document, action.fileName), ...keep, status: info(`Opened ${action.fileName}`) };
     case "imported":

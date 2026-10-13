@@ -73,7 +73,16 @@ Hexframe stays a consumer; RigLab hands it the shapes it already loads (`src/hex
 - `toHexframeRig` returns the rig in `fighter.rig.json`'s shape, with no format header, limits or chains, and its depth profiles. For the imported humanoid it equals the vendored `fighter.rig.json`. Hexframe paints by depth profile, so a rig without depth profiles is refused, and the left-out limits and chains are reported.
 - `toHexframeClip` resamples an animation, constraints held, into Hexframe's 13 evenly spaced poses over a 60 Hz duration of `length × 60 / fps`. A non-integer duration is rounded and reported. Easing is `smoothstep` when every key is smooth, and `linear` otherwise. Hexframe's vendored `sampleClip` then plays the result. Every Hexframe frame that differs from RigLab's playback by more than 1e-6 is reported, which is how hold transitions show up. Each of the 13 Hexframe clips round-trips through import and this adapter with Hexframe's sampler unchanged to 1e-9.
 
-Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses the vendored part SVGs as data: one `<svg>` root naming its bone, holding only `<path class d/>` elements with conservative values. Anything else (scripts, other elements or attributes, `url()` data) is refused, and nothing is injected as markup. `src/hexframe/art.ts` places each bone's part, found by the bone's `slot`, at that bone's FK transform, in Hexframe's paint order for facing right when the rig's depth profiles still fit it, and in bone order otherwise. The Art toggle draws it under the skeleton in every mode. The Export panel downloads the Hexframe rig and the active animation's clip.
+Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses part SVGs (the vendored fighter parts and the chibi parts) as data: one `<svg>` root naming its bone, holding only `<path class d/>` elements with conservative values. Anything else (scripts, other elements or attributes, `url()` data) is refused, and nothing is injected as markup. `src/hexframe/art.ts` places each bone's part, found by the bone's `slot`, at that bone's FK transform, in Hexframe's paint order for facing right when the rig's depth profiles still fit it, and in bone order otherwise. The Art toggle draws it under the skeleton in every mode. The Export panel downloads the Hexframe rig and the active animation's clip.
+
+## Templates and the chibi
+
+New starts from a template (`src/editor/templates.ts`): the imported Hexframe humanoid, or the chibi.
+
+- **Chibi rig.** `characters/chibi/chibi.rig.json` is a `riglab.rig` with Hexframe's 11 bone names, parents, chains, bend sides and depth profiles at chibi proportions. It stands 91 units tall, and the head bone is 44 of them, so it is about two heads tall. The pelvis sits 25 units up, the legs are 12 + 13 units, the arms 10 + 11, and both feet rest at y = 0. Its bones use their own `chibi_*` slots.
+- **Chibi art.** `characters/chibi/parts/` holds 11 original part SVGs in Hexframe's part format, read by the same strict parser. The style is MapleStory-like: a big round head with hair, bangs, big eyes and blush, a short tunic with a gold collar and belt, puffy sleeves, mitten hands, shorts and big shoes. It copies no MapleStory asset. Following Hexframe's depth profile, which paints `arm-front` and `leg-front` behind the body when facing right, those limbs use the darker shades.
+- **Retargeting.** `src/editor/retarget.ts` plays an animation authored for one rig on another with the same bones and root. Rotations carry over unchanged, and root, pin and prop translation scales by the ratio of the rigs' root heights (25 / 42 from the humanoid to the chibi). The chibi template carries Hexframe's 13 clips retargeted this way, every one validated against the chibi rig.
+- **Art sets.** Parts are keyed by slot and belong to an art set (`fighter` or `chibi`). Every rig's slots are its own, so the Art toggle draws each rig's art. The art layer tags each part with its set, and each set keeps its own palette in the stylesheet.
 
 ## Acceptance
 
@@ -85,6 +94,8 @@ Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses t
 | --- | --- |
 | `vendor/hexframe/` | Pinned Hexframe rig core, fighter data and part art. |
 | `src/format/` | The `riglab.rig`, `riglab.anim` and `riglab.document` types, their closed validators and the shared sampler. |
+| `characters/chibi/` | The chibi rig and its 11 original part SVGs. |
+| `src/chibi/` | Loads the chibi rig, parses its art as the `chibi` set and retargets Hexframe's clips onto it. |
 | `src/hexframe/` | Loads the vendored rig, clips and parts; imports them as the RigLab `humanoid`; adapts RigLab rigs and animations back to Hexframe's shapes; places part art. |
 | `src/editor/` | The editor's pure state (`types.ts`, `core.ts`, `documentEdits.ts`, `state.ts`), undo history, rig setup, pose and timeline edits, view math, shortcuts, document helpers and browser file access. |
 | `src/export/` | Bundle building and verified reading, baking, and the ZIP writer and reader. |
@@ -93,6 +104,7 @@ Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses t
 | `src/app/` | The application shell: toolbar, panels, inspector, transport, status bar, file and shortcut wiring, and the stylesheet. |
 | `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/`, `tests/export/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import, editor state, the solver and export bundles. |
 | `tests/acceptance/` | The end-to-end spear-thrust acceptance test. |
+| `tests/chibi/` | The chibi rig, art, retargeting and template. |
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |
 

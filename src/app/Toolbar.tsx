@@ -2,12 +2,16 @@ import { shortcutLabel } from "../editor/shortcuts";
 import type { Command, Platform } from "../editor/shortcuts";
 import { MODES } from "../editor/state";
 import type { Mode } from "../editor/state";
+import { TEMPLATES } from "../editor/templates";
+import type { TemplateId } from "../editor/templates";
 
 interface ToolbarProps {
   readonly platform: Platform;
   readonly mode: Mode;
   readonly onMode: (mode: Mode) => void;
   readonly onCommand: (command: Command) => void;
+  /** Start a new document from a template. */
+  readonly onNew: (template: TemplateId) => void;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
   readonly title: string;
@@ -15,13 +19,12 @@ interface ToolbarProps {
 }
 
 const FILE: readonly { readonly command: Command; readonly label: string }[] = [
-  { command: "new", label: "New" },
   { command: "open", label: "Open" },
   { command: "save", label: "Save" },
   { command: "saveAs", label: "Save As" },
 ];
 
-export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, title, dirty }: ToolbarProps) {
+export function Toolbar({ platform, mode, onMode, onCommand, onNew, canUndo, canRedo, title, dirty }: ToolbarProps) {
   const button = (command: Command, label: string, disabled = false) => (
     <button
       key={command}
@@ -38,6 +41,16 @@ export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, t
     <header className="app__bar">
       <h1 className="app__title">RigLab</h1>
       <div className="toolbar" role="toolbar" aria-label="File">
+        <select
+          className="tool tool--menu"
+          aria-label="New document from a template"
+          title={`New document (${shortcutLabel("new", platform)} starts a Hexframe humanoid)`}
+          value=""
+          onChange={(event) => onNew(event.target.value as TemplateId)}
+        >
+          <option value="" disabled>New…</option>
+          {TEMPLATES.map((template) => <option key={template.id} value={template.id}>{template.label}</option>)}
+        </select>
         {FILE.map(({ command, label }) => button(command, label))}
       </div>
       <div className="toolbar" role="toolbar" aria-label="Edit">

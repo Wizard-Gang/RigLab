@@ -4,10 +4,11 @@ import { DOCUMENT_EXTENSION, parseDocument, serializeDocument } from "../format/
 import { openFile, saveFile } from "../editor/files";
 import type { FileHandle } from "../editor/files";
 import { documentOf, isDirty } from "../editor/state";
+import type { TemplateId } from "../editor/templates";
 import type { Action, EditorState } from "../editor/state";
 
 export interface FileCommands {
-  readonly newDocument: () => void;
+  readonly newDocument: (template?: TemplateId) => void;
   readonly open: () => Promise<void>;
   readonly save: () => Promise<void>;
   readonly saveAs: () => Promise<void>;
@@ -25,10 +26,10 @@ export function useFileCommands(state: EditorState, dispatch: Dispatch<Action>):
     dispatch({ type: "status", status: { tone: "error", text: `${what} failed: ${(error as Error).message ?? String(error)}` } });
   }, [dispatch]);
 
-  const newDocument = useCallback(() => {
+  const newDocument = useCallback((template?: TemplateId) => {
     if (isDirty(latest.current) && !window.confirm(DISCARD)) return;
     handle.current = null;
-    dispatch({ type: "new" });
+    dispatch({ type: "new", template });
   }, [dispatch]);
 
   const open = useCallback(async () => {
