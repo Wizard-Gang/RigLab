@@ -1,6 +1,9 @@
 // Keyboard shortcuts. Browsers reserve Mod+N for a new window, so New is Mod+Alt+N.
+// Arrow keys step frames, Shift+arrows step keys, and Space plays or pauses.
 
-export type Command = "new" | "open" | "save" | "saveAs" | "undo" | "redo" | "delete" | "escape";
+export type Command =
+  | "new" | "open" | "save" | "saveAs" | "undo" | "redo" | "delete" | "escape"
+  | "previousFrame" | "nextFrame" | "previousKey" | "nextKey" | "togglePlay";
 
 export interface KeyInput {
   readonly key: string;
@@ -22,6 +25,11 @@ export const SHORTCUTS: Readonly<Record<Command, string>> = Object.freeze({
   redo: "Mod+Shift+Z",
   delete: "Delete",
   escape: "Escape",
+  previousFrame: "Left",
+  nextFrame: "Right",
+  previousKey: "Shift+Left",
+  nextKey: "Shift+Right",
+  togglePlay: "Space",
 });
 
 export function platformOf(userAgent: string): Platform {
@@ -32,8 +40,8 @@ export function platformOf(userAgent: string): Platform {
 export function shortcutLabel(command: Command, platform: Platform): string {
   const parts = SHORTCUTS[command].split("+");
   const names: Record<string, string> = platform === "mac"
-    ? { Mod: "⌘", Alt: "⌥", Shift: "⇧" }
-    : { Mod: "Ctrl", Alt: "Alt", Shift: "Shift" };
+    ? { Mod: "⌘", Alt: "⌥", Shift: "⇧", Left: "←", Right: "→" }
+    : { Mod: "Ctrl", Alt: "Alt", Shift: "Shift", Left: "←", Right: "→" };
   return parts.map((part) => names[part] ?? part).join(platform === "mac" ? "" : "+");
 }
 
@@ -44,6 +52,9 @@ export function commandFor(input: KeyInput, platform: Platform): Command | null 
     if (input.metaKey || input.ctrlKey || input.altKey) return null;
     if (input.key === "Escape") return "escape";
     if (input.key === "Delete" || input.key === "Backspace") return "delete";
+    if (input.key === "ArrowLeft") return input.shiftKey ? "previousKey" : "previousFrame";
+    if (input.key === "ArrowRight") return input.shiftKey ? "nextKey" : "nextFrame";
+    if (input.key === " " && !input.shiftKey) return "togglePlay";
     return null;
   }
   const letter = input.code.startsWith("Key") ? input.code.slice(3) : "";

@@ -7,6 +7,8 @@ import type { Selection } from "../editor/state";
 interface InspectorProps {
   readonly rig: RigLabRig;
   readonly selection: Selection;
+  /** The active animation, whose keys a key selection names. */
+  readonly active: RigLabAnimation | null;
   readonly pose: Pose;
   readonly placed: ReadonlyMap<string, Placed>;
   readonly animations: readonly RigLabAnimation[];
@@ -38,7 +40,7 @@ function AnimationName({ name, onRename }: { readonly name: string; readonly onR
   );
 }
 
-export function Inspector({ rig, selection, pose, placed, animations, onRename }: InspectorProps) {
+export function Inspector({ rig, selection, active, pose, placed, animations, onRename }: InspectorProps) {
   if (selection?.kind === "animation") {
     const animation = animations.find((candidate) => candidate.name === selection.name);
     if (!animation) return null;
@@ -50,6 +52,20 @@ export function Inspector({ rig, selection, pose, placed, animations, onRename }
         <dt>Length</dt><dd>{animation.length} frames · {fixed(animation.length / animation.fps)} s</dd>
         <dt>Playback</dt><dd>{animation.loop ? "Loop" : "Once"}</dd>
         <dt>Keys</dt><dd>{animation.keys.map((key) => key.frame).join(", ")}</dd>
+      </dl>
+    );
+  }
+  if (selection?.kind === "key") {
+    const key = active?.keys.find((candidate) => candidate.frame === selection.frame);
+    if (!active || !key) return null;
+    const next = active.keys.find((candidate) => candidate.frame > key.frame);
+    return (
+      <dl className="inspector">
+        <dt>Key</dt><dd>frame {key.frame} of <code>{active.name}</code></dd>
+        <dt>Time</dt><dd>{fixed(key.frame / active.fps)} s</dd>
+        <dt>To next key</dt><dd>{key.interpolation}{next ? ` over ${next.frame - key.frame} frames` : active.loop ? " back to frame 0" : " (last key holds)"}</dd>
+        <dt>Pins</dt><dd>{key.pins?.length ? key.pins.map((pin) => pin.chain).join(", ") : "none"}</dd>
+        <dt>Prop</dt><dd>{key.prop ? `${key.prop.name} held by ${key.prop.grips.map((grip) => grip.chain).join(", ")}` : "none"}</dd>
       </dl>
     );
   }
@@ -75,5 +91,5 @@ export function Inspector({ rig, selection, pose, placed, animations, onRename }
       </dl>
     );
   }
-  return <p className="panel__empty">Select a joint on the canvas or in the hierarchy, or an animation in the list.</p>;
+  return <p className="panel__empty">Select a joint on the canvas or in the hierarchy, an animation in the list, or a key on the timeline.</p>;
 }

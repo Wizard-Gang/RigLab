@@ -2,19 +2,9 @@
 
 ## Open tasks
 
-### RL-007 — [FEAT] Author animations on a variable keyframe timeline
-
-- Dependency: None.
-- Why: A spear thrust may need only three poses. The author decides how long each pose holds, without a 13-pose requirement or forced interpolation.
-- Scope: A timeline panel with integer frames at the animation's fps (default 14), clip length and loop. Add a key from the current pose, duplicate the frame, delete and move keys, and set each transition to hold (default), linear or smoothstep. Playback and scrubbing through `samplePose`. Optional onion skins of the previous and next keys. A key is edited with the RL-005 and RL-006 tools.
-- Non-goals: Per-bone curve editing, audio.
-- Acceptance: Timeline reducer tests for every command. A three-key animation plays over its full length exactly as `samplePose` samples it. Undo covers timeline edits. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused timeline tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
-- Authorities: `src/format/`, `docs/ARCHITECTURE.md`.
-
 ### RL-008 — [FEAT] Export, validate and re-import riglab-export bundles
 
-- Dependency: RL-007.
+- Dependency: None.
 - Why: Consumers need versioned files they can trust. Some will evaluate keys themselves; others only draw solved transforms.
 - Scope: An Export mode beside Rig setup, Pose and Animation. A `riglab-export/` bundle holding `manifest.json` (format, version, generator, and every file with its SHA-256), `<rig>.rig.json`, `animations/<name>.anim.json`, and optional `baked/<name>.baked.json` with per-frame world transforms from `samplePose` and FK. Export writes a directory through the File System Access API when available, and otherwise a store-only zip built without a new dependency. Import verifies the manifest, the hashes, the rig and animation references, and the format versions before replacing the document.
 - Non-goals: Rendered SVG or video output, a Hexframe-specific format (RL-010).
