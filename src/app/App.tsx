@@ -49,7 +49,10 @@ export function App() {
     enabled: (state.mode === "animate" || state.mode === "export") && animation !== null,
   });
   const posed = state.mode !== "setup" && animation !== null;
-  const engine = useMemo(() => (posed ? engineOf(document.rig, animation) : null), [posed, document.rig, animation]);
+  const engine = useMemo(
+    () => (posed ? engineOf(document.rig, animation, document.weapons) : null),
+    [posed, document.rig, animation, document.weapons],
+  );
   const played = useMemo(
     () => (engine ? playAt(engine, state.frame) : { pose: {}, constraints: NO_CONSTRAINTS, violations: [] }),
     [engine, state.frame],

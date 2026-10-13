@@ -33,7 +33,7 @@ export function poseEdit(state: EditorState, pose: Pose, note: string | null, wa
   const document = documentOf(state);
   const animation = activeAnimationOf(state);
   if (!animation) return { ...state, status: error("Add an animation to pose") };
-  const result = setKeyPose(document.rig, animation, state.frame, pose, constraints);
+  const result = setKeyPose(document.rig, animation, state.frame, pose, constraints, document.weapons);
   if (!result.ok) return { ...state, status: error(result.error) };
   const text = [`Posed ${animation.name} at frame ${state.frame}`, note, warning].filter(Boolean).join("; ");
   return edit(state, replacing(document, animation, result.animation), { status: warning ? error(text) : info(text) });
@@ -45,7 +45,7 @@ export function timelineEdit(state: EditorState, change: TimelineEdit): EditorSt
   const document = documentOf(state);
   const animation = activeAnimationOf(state);
   if (!animation) return { ...state, status: error("Add an animation first") };
-  const result = applyTimelineEdit(document.rig, animation, change);
+  const result = applyTimelineEdit(document.rig, animation, change, document.weapons);
   if (!result.ok) return { ...state, status: error(result.error) };
   return edit(state, replacing(document, animation, result.animation), { status: info(result.message) });
 }

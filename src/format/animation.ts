@@ -1,12 +1,13 @@
 // riglab.anim version 2: one kind's keys on Hexframe's engine grid, each a full pose with the interpolation to the next.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { validateKeyConstraints } from "./constraints";
-import type { Pin, Prop } from "./constraints";
+import type { HeldWeapon, Pin, Prop } from "./constraints";
 import type { RigLabRig } from "./rig";
 import { ANIMATION_KINDS, ENGINE_FPS, frameList, isKind, keyFrames, KINDS } from "./timing";
 import type { AnimationKind } from "./timing";
 import { checkName, closedObject, isFiniteNumber, isObject, Issues } from "./validate";
 import type { Validation } from "./validate";
+import type { RigLabWeapon } from "./weapon";
 
 export const ANIMATION_FORMAT = "riglab.anim";
 export const ANIMATION_VERSION = 2;
@@ -27,6 +28,8 @@ export interface Key {
   readonly pins?: readonly Pin[];
   /** A rigid prop the key's chain ends hold. */
   readonly prop?: Prop;
+  /** A weapon of the document the key's hands hold; never with a prop. */
+  readonly weapon?: HeldWeapon;
 }
 
 export interface RigLabAnimation {
@@ -66,7 +69,8 @@ function validatePose(issues: Issues, path: string, value: unknown, rig: RigLabR
   }
 }
 
-export function validateAnimation(value: unknown, rig: RigLabRig): Validation<RigLabAnimation> {
+/** Validate an animation for its rig; keys may hold only the given weapons, as the document carries them. */
+export function validateAnimation(value: unknown, rig: RigLabRig, weapons: readonly RigLabWeapon[] = []): Validation<RigLabAnimation> {
   const issues = new Issues();
   const fields = ["format", "version", "name", "rig", "kind", "fps", "length", "loop", "keys"];
   if (!closedObject(issues, "$", value, fields)) return issues.result(value);
@@ -91,13 +95,13 @@ export function validateAnimation(value: unknown, rig: RigLabRig): Validation<Ri
   if (frames && !anchored) issues.add("$.keys", `must hold ${frames.length} keys: ${kind} keys sit at frames ${frameList(frames)}`);
   value.keys.forEach((key: unknown, index) => {
     const path = `$.keys[${index}]`;
-    if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"], ["pins", "prop"])) return;
+    if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"], ["pins", "prop", "weapon"])) return;
     if (anchored && key.frame !== frames[index]) issues.add(`${path}.frame`, `must be ${frames[index]}: ${kind} keys sit at frames ${frameList(frames)}`);
     if (!INTERPOLATIONS.includes(key.interpolation as Interpolation)) {
       issues.add(`${path}.interpolation`, "must be 'hold', 'linear' or 'smoothstep'");
     }
     validatePose(issues, `${path}.pose`, key.pose, rig);
-    validateKeyConstraints(issues, path, key, rig);
+    validateKeyConstraints(issues, path, key, rig, weapons);
   });
   return issues.result(value);
 }

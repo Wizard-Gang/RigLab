@@ -5,6 +5,7 @@ import type { BonePose, Clip, Pose } from "../../vendor/hexframe/src/rig";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabRig } from "../format/rig";
+import type { RigLabWeapon } from "../format/weapon";
 import { poseFrames } from "../format/timing";
 import { blendConstraints, constraintsAt, samplePose } from "./constraints";
 import type { Constraints } from "./constraints";
@@ -18,7 +19,7 @@ export function hexframePose(rig: RigLabRig, pose: Pose): Pose {
   }));
 }
 
-/** A frame as Hexframe plays it, with the pins and prop RigLab keeps beside the pose. */
+/** A frame as Hexframe plays it, with the pins, prop and weapon RigLab keeps beside the pose. */
 export interface Played {
   readonly pose: Pose;
   readonly constraints: Constraints;
@@ -33,17 +34,18 @@ export interface Engine {
   readonly poses: readonly Played[];
 }
 
-export function engineOf(rig: RigLabRig, animation: RigLabAnimation): Engine {
+/** The animation as Hexframe's clip; keys may hold the given weapons, as the document carries them. */
+export function engineOf(rig: RigLabRig, animation: RigLabAnimation, weapons: readonly RigLabWeapon[] = []): Engine {
   const poses = poseFrames(animation.length).map((frame) => {
-    const held = samplePose(rig, animation, frame);
-    return { pose: hexframePose(rig, held.pose), constraints: constraintsAt(animation, frame), violations: held.violations };
+    const held = samplePose(rig, animation, frame, weapons);
+    return { pose: hexframePose(rig, held.pose), constraints: constraintsAt(animation, frame, weapons), violations: held.violations };
   });
   return { clip: { loop: animation.loop, duration: animation.length, easing: "linear", poses: poses.map((entry) => entry.pose) }, poses };
 }
 
 /**
  * What Hexframe plays at a whole frame. On one of the 13 poses that is the pose itself; between two of them the
- * pose is Hexframe's sampler, and the pins and prop move linearly between the two the same way.
+ * pose is Hexframe's sampler, and the pins, prop and weapon move linearly between the two the same way.
  */
 export function playAt(engine: Engine, frame: number): Played {
   const { clip, poses } = engine;
