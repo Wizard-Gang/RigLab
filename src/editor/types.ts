@@ -8,11 +8,12 @@ import type { RigEdit } from "./rigEdits";
 import type { TimelineEdit } from "./timeline";
 import type { View } from "./view";
 
-export type Mode = "setup" | "pose" | "animate";
+export type Mode = "setup" | "pose" | "animate" | "export";
 export const MODES: readonly { readonly id: Mode; readonly label: string }[] = [
   { id: "setup", label: "Rig setup" },
   { id: "pose", label: "Pose" },
   { id: "animate", label: "Animation" },
+  { id: "export", label: "Export" },
 ];
 
 export type Selection =
@@ -50,6 +51,7 @@ export type Action =
   | { readonly type: "new" }
   | { readonly type: "open"; readonly document: RigLabDocument; readonly fileName: string }
   | { readonly type: "saved"; readonly document: RigLabDocument; readonly fileName: string }
+  | { readonly type: "imported"; readonly document: RigLabDocument; readonly source: string }
   | { readonly type: "status"; readonly status: Status | null }
   | { readonly type: "undo" }
   | { readonly type: "redo" }

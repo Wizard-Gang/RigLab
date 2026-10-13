@@ -2,19 +2,9 @@
 
 ## Open tasks
 
-### RL-008 — [FEAT] Export, validate and re-import riglab-export bundles
-
-- Dependency: None.
-- Why: Consumers need versioned files they can trust. Some will evaluate keys themselves; others only draw solved transforms.
-- Scope: An Export mode beside Rig setup, Pose and Animation. A `riglab-export/` bundle holding `manifest.json` (format, version, generator, and every file with its SHA-256), `<rig>.rig.json`, `animations/<name>.anim.json`, and optional `baked/<name>.baked.json` with per-frame world transforms from `samplePose` and FK. Export writes a directory through the File System Access API when available, and otherwise a store-only zip built without a new dependency. Import verifies the manifest, the hashes, the rig and animation references, and the format versions before replacing the document.
-- Non-goals: Rendered SVG or video output, a Hexframe-specific format (RL-010).
-- Acceptance: An export followed by an import is deep-equal. Baked frames equal `samplePose` plus FK. A tampered hash, an unknown version or a missing reference is refused with its path. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused export and import tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
-- Authorities: `src/format/`, `docs/ARCHITECTURE.md`.
-
 ### RL-009 — [TEST] Prove the spear-thrust acceptance path
 
-- Dependency: RL-008.
+- Dependency: None.
 - Why: This is the recommendation's first end-to-end acceptance test, and it should stay executable.
 - Scope: One automated test. It imports Hexframe's humanoid, lengthens the forearms in Rig Setup, and authors a three-key spear thrust: a wind-up with the elbows back, a transition with the elbows centered, and an extension with the hands pushed forward. It exports the bundle, reloads it, and checks that every joint stays connected, every limb length is identical on every frame, and the reloaded playback matches the original.
 - Non-goals: New editor features.

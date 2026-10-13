@@ -13,6 +13,7 @@ import { skeletonFor } from "../viewer/skeleton";
 import { usePlayback } from "../viewer/usePlayback";
 import { AnimationsPanel } from "./AnimationsPanel";
 import { BoneSetup } from "./BoneSetup";
+import { ExportPanel } from "./ExportPanel";
 import { Inspector } from "./Inspector";
 import { PoseInspector } from "./PoseInspector";
 import { StatusBar } from "./StatusBar";
@@ -38,7 +39,7 @@ export function App() {
     loop: animation?.loop ?? false,
     frame: state.frame,
     onFrame,
-    enabled: state.mode === "animate" && animation !== null,
+    enabled: (state.mode === "animate" || state.mode === "export") && animation !== null,
   });
   const posed = state.mode !== "setup" && animation !== null;
   const held = useMemo(
@@ -136,8 +137,15 @@ export function App() {
       </main>
 
       <aside className="panel panel--right">
-        <h2 className="panel__title">{state.mode === "setup" ? "Rig setup" : state.mode === "pose" ? "Pose" : "Inspector"}</h2>
-        {state.mode === "setup" && selectedBone ? (
+        <h2 className="panel__title">{{ setup: "Rig setup", pose: "Pose", animate: "Inspector", export: "Export" }[state.mode]}</h2>
+        {state.mode === "export" ? (
+          <ExportPanel
+            document={document}
+            dirty={dirty}
+            onImported={(imported, source) => dispatch({ type: "imported", document: imported, source })}
+            onStatus={(status) => dispatch({ type: "status", status })}
+          />
+        ) : state.mode === "setup" && selectedBone ? (
           <BoneSetup rig={document.rig} bone={selectedBone} onEdit={(edit) => dispatch({ type: "rigEdit", edit })} />
         ) : state.mode === "pose" && selectedBone && animation ? (
           <PoseInspector
@@ -170,7 +178,7 @@ export function App() {
           frame={state.frame}
           selectedKey={state.selection?.kind === "key" ? state.selection.frame : null}
           playing={playback.playing}
-          canPlay={state.mode === "animate"}
+          canPlay={state.mode === "animate" || state.mode === "export"}
           onion={state.onion}
           onToggle={playback.toggle}
           onSeek={(frame) => {

@@ -36,11 +36,11 @@ Nothing under `vendor/` is edited in place. `npm run vendor:hexframe -- <hexfram
 
 The editor is a pure state machine in `src/editor/state.ts`. Its document is a `riglab.document` (version 1): one `riglab.rig` and the `riglab.anim` animations authored against it, validated as a whole by `validateDocument`, with every nested message re-rooted at its document path. Document edits go through a bounded snapshot history (`src/editor/history.ts`, 100 steps); selection, mode, frame, view, grid and snap stay outside it. The editor tracks the document as last created, opened or saved, so it is unsaved exactly when the present snapshot differs.
 
-- **Modes.** Rig setup shows the rest pose. Pose scrubs the active animation without playing it. Animation plays it through `sampleAnimation` at its own frame rate.
+- **Modes.** Rig setup shows the rest pose. Pose scrubs the active animation without playing it. Animation plays it at its own frame rate. Export plays it too, beside the export panel.
 - **Selection.** One selection: a bone, an animation or a key. Delete removes a selected animation, a selected key (never the first), or the selected joint and its subtree in Rig setup. Escape clears the selection.
 - **Timeline.** In Pose and Animation modes the timeline (`src/editor/timeline.ts`, `src/app/Timeline.tsx`) shows the active animation's integer frames at its own rate (14 fps by default), its keys and a playhead. It adds a key holding what the frame shows (pose, pins and prop), duplicates the key in force onto the next frame, deletes keys, and moves a key by dragging it to a free frame (the first key stays at frame 0). It sets each key's transition to hold (the default for new animations), linear or smooth, and sets the rate, the length (never before the last key) and looping. Each of these is one undo step. Arrows step frames, Shift+arrows step keys and Space plays. Onion skins draw the previous and next keys as faint skeletons. Preview and playback show `samplePose`, so what plays is exactly what the sampler produces.
 - **Rig setup.** Only Rig setup changes anatomy: the reducer refuses a rig edit in any other mode. `src/editor/rigEdits.ts` moves a joint (dragged on the canvas, snapped in rest space and stored as an offset in its parent's frame, or typed), sets tips, slots and names, adds a child joint, deletes a joint with its subtree, sets angle limits and adds, removes or re-bends chains. Every edit must leave the whole document valid. Renaming a bone renames it in parents, chains, depth profiles and every animation key; deleting one drops it from chains and keys, and drops depth profiles that would name a deleted bone. Pose values never change.
-- **Files.** `src/editor/files.ts` uses the File System Access API when the browser offers it, and a file input and a download otherwise. Opening parses and validates before anything changes, and a refusal names the first failing path. New starts from the humanoid with its 13 reference animations.
+- **Files.** `src/editor/files.ts` (documents) and `src/editor/bundleFiles.ts` (export bundles) use the File System Access API when the browser offers it, and a file input and a download otherwise. Opening parses and validates before anything changes, and a refusal names the first failing path. New starts from the humanoid with its 13 reference animations.
 - **View.** `src/editor/view.ts` keeps zoom and pan in rig units. The wheel zooms about the cursor, dragging empty canvas pans, and zoom 1 fits the rig's viewBox plus a margin. Grid lines sit on multiples of the spacing, and minor lines drop out when they would crowd the screen.
 - **Shortcuts.** `src/editor/shortcuts.ts` maps Mod (⌘ on macOS, Ctrl elsewhere) plus O, S, Shift+S, Z, Shift+Z and Y, and Delete and Escape. New is Mod+Alt+N, because browsers reserve Mod+N. Keys typed into a field stay with the field.
 
@@ -56,6 +56,15 @@ The editor is a pure state machine in `src/editor/state.ts`. Its document is a `
 
 In Pose mode a drop writes the solved pose and its pins and prop into the active animation's key at the current frame. If no key is there, it inserts one that continues the interpolation in force and the constraints in force. The pose inspector types a rotation, or the root's position, and toggles pins and grips the same way. Each drop is one undo step, and poses change only in Pose mode.
 
+## Export bundles
+
+Export mode builds a `riglab-export/` bundle (`src/export/bundle.ts`) for consumers. Some will evaluate keys and constraints themselves; others only draw solved transforms.
+
+- `manifest.json` (`riglab.export`, version 1) names the generator and lists the rig, every animation and any baked files, each with its SHA-256. File names follow from validated names: `<rig>.rig.json`, `animations/<name>.anim.json` and `baked/<name>.baked.json`.
+- A baked file (`riglab.baked`, version 1, `src/export/bake.ts`) holds, for every output frame (0 to `length - 1` when looping, 0 to `length` otherwise), each bone's world `[x, y, rotation°]` in rig order, computed with `samplePose` and Hexframe's FK, plus the held prop's transform when there is one.
+- Export writes the bundle into a `riglab-export` folder through the File System Access API when the browser offers it. It can also download `riglab-export.zip`, built by a dependency-free ZIP writer (`src/export/zip.ts`) whose stored entries and fixed timestamps make the same bundle produce the same bytes.
+- Import reads a folder or a zip (stored or deflated entries, every CRC checked) and verifies the whole bundle before the document changes: the manifest is closed and versioned, every listed file exists and matches its SHA-256, and every file validates against the rig and agrees with the manifest's names. Baked files must name a bundled animation and match its rate, looping, frame count and the rig's bones. Any failure is refused with its file and JSON path, such as `manifest.json $.animations[1].sha256: does not match animations/labWalk.anim.json`.
+
 ## Source layout
 
 | Path | Responsibility |
@@ -64,10 +73,11 @@ In Pose mode a drop writes the solved pose and its pins and prop into the active
 | `src/format/` | The `riglab.rig`, `riglab.anim` and `riglab.document` types, their closed validators and the shared sampler. |
 | `src/hexframe/` | Loads the vendored rig and clips through Hexframe's own `createRig` and imports them as the RigLab `humanoid`. |
 | `src/editor/` | The editor's pure state (`types.ts`, `core.ts`, `documentEdits.ts`, `state.ts`), undo history, rig setup, pose and timeline edits, view math, shortcuts, document helpers and browser file access. |
+| `src/export/` | Bundle building and verified reading, baking, and the ZIP writer and reader. |
 | `src/solve/` | Rotation-only posing, two-bone IK, angle limits, rotation snap, grid-snapped targets, pins, the held prop and `samplePose`. |
 | `src/viewer/` | Skeleton geometry from FK placements, the zoomable SVG rig canvas and its grid, the bone hierarchy, and integer-frame playback. |
 | `src/app/` | The application shell: toolbar, panels, inspector, transport, status bar, file and shortcut wiring, and the stylesheet. |
-| `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import, editor state and the solver. |
+| `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/`, `tests/export/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import, editor state, the solver and export bundles. |
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |
 

@@ -84,6 +84,14 @@ describe("editor state", () => {
     expect([isDirty(edited), isDirty(saved), saved.fileName]).toEqual([true, false, "humanoid.riglab.json"]);
   });
 
+  it("replaces the document on import, clean and untitled, keeping the editor's mode", () => {
+    const document = { ...templateDocument(), animations: templateDocument().animations.slice(0, 3) };
+    const imported = run(initialState(), { type: "setMode", mode: "export" }, { type: "addAnimation" }, { type: "imported", document, source: "riglab-export.zip" });
+    expect([imported.fileName, names(imported).length, isDirty(imported), imported.mode]).toEqual([null, 3, false, "export"]);
+    expect(imported.status?.text).toBe("Imported riglab-export.zip");
+    expect(imported.history.past).toHaveLength(0);
+  });
+
   it("switches animation and frame together, and accepts only known grid spacings", () => {
     const state = run(initialState(), { type: "setFrame", frame: 30 }, { type: "select", selection: { kind: "animation", name: "jump" } });
     expect([state.activeAnimation, state.frame]).toEqual(["jump", 0]);

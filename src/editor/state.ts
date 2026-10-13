@@ -25,6 +25,8 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
       return { ...initialState(templateDocument()), ...keep, status: info("New document") };
     case "open":
       return { ...initialState(action.document, action.fileName), ...keep, status: info(`Opened ${action.fileName}`) };
+    case "imported":
+      return { ...initialState(action.document, null), ...keep, status: info(`Imported ${action.source}`) };
     case "saved":
       return { ...state, saved: action.document, fileName: action.fileName, status: info(`Saved ${action.fileName}`) };
     case "status":
