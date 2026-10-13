@@ -12,6 +12,7 @@ import { applyTimelineEdit } from "./timeline";
 import type { TimelineEdit } from "./timeline";
 import { KINDS } from "../format/timing";
 import { activeAnimationOf, documentOf, error, info } from "./types";
+import { pruneWeapons } from "./weaponEdits";
 import type { Action, EditorState } from "./types";
 
 function replacing(document: RigLabDocument, previous: RigLabAnimation, next: RigLabAnimation): RigLabDocument {
@@ -95,7 +96,7 @@ export function animationEdit(state: EditorState, action: Action): EditorState {
       const index = names.indexOf(selection.name);
       if (index < 0) return state;
       const next = animations.filter((_, at) => at !== index);
-      return edit(state, { ...document, animations: next }, {
+      return edit(state, pruneWeapons({ ...document, animations: next }), {
         activeAnimation: next[Math.min(index, next.length - 1)]?.name ?? null, selection: null, frame: 0, status: info(`Deleted ${selection.name}`),
       });
     }

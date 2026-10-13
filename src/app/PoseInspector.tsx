@@ -19,7 +19,7 @@ interface PoseInspectorProps {
   readonly onError: (message: string) => void;
 }
 
-/** Pose mode's inspector: rotation, root position, pins and the prop for the key at this frame. */
+/** Pose mode's inspector: rotation, root position, pins and an old document's prop for the key at this frame. */
 export function PoseInspector({ rig, bone: name, pose, constraints, placed, frame, keyed, onPose, onError }: PoseInspectorProps) {
   const bone = rig.bones.find((candidate) => candidate.name === name);
   const world = placed.get(name);
@@ -30,6 +30,8 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
   const prop = constraints.prop;
   const pinned = chain !== undefined && constraints.pins.some((pin) => pin.chain === chain.name);
   const gripped = chain !== undefined && prop !== null && prop.grips.some((grip) => grip.chain === chain.name);
+  const wielding = chain && constraints.weapon?.weapon.bodies.some((body) => body.grips.some((grip) => grip.chain === chain.name))
+    ? constraints.weapon.weapon.name : null;
 
   /** Re-hold every pin and grip after a change, then commit; anything the solver could not do is a warning. */
   const commit = (next: Pose, note: string | null, warning: string | null, held: Constraints = constraints): void => {
@@ -56,7 +58,7 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
           </>
         ) : null}
         <dt>Limits</dt><dd>{bone.limits ? `${bone.limits.min}° to ${bone.limits.max}°` : "none"}</dd>
-        <dt>Chain</dt><dd>{chain ? `${chain.name} · bend\u00a0${chain.bend > 0 ? "+" : "−"}${pinned ? " · pinned" : ""}${gripped ? " · on prop" : ""}` : "—"}</dd>
+        <dt>Chain</dt><dd>{chain ? `${chain.name} · bend\u00a0${chain.bend > 0 ? "+" : "−"}${pinned ? " · pinned" : ""}${gripped ? " · on prop" : ""}${wielding ? ` · holds the ${wielding}` : ""}` : "—"}</dd>
         <dt>World position</dt><dd>{fixed(world.x)}, {fixed(world.y)}</dd>
         <dt>World rotation</dt><dd>{fixed((world.rotation * 180) / Math.PI)}°</dd>
       </dl>
@@ -65,9 +67,9 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
           <button type="button" className="tool" aria-pressed={pinned} onClick={() => holds(togglePin(rig, pose, constraints, chain.name))}>
             {pinned ? "Unpin end" : "Pin end"}
           </button>
-          <button type="button" className="tool" aria-pressed={gripped} onClick={() => holds(toggleGrip(rig, pose, constraints, chain.name))}>
-            {gripped ? "Let go of prop" : prop ? "Grip prop" : "Hold a prop"}
-          </button>
+          {gripped ? (
+            <button type="button" className="tool" onClick={() => holds(toggleGrip(rig, pose, constraints, chain.name))}>Let go of prop</button>
+          ) : null}
         </div>
       ) : null}
       {prop ? (

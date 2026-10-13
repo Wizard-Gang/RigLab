@@ -64,6 +64,8 @@ export type Action =
   | { readonly type: "deleteSelection" }
   | { readonly type: "rigEdit"; readonly edit: RigEdit }
   | { readonly type: "timeline"; readonly edit: TimelineEdit }
+  /** Hold a weapon by name on the key at the current frame, or let go of it with null. */
+  | { readonly type: "holdWeapon"; readonly name: string | null }
   | {
     readonly type: "setPose";
     readonly pose: Pose;

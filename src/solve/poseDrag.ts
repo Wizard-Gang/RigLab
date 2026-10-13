@@ -7,11 +7,14 @@ import { hold, moveProp, turnProp } from "./holds";
 import { dragTip } from "./ik";
 import { dragJoint } from "./pose";
 import type { SolveStatus } from "./pose";
+import { freeBodyGripping, moveBody, turnBody } from "./weaponDrags";
 
 export type DragHandle =
   | { readonly kind: "joint" | "tip"; readonly bone: string }
   | { readonly kind: "prop-move" }
-  | { readonly kind: "prop-turn" };
+  | { readonly kind: "prop-turn" }
+  | { readonly kind: "weapon-move"; readonly body: string }
+  | { readonly kind: "weapon-turn"; readonly body: string };
 
 export interface PoseDrag {
   readonly pose: Pose;
@@ -27,9 +30,10 @@ function held(rig: RigLabRig, pose: Pose, constraints: Constraints, status: Solv
 }
 
 /**
- * Pose-mode drag in priority order. A pinned chain end moves its pin, a gripped one carries the prop, and
- * the prop's handles move or turn it; any other handle poses the body. Pins and grips are then re-held,
- * so lengths stay fixed and a hold that cannot be kept is reported.
+ * Pose-mode drag in priority order. A pinned chain end moves its pin, a gripped one carries the prop or the free
+ * weapon body it holds, and the prop's and free bodies' handles move or turn them; any other handle poses the body,
+ * and bodies that ride a hand follow it. Pins and grips are then re-held, so lengths stay fixed and a hold that
+ * cannot be kept is reported.
  */
 export function dragInPose(
   rig: RigLabRig,
@@ -45,6 +49,12 @@ export function dragInPose(
     const moved = handle.kind === "prop-move" ? moveProp(prop, null, target) : turnProp(prop, target, rotationSnap);
     return held(rig, pose, { ...constraints, prop: moved }, "ok", null);
   }
+  const weapon = constraints.weapon;
+  if (handle.kind === "weapon-move" || handle.kind === "weapon-turn") {
+    if (!weapon) return { pose, constraints, status: "ok", message: null };
+    const moved = handle.kind === "weapon-move" ? moveBody(weapon, handle.body, null, target) : turnBody(weapon, handle.body, target, rotationSnap);
+    return held(rig, pose, { ...constraints, weapon: moved }, "ok", null);
+  }
   const chain = handle.kind === "tip" ? rig.chains.find((candidate) => candidate.lower === handle.bone) : undefined;
   if (chain && constraints.pins.some((pin) => pin.chain === chain.name)) {
     const pins = constraints.pins.map((pin) => (pin.chain === chain.name ? { chain: pin.chain, x: target.x, y: target.y } : pin));
@@ -53,6 +63,8 @@ export function dragInPose(
   if (chain && prop?.grips.some((grip) => grip.chain === chain.name)) {
     return held(rig, pose, { ...constraints, prop: moveProp(prop, chain.name, target) }, "ok", null);
   }
+  const carried = chain && weapon ? freeBodyGripping(weapon, chain.name) : null;
+  if (chain && weapon && carried) return held(rig, pose, { ...constraints, weapon: moveBody(weapon, carried, chain.name, target) }, "ok", null);
   const solved = handle.kind === "joint"
     ? dragJoint(rig, pose, handle.bone, target, rotationSnap)
     : dragTip(rig, pose, handle.bone, target, rotationSnap);

@@ -9,6 +9,7 @@ import type { RigLabRig } from "../../src/format";
 import { toHexframeRig } from "../../src/hexframe/adapter";
 import { artPlacements } from "../../src/hexframe/art";
 import { place, runtimeRig, setRotation } from "../../src/solve";
+import { WEAPON_PARTS } from "../../src/weapons/weapons";
 
 const chibi = CHIBI_RIG;
 const tipOf = (rig: RigLabRig, name: string) => {
@@ -68,7 +69,8 @@ describe("chibi art", () => {
       expect(CHIBI_PARTS[bone.slot], bone.slot).toMatchObject({ bone: bone.name, set: "chibi" });
       expect(ART_PARTS[bone.slot]).toBe(CHIBI_PARTS[bone.slot]);
     }
-    expect(Object.keys(ART_PARTS)).toHaveLength(11);
+    // The art library also carries the weapons' parts, on their own weapon_* slots.
+    expect(Object.keys(ART_PARTS).sort()).toEqual([...Object.keys(CHIBI_PARTS), ...Object.keys(WEAPON_PARTS)].sort());
   });
 
   it("uses only the chibi palette's classes", () => {
