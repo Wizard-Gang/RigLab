@@ -19,7 +19,7 @@ function steppedKey(state: EditorState, direction: -1 | 1): number {
 }
 
 export function editorReducer(state: EditorState, action: Action): EditorState {
-  const keep = { mode: state.mode, grid: state.grid, snap: state.snap, rotationSnap: state.rotationSnap, onion: state.onion };
+  const keep = { mode: state.mode, grid: state.grid, snap: state.snap, rotationSnap: state.rotationSnap, onion: state.onion, art: state.art };
   switch (action.type) {
     case "new":
       return { ...initialState(templateDocument()), ...keep, status: info("New document") };
@@ -63,6 +63,8 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
       return ROTATION_SNAPS.includes(action.degrees) ? { ...state, rotationSnap: action.degrees } : state;
     case "setOnion":
       return { ...state, onion: action.onion };
+    case "setArt":
+      return { ...state, art: action.art };
     case "rigEdit":
       return rigEdit(state, action.edit);
     case "setPose":

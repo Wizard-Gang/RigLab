@@ -76,7 +76,8 @@ async function write(handle: FileHandle, text: string): Promise<SavedFile> {
   return { name: handle.name, handle };
 }
 
-function download(text: string, name: string): SavedFile {
+/** Hand the author a text file as a browser download. */
+export function download(text: string, name: string): SavedFile {
   const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
   const anchor = document.createElement("a");
   anchor.href = url;

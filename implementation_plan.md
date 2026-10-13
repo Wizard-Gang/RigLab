@@ -2,19 +2,9 @@
 
 ## Open tasks
 
-### RL-010 — [FEAT] Add the Hexframe consumer adapter and art overlay
-
-- Dependency: None.
-- Why: Hexframe stays a consumer. The same humanoid motion should drive its fighter without reauthoring, and SVG art should attach at exported pivots instead of defining the skeleton.
-- Scope: An adapter that turns a RigLab rig and animation into Hexframe's `fighter.rig.json` shape and 13-pose clip at its 60 Hz duration. Hold transitions are approximated, and the frames that differ are reported. The output is validated with the vendored `createRig` and `sampleClip`. A canvas overlay draws Hexframe's 11 part SVGs on their slots: the lock is extended to vendor the parts, which are parsed as data with no markup injection.
-- Non-goals: Changing Hexframe. Hexframe adopts the adapter through its own HF task.
-- Acceptance: A Hexframe clip round-trips through import and the adapter, and Hexframe's sampler matches the original within 1e-9. A three-key hold animation reports its approximated frames. The overlay places each part at its bone's FK transform. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused adapter tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
-- Authorities: `vendor/hexframe/`, `src/format/`, Hexframe's `docs/ARCHITECTURE.md`.
-
 ### RL-011 — [BUILD] Release v0.2.0
 
-- Dependency: RL-010.
+- Dependency: None.
 - Why: The editor, constraints, timeline, export bundle and Hexframe adapter form the first complete authoring release.
 - Scope: Set `package.json` and `package-lock.json` to 0.2.0. Merging lets Release Cutter tag `v0.2.0` and dispatch the reproduced, attested, immutable Release.
 - Non-goals: Desktop packaging, deployment.

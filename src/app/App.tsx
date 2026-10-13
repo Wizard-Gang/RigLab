@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { createRigLabRig } from "../format";
 import { constraintsAt, NO_CONSTRAINTS, samplePose } from "../solve";
 import { constraintGeometry } from "../viewer/constraintGeometry";
+import { ArtLayer } from "../viewer/ArtLayer";
+import { artPlacements } from "../hexframe/art";
+import { HEXFRAME_PARTS } from "../hexframe/parts";
 import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
 import { activeAnimationOf, documentOf, editorReducer, initialState, isDirty } from "../editor/state";
@@ -54,6 +57,10 @@ export function App() {
   const markers = useMemo(
     () => (posed ? constraintGeometry(document.rig, pose, drags.constraints) : undefined),
     [posed, document.rig, pose, drags.constraints],
+  );
+  const art = useMemo(
+    () => (state.art ? artPlacements(drags.rig, rig, skeleton.placed, HEXFRAME_PARTS, state.activeAnimation) : null),
+    [state.art, drags.rig, rig, skeleton.placed, state.activeAnimation],
   );
   const ghosts = useMemo(() => {
     if (!posed || !state.onion || playback.playing) return undefined;
@@ -133,7 +140,9 @@ export function App() {
           drag={drags.drag}
           constraints={markers}
           ghosts={ghosts}
-        />
+        >
+          {art ? <ArtLayer placements={art} /> : null}
+        </RigCanvas>
       </main>
 
       <aside className="panel panel--right">
@@ -141,6 +150,7 @@ export function App() {
         {state.mode === "export" ? (
           <ExportPanel
             document={document}
+            active={animation}
             dirty={dirty}
             onImported={(imported, source) => dispatch({ type: "imported", document: imported, source })}
             onStatus={(status) => dispatch({ type: "status", status })}
@@ -213,6 +223,8 @@ export function App() {
         onSnap={(snap) => dispatch({ type: "setSnap", snap })}
         rotationSnap={state.rotationSnap}
         onRotationSnap={(degrees) => dispatch({ type: "setRotationSnap", degrees })}
+        art={state.art}
+        onArt={(value) => dispatch({ type: "setArt", art: value })}
       />
     </div>
   );
