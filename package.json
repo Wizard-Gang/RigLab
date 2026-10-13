@@ -12,7 +12,7 @@
   },
   "scripts": {
     "start": "npm run dev",
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

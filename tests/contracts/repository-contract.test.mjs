@@ -31,6 +31,7 @@ test('npm start runs the dev server and check stays credential-free and offline'
   assert.match(failuresWith((state) => { state.pkg.scripts.check += ' && npm run audit:dependencies'; }), /credential-free and offline/);
   assert.match(failuresWith((state) => { state.pkg.scripts.check += ' && npm run verify:github-settings'; }), /credential-free and offline/);
   assert.match(failuresWith((state) => { delete state.pkg.scripts.dev; }), /missing package script dev/);
+  assert.match(failuresWith((state) => { state.pkg.scripts.dev = 'vite'; }), /managed local development lifecycle/);
 });
 
 test('RigLab never deploys', () => {

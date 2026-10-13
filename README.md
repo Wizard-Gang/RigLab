@@ -43,7 +43,15 @@ npm ci
 npm start
 ```
 
-`npm start` runs `npm run dev`, the Vite dev server at <http://localhost:5180>. Local development needs no account, credential or network service.
+`npm start` runs `npm run dev`, a managed launcher (`scripts/dev.mjs`) that serves the editor at <http://localhost:5180> and opens it in the browser. Local development needs no account, credential or network service. Each run takes the same steps as SharkTank's and WizardGang's launchers:
+
+1. **Teardown.** Stop the server this checkout last started, and any other RigLab Vite still on the port, from this checkout or one of its worktrees. A port held by anything else is refused, and the message names the process. RigLab never stops a process it cannot prove is its own.
+2. **Reset.** Clear `dist/`, `node_modules/.vite/` and `tmp/dev/`.
+3. **Install.** Run `npm ci` when `node_modules/` is missing or `package-lock.json` changed since the last install.
+4. **Build.** Run `vite build` against the library the server reads, so a broken library or import fails here.
+5. **Start.** Start Vite on the port, wait until it answers, then open the browser.
+
+Ctrl-C, `SIGTERM` or closing the terminal stops the server. A second `npm start` replaces a running one, so `Port 5180 is already in use` never comes from a RigLab server. `RIGLAB_PORT=5190 npm start` serves on another port, for example a worktree beside the main checkout. `RIGLAB_NO_OPEN=1 npm start` (or `npm run dev -- --no-open`) skips the browser.
 
 RigLab reads its rig, skins, weapons and seed animations from a library folder: the one `RIGLAB_LIBRARY` names, else `~/Documents/RigLab/` when it holds a `config.txt`, else the repository's `placeholder-library/`, which has the same layout with plain-box art. Each line of the folder's `config.txt` maps one thing, as `<kind> <name> = <path>`. The status bar names the folder in use, and `npm start` reloads when a mapped file changes. The toolbar's Wardrobe link opens <http://localhost:5180/wardrobe/>, which steps through every skin, puts any skin's part on any slot, and shows the library's weapons and animations on the rig. [Architecture](docs/ARCHITECTURE.md) (Library folders) describes the layout.
 
@@ -54,7 +62,7 @@ RigLab reads its rig, skins, weapons and seed animations from a library folder: 
 | Purpose | Command | Boundary |
 | --- | --- | --- |
 | Install exact dependencies | `npm ci` | Local install from the committed lockfile |
-| Start the editor | `npm start` | Runs `npm run dev`, the credential-free Vite dev server |
+| Start the editor | `npm start` | Runs `npm run dev`: teardown, reset, install, build, then the credential-free Vite dev server |
 | Repository acceptance | `npm run check` | Plan queue, workflow shell, vendor pin, repository and delivery contracts, types, tests, build and change identity |
 | Rig and editor tests | `npm test` | Vitest, node environment, against `placeholder-library/` |
 | Validate a library folder | `npm run check:library [folder]` | Local only; defaults to the folder `npm start` reads |

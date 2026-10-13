@@ -54,6 +54,9 @@ export function validatePackage(pkg, lock) {
     if (!pkg.scripts?.[name]) failures.push(`missing package script ${name}`);
   }
   if (pkg.scripts?.start !== 'npm run dev') failures.push('npm start must run the local dev server through npm run dev');
+  if (pkg.scripts?.dev !== 'node scripts/dev.mjs') {
+    failures.push('npm run dev must run the managed local development lifecycle, node scripts/dev.mjs');
+  }
   if (pkg.scripts?.['audit:dependencies'] !== 'npm audit --audit-level=high') {
     failures.push('dependency advisory gate must fail on high-severity advisories');
   }
