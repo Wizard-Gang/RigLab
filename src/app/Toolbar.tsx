@@ -58,6 +58,7 @@ export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, t
           </button>
         ))}
       </div>
+      <a className="tool" href="wardrobe/" title="Step through every skin, part, weapon and animation in the library">Wardrobe</a>
       <p className="app__document" title={dirty ? "Unsaved changes" : "Saved"}>
         {title}
         {dirty ? <span className="app__dirty" aria-label="unsaved changes"> ●</span> : null}

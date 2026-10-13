@@ -5,7 +5,7 @@ export function ArtLayer({ placements }: { readonly placements: readonly ArtPlac
   return (
     <g className="art" pointerEvents="none">
       {placements.map((item) => (
-        <g key={`${item.part.set}:${item.bone}`} className={`art-set art-set--${item.part.set}`} transform={`translate(${item.x} ${item.y}) rotate(${item.rotation})`}>
+        <g key={`${item.part.set}:${item.bone}`} className={`art-set art-set--${item.part.set}`} data-bone={item.bone} transform={`translate(${item.x} ${item.y}) rotate(${item.rotation})`}>
           {item.part.paths.map((path, index) => <path key={index} className={path.className} d={path.d} />)}
         </g>
       ))}
