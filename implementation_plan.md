@@ -2,19 +2,9 @@
 
 ## Open tasks
 
-### RL-009 — [TEST] Prove the spear-thrust acceptance path
-
-- Dependency: None.
-- Why: This is the recommendation's first end-to-end acceptance test, and it should stay executable.
-- Scope: One automated test. It imports Hexframe's humanoid, lengthens the forearms in Rig Setup, and authors a three-key spear thrust: a wind-up with the elbows back, a transition with the elbows centered, and an extension with the hands pushed forward. It exports the bundle, reloads it, and checks that every joint stays connected, every limb length is identical on every frame, and the reloaded playback matches the original.
-- Non-goals: New editor features.
-- Acceptance: The test passes in `npm run check` and fails if lengths drift, a joint disconnects or playback differs.
-- Validation: Pinned `npm ci`, the acceptance test, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check` and exact-head CI.
-- Authorities: The RigLab recommendation's acceptance test, `src/format/`, `src/solve/`.
-
 ### RL-010 — [FEAT] Add the Hexframe consumer adapter and art overlay
 
-- Dependency: RL-009.
+- Dependency: None.
 - Why: Hexframe stays a consumer. The same humanoid motion should drive its fighter without reauthoring, and SVG art should attach at exported pivots instead of defining the skeleton.
 - Scope: An adapter that turns a RigLab rig and animation into Hexframe's `fighter.rig.json` shape and 13-pose clip at its 60 Hz duration. Hold transitions are approximated, and the frames that differ are reported. The output is validated with the vendored `createRig` and `sampleClip`. A canvas overlay draws Hexframe's 11 part SVGs on their slots: the lock is extended to vendor the parts, which are parsed as data with no markup injection.
 - Non-goals: Changing Hexframe. Hexframe adopts the adapter through its own HF task.

@@ -65,6 +65,10 @@ Export mode builds a `riglab-export/` bundle (`src/export/bundle.ts`) for consum
 - Export writes the bundle into a `riglab-export` folder through the File System Access API when the browser offers it. It can also download `riglab-export.zip`, built by a dependency-free ZIP writer (`src/export/zip.ts`) whose stored entries and fixed timestamps make the same bundle produce the same bytes.
 - Import reads a folder or a zip (stored or deflated entries, every CRC checked) and verifies the whole bundle before the document changes: the manifest is closed and versioned, every listed file exists and matches its SHA-256, and every file validates against the rig and agrees with the manifest's names. Baked files must name a bundled animation and match its rate, looping, frame count and the rig's bones. Any failure is refused with its file and JSON path, such as `manifest.json $.animations[1].sha256: does not match animations/labWalk.anim.json`.
 
+## Acceptance
+
+`tests/acceptance/spear-thrust.test.ts` drives the editor's own reducer through the RigLab recommendation's first acceptance path. It starts from the imported Hexframe humanoid and lengthens both forearms in Rig setup. It then authors a three-key spear thrust in Pose mode: both feet pinned, both hands on one spear, a wind-up with the elbows back, a linear transition with them centered, and an extension with the hands pushed forward. It exports the bundle with baked frames, zips and unzips it, and reloads it. The reloaded document must equal the original, and re-baking must equal the exported bake. On every frame, every joint must sit at its offset from its parent and every tip must keep its length (to 1e-5), both feet must stay on their pins, and the reloaded playback must sample exactly as the original. Breaking connectivity by 0.01 units, or letting a non-root bone translate, fails it.
+
 ## Source layout
 
 | Path | Responsibility |
@@ -78,6 +82,7 @@ Export mode builds a `riglab-export/` bundle (`src/export/bundle.ts`) for consum
 | `src/viewer/` | Skeleton geometry from FK placements, the zoomable SVG rig canvas and its grid, the bone hierarchy, and integer-frame playback. |
 | `src/app/` | The application shell: toolbar, panels, inspector, transport, status bar, file and shortcut wiring, and the stylesheet. |
 | `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/`, `tests/export/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import, editor state, the solver and export bundles. |
+| `tests/acceptance/` | The end-to-end spear-thrust acceptance test. |
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |
 
