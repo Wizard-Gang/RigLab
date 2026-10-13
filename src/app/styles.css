@@ -128,6 +128,15 @@ button, select, input { font: inherit; color: inherit; }
 .art-set--chibi .part--shine { fill: #fff; stroke: none; }
 .art-set--chibi .part--blush { fill: #ff9fb3; stroke: none; opacity: 0.65; }
 .art-set--chibi .detail { fill: none; stroke: #6b2f26; stroke-width: 1.1; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+/* Weapons share the chibi's outline, gold, wood and cloth, plus a steel tone. */
+.art-set--weapons .part { fill: #dfe6ee; stroke: #2a1d16; stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.art-set--weapons .part--steel-dark { fill: #a9b8c8; }
+.art-set--weapons .part--wood { fill: #8f5a33; }
+.art-set--weapons .part--wood-dark { fill: #6e4325; }
+.art-set--weapons .part--grip { fill: #34416e; }
+.art-set--weapons .part--accent { fill: #f3c552; }
+.art-set--weapons .part--gem { fill: #5aa0f0; }
+.art-set--weapons .detail { fill: none; stroke: #2a1d16; stroke-width: 0.8; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.6; }
 .ghost line { stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.35; }
 .ghost--previous line { stroke: #ff8f6b; }
 .ghost--next line { stroke: #6bc4ff; }
