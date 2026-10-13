@@ -56,7 +56,7 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
           </>
         ) : null}
         <dt>Limits</dt><dd>{bone.limits ? `${bone.limits.min}° to ${bone.limits.max}°` : "none"}</dd>
-        <dt>Chain</dt><dd>{chain ? `${chain.name} · bend ${chain.bend > 0 ? "+" : "−"}${pinned ? " · pinned" : ""}${gripped ? " · on prop" : ""}` : "—"}</dd>
+        <dt>Chain</dt><dd>{chain ? `${chain.name} · bend\u00a0${chain.bend > 0 ? "+" : "−"}${pinned ? " · pinned" : ""}${gripped ? " · on prop" : ""}` : "—"}</dd>
         <dt>World position</dt><dd>{fixed(world.x)}, {fixed(world.y)}</dd>
         <dt>World rotation</dt><dd>{fixed((world.rotation * 180) / Math.PI)}°</dd>
       </dl>

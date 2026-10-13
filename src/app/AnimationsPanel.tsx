@@ -33,7 +33,7 @@ export function AnimationsPanel({ animations, active, selected, onSelect, onAdd,
               aria-label={`${animation.name}, ${animation.kind}, ${animation.keys.length} keys over ${animation.length} frames`}
               onClick={() => onSelect(animation.name)}
             >
-              <span>{animation.name}</span>
+              <span className="truncate" title={animation.name}>{animation.name}</span>
               <span className="list__meta">{KINDS[animation.kind].label} · {animation.keys.length} keys · {seconds(animation.length)}</span>
             </button>
           </li>
