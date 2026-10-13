@@ -42,3 +42,12 @@ describe("riglab.palette", () => {
     expect(() => paletteCss("x } body {", value)).toThrow("is not an art set name");
   });
 });
+
+describe("the library stylesheet", () => {
+  it("scopes every skin's and weapon's palette to its own art set, in config order", async () => {
+    const { LIBRARY } = await import("../../src/library/active");
+    const { libraryCss } = await import("../../src/library/styles");
+    const sets = libraryCss(LIBRARY).split("\n").map((rule) => /^\.art-set--([A-Za-z0-9_-]+) /.exec(rule)?.[1]);
+    expect([...new Set(sets)]).toEqual(["plain", "block", "sword", "spear", "axe", "daggers"]);
+  });
+});

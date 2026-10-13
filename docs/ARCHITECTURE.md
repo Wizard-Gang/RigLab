@@ -99,15 +99,15 @@ Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses p
 
 ## The chibi
 
-New starts the chibi (`src/editor/templates.ts`) with no animations. It is RigLab's only rig template.
+New starts the chibi (`src/editor/templates.ts`) with the library's seed animations: one rest-pose animation per kind. It is RigLab's only rig template, and it comes from the library folder (see Library folders).
 
-- **Chibi rig.** `characters/chibi/chibi.rig.json` is a `riglab.rig` with Hexframe's 11 bone names, parents, chains, bend sides and depth profiles at chibi proportions. It stands 91 units tall, and the head bone is 44 of them, so it is about two heads tall. The pelvis sits 25 units up, the legs are 12 + 13 units, the arms 10 + 11, and both feet rest at y = 0. Its bones use their own `chibi_*` slots.
-- **Chibi art.** `characters/chibi/parts/` holds 11 original part SVGs in Hexframe's part format, read by the same strict parser. The style is MapleStory-like: a big round head with hair, bangs, big eyes and blush, a short tunic with a gold collar and belt, puffy sleeves, mitten hands, shorts and big shoes. It copies no MapleStory asset. Following Hexframe's depth profile, which paints `arm-front` and `leg-front` behind the body when facing right, those limbs use the darker shades.
-- **Art set.** Parts are keyed by slot and belong to the `chibi` art set. The art layer tags each part with its set, and the set keeps its own palette in the stylesheet.
+- **Chibi rig.** The library's `rig` line names the chibi rig, `rigs/chibi.rig.json` in both the owner's folder and `placeholder-library/`. It is a `riglab.rig` with Hexframe's 11 bone names, parents, chains, bend sides and depth profiles at chibi proportions. It stands 91 units tall, and the head bone is 44 of them, so it is about two heads tall. The pelvis sits 25 units up, the legs are 12 + 13 units, the arms 10 + 11, and both feet rest at y = 0. Its bones use their own `chibi_*` slots.
+- **Chibi art.** The owner's library holds the 11 original part SVGs as skin `chibi`, in Hexframe's part format, read by the same strict parser. The style is MapleStory-like: a big round head with hair, bangs, big eyes and blush, a short tunic with a gold collar and belt, puffy sleeves, mitten hands, shorts and big shoes. It copies no MapleStory asset. Following Hexframe's depth profile, which paints `arm-front` and `leg-front` behind the body when facing right, those limbs use the darker shades.
+- **Art set.** The editor draws with the first skin in `config.txt`. Parts are keyed by slot and belong to their skin's art set, named after the skin. The art layer tags each part with its set, and `main.tsx` adds every skin's and weapon's palette, through `libraryCss`, as one stylesheet.
 
 ## Weapons
 
-`characters/weapons/` holds the chibi's four weapons as `riglab.weapon` files, and `src/weapons/weapons.ts` validates them against the chibi and parses their parts into the `weapons` art set. The parts are original, drawn in the strict part format, and their palette reuses the chibi's outline, gold, wood and cloth with a steel tone.
+The library's `weapon` lines give the chibi's four weapons, each a directory with its `riglab.weapon` file, its part art, its palette and its first hold. `src/weapons/weapons.ts` lists them in config order, and each draws in an art set named after it. The owner's parts are original, drawn in the strict part format, and their palette reuses the chibi's outline, gold, wood and cloth with a steel tone.
 
 | Weapon | Bodies | Grips | Shape |
 | --- | --- | --- | --- |
@@ -116,7 +116,7 @@ New starts the chibi (`src/editor/templates.ts`) with no animations. It is RigLa
 | `axe` | One free body | `upper` (`arm-front`) and `lower` (`arm-back`), 10 apart on the haft | Crescent head up, its edge toward +x, 53 units long |
 | `daggers` | `dagger-front` and `dagger-back`, one per hand | `fist` on `arm-front` and on `arm-back`, at 180° | Reverse grip: the blade leaves the pinky side of the fist and lies back along the forearm |
 
-At chibi scale (91 units tall, arms 10 + 11, mitten fists about 7.6 units across) the grips fit two fists and stay reachable. `readyHold` gives each free body a ready placement in front of the chibi at the waist, tilted toward the facing side, so both hands reach their grips and the big head never hides the blade. `tests/weapons/` holds each two-handed weapon there with both feet planted and proves that both hands reach their grips without stretching. It also shows that in a raised guard each dagger's blade points down along its forearm.
+At chibi scale (91 units tall, arms 10 + 11, mitten fists about 7.6 units across) the grips fit two fists and stay reachable. `readyHold` gives each free body the ready placement from its weapon's `hold.json` in front of the chibi at the waist, tilted toward the facing side, so both hands reach their grips and the big head never hides the blade. `tests/weapons/` holds each two-handed weapon there with both feet planted and proves that both hands reach their grips without stretching. It also shows that in a raised guard each dagger's blade points down along its forearm.
 
 ## Library folders
 
@@ -128,6 +128,8 @@ A library folder holds a rig, its skins, the weapons it holds and the animations
 - An **animation** line names a `riglab.anim` version 2 file for the rig, named as the line is.
 
 `loadLibrary(files)` (`src/library/load.ts`) takes folder-relative paths to file text and returns the rig, skins, weapons with their parts, palettes and holds, and animations, all in config order. Every part goes through the strict part parser. A failure lists every problem it found, each under its file or `config.txt` line. `placeholder-library/` is a library in this layout. Its rig and weapon rigs are the real ones and its art is plain boxes, so tests load it through the same path a real folder takes.
+
+RigLab reads the folder named by `RIGLAB_LIBRARY`, else `~/Documents/RigLab/` when it holds a `config.txt`, else `placeholder-library/` (`src/library/folder.ts`). It reads `config.txt` and only what it maps: rig and animation files, and the `.txt`, `.json` and `.svg` files directly inside each skin and weapon directory. It refuses any path that resolves outside the folder, symlinks included, a mapped file of another type, and any file over 2 MiB. The Vite plugin (`src/library/plugin.ts`, loaded through `scripts/library-plugin.mjs`) serves the files as `virtual:riglab-library` to the dev server, the build and Vitest, after the loader accepts them; otherwise Vite's overlay lists every problem. Under `npm start` it watches the folder and reloads the page when a mapped file or `config.txt` changes. Vitest and `npm run check` (which builds with `--mode placeholder`) always read the placeholder, so they behave the same on every machine. `src/library/active.ts` loads the library once for the app, and the status bar names it, home-relative, or says it is the placeholder. `npm run check:library [folder]` validates a folder outside `check`.
 
 ## Acceptance
 
@@ -141,11 +143,9 @@ A library folder holds a rig, its skins, the weapons it holds and the animations
 | --- | --- |
 | `vendor/hexframe/` | Hexframe's pinned rig engine: rig contract, FK, paint order and clip sampler. |
 | `src/format/` | The `riglab.rig`, `riglab.anim`, `riglab.weapon`, `riglab.palette`, `riglab.hold` and `riglab.document` types, their closed validators, engine timing and kinds, and the key sampler. |
-| `characters/chibi/` | The chibi rig and its 11 original part SVGs. |
-| `src/chibi/` | Loads the chibi rig and parses its art as the `chibi` set. |
-| `characters/weapons/` | The sword, spear, axe and daggers as `riglab.weapon` files, with their original part SVGs. |
-| `src/weapons/` | Loads the weapons, parses their art as the `weapons` set, and gives each its ready hold. |
-| `src/library/` | Parses a library folder's `config.txt` and loads its rig, skins, weapons and animations. |
+| `src/chibi/` | The library's chibi rig and the skin the editor draws with. |
+| `src/weapons/` | The library's weapons in config order, their art by slot, and each one's ready hold. |
+| `src/library/` | Parses a library folder's `config.txt`, loads its rig, skins, weapons and animations, chooses and reads the folder, serves it through the Vite plugin, and emits its palettes. |
 | `placeholder-library/` | A library folder with the real rig and weapon rigs and plain-box art, for tests. |
 | `src/hexframe/` | Adapts RigLab rigs and animations to Hexframe's shapes, parses part art and places it. |
 | `src/editor/` | The editor's pure state (`types.ts`, `core.ts`, `documentEdits.ts`, `state.ts`), undo history, rig setup, pose, weapon and timeline edits, view math, shortcuts, document helpers and browser file access. |

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { CHIBI_RIG, CHIBI_SKIN } from "../../src/chibi/chibi";
 import { restPose } from "../../src/editor/animations";
 import { ART_PARTS } from "../../src/editor/templates";
 import { artPlacements, withWeaponArt } from "../../src/hexframe/art";
@@ -9,6 +9,8 @@ import { constraintGeometry } from "../../src/viewer/constraintGeometry";
 import { readyHold, weaponNamed } from "../../src/weapons/weapons";
 
 const rig = CHIBI_RIG;
+/** Rig parts draw in the editor's skin, and each weapon in its own art set. */
+const skin = CHIBI_SKIN.name;
 const runtime = runtimeRig(rig);
 const wielded = (name: string): Wielded => {
   const weapon = weaponNamed(name)!;
@@ -27,13 +29,13 @@ describe("weapon art", () => {
   it("paints a two-handed weapon just under the near hand, over the torso and the far arm", () => {
     expect(painted("sword")).toEqual([
       "leg-front", "shin-front", "leg-back", "shin-back", "pelvis", "arm-front", "forearm-front", "torso", "arm-back",
-    ].map((bone) => `chibi:${bone}`).concat(["weapons:sword", "chibi:forearm-back", "chibi:head"]));
+    ].map((bone) => `${skin}:${bone}`).concat(["sword:sword", `${skin}:forearm-back`, `${skin}:head`]));
   });
 
   it("paints each dagger just under the hand that holds it", () => {
     const order = painted("daggers");
-    expect(order.indexOf("weapons:dagger-front")).toBe(order.indexOf("chibi:forearm-front") - 1);
-    expect(order.indexOf("weapons:dagger-back")).toBe(order.indexOf("chibi:forearm-back") - 1);
+    expect(order.indexOf("daggers:dagger-front")).toBe(order.indexOf(`${skin}:forearm-front`) - 1);
+    expect(order.indexOf("daggers:dagger-back")).toBe(order.indexOf(`${skin}:forearm-back`) - 1);
   });
 });
 

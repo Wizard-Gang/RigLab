@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createRig } from "../../vendor/hexframe/src/rig";
 import type { RigContract } from "../../vendor/hexframe/src/rig";
-import { CHIBI_PARTS, CHIBI_RIG } from "../../src/chibi/chibi";
+import { CHIBI_PARTS, CHIBI_RIG, CHIBI_SKIN } from "../../src/chibi/chibi";
+import { blankAnimation } from "../../src/editor/animations";
+import { ANIMATION_KINDS } from "../../src/format/timing";
 import { documentOf, editorReducer, initialState } from "../../src/editor/state";
 import { ART_PARTS, templateDocument } from "../../src/editor/templates";
 import { validateDocument } from "../../src/format";
@@ -63,22 +65,19 @@ describe("chibi rig", () => {
 });
 
 describe("chibi art", () => {
-  it("parses all 11 parts as the chibi set, each bound by slot to its own bone", () => {
+  it("parses all 11 parts of the editor's skin, each bound by slot to its own bone", () => {
     expect(Object.keys(CHIBI_PARTS)).toHaveLength(11);
     for (const bone of chibi.bones) {
-      expect(CHIBI_PARTS[bone.slot], bone.slot).toMatchObject({ bone: bone.name, set: "chibi" });
+      expect(CHIBI_PARTS[bone.slot], bone.slot).toMatchObject({ bone: bone.name, set: CHIBI_SKIN.name });
       expect(ART_PARTS[bone.slot]).toBe(CHIBI_PARTS[bone.slot]);
     }
     // The art library also carries the weapons' parts, on their own weapon_* slots.
     expect(Object.keys(ART_PARTS).sort()).toEqual([...Object.keys(CHIBI_PARTS), ...Object.keys(WEAPON_PARTS)].sort());
   });
 
-  it("uses only the chibi palette's classes", () => {
-    const palette = new Set(["part", "part--back", "part--skin", "part--skin-back", "part--pants", "part--pants-back", "part--shoe",
-      "part--shoe-back", "part--hair", "part--accent", "part--eye", "part--shine", "part--blush", "detail"]);
+  it("uses only its own palette's classes", () => {
     const used = Object.values(CHIBI_PARTS).flatMap((part) => part.paths.flatMap((path) => path.className.split(" ")));
-    expect(used.filter((name) => !palette.has(name))).toEqual([]);
-    expect(CHIBI_PARTS.chibi_head!.paths.map((path) => path.className)).toContain("part part--eye");
+    expect(used.filter((name) => !Object.hasOwn(CHIBI_SKIN.palette.classes, name))).toEqual([]);
   });
 
   it("draws in Hexframe's paint order at each bone's FK transform", () => {
@@ -88,7 +87,7 @@ describe("chibi art", () => {
     const placements = artPlacements(chibi, runtimeRig(chibi), placed, ART_PARTS, "idle");
     expect(placements.map((item) => [item.bone, item.part.set])).toEqual(
       ["leg-front", "shin-front", "leg-back", "shin-back", "pelvis", "arm-front", "forearm-front", "torso", "arm-back", "forearm-back", "head"]
-        .map((bone) => [bone, "chibi"]),
+        .map((bone) => [bone, CHIBI_SKIN.name]),
     );
     for (const item of placements) {
       const at = placed.get(item.bone)!;
@@ -98,12 +97,12 @@ describe("chibi art", () => {
 });
 
 describe("chibi template", () => {
-  it("opens a valid chibi document with no animations from New", () => {
+  it("opens a valid chibi document with one rest-pose animation per kind from New", () => {
     const document = templateDocument();
     expect(validateDocument(document).ok).toBe(true);
-    expect([document.rig, document.animations]).toEqual([chibi, []]);
+    expect([document.rig, document.animations]).toEqual([chibi, ANIMATION_KINDS.map((kind) => blankAnimation(chibi, kind, kind))]);
     const state = editorReducer(editorReducer(initialState(), { type: "addAnimation", kind: "idle" }), { type: "new" });
     expect(documentOf(state)).toEqual(document);
-    expect([state.activeAnimation, state.status?.text]).toEqual([null, "New chibi document"]);
+    expect([state.activeAnimation, state.status?.text]).toEqual(["idle", "New chibi document"]);
   });
 });

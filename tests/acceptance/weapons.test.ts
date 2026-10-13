@@ -76,7 +76,7 @@ const SWINGS: Record<string, readonly (Swing | Hands)[]> = {
 };
 
 function author(name: string): RigLabDocument {
-  let state = run(initialState(), { type: "addAnimation", kind: "attack" }, { type: "renameAnimation", from: "attack", to: `${name}-attack` }, { type: "setMode", mode: "pose" });
+  let state = run(initialState(), { type: "activateAnimation", name: "attack" }, { type: "renameAnimation", from: "attack", to: `${name}-attack` }, { type: "setMode", mode: "pose" });
   const weapon = weaponNamed(name)!;
   for (const [index, frame] of [0, 8, 16, 24].entries()) {
     state = run(state, { type: "setFrame", frame });
@@ -111,7 +111,8 @@ describe("weapon acceptance", () => {
   for (const name of ["sword", "spear", "axe", "daggers"]) {
     it(`authors, exports and reloads a ${name} attack with the skeleton connected, the feet planted and the ${name} in hand`, async () => {
       const document = author(name);
-      const animation = document.animations[0]!;
+      const named = (animations: RigLabDocument["animations"]) => animations.find((item) => item.name === `${name}-attack`)!;
+      const animation = named(document.animations);
       expect(animation.keys.map((key) => [key.frame, key.weapon?.name, key.pins?.length])).toEqual([0, 8, 16, 24].map((frame) => [frame, name, 2]));
       const files = await buildBundle(document, { baked: true, generator: "RigLab acceptance" });
       const reloaded = await readBundle(await unzip(zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])))));
@@ -119,7 +120,7 @@ describe("weapon acceptance", () => {
       expect(reloaded.value).toEqual(document);
 
       const { rig, weapons } = reloaded.value;
-      const again = reloaded.value.animations[0]!;
+      const again = named(reloaded.value.animations);
       const baked: RigLabBaked = JSON.parse(new TextDecoder().decode(files.get(`baked/${again.name}.baked.json`)!));
       expect(bakeAnimation(rig, again, weapons)).toEqual(baked);
       const clip = toHexframeClip(rig, again, weapons);

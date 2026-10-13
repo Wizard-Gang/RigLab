@@ -29,7 +29,7 @@ describe("the chibi's weapons", () => {
     expect(WEAPONS.map((candidate) => candidate.name)).toEqual(["sword", "spear", "axe", "daggers"]);
     for (const candidate of WEAPONS) {
       expect(validateWeapon(candidate, rig).ok).toBe(true);
-      for (const body of candidate.bodies) expect(WEAPON_PARTS[body.slot]?.set).toBe("weapons");
+      for (const body of candidate.bodies) expect(WEAPON_PARTS[body.slot]?.set).toBe(candidate.name);
     }
     expect(Object.keys(WEAPON_PARTS).sort()).toEqual(["weapon_axe", "weapon_dagger", "weapon_spear", "weapon_sword"]);
   });

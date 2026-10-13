@@ -115,30 +115,7 @@ button, select, input { font: inherit; color: inherit; }
 .prop-handle { fill: var(--bg); stroke: #e8c58a; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: move; }
 .weapon { stroke: #a9b8c8; stroke-width: 4; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.85; }
 .weapon-handle { fill: var(--bg); stroke: #cfe0f2; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: move; }
-/* Each art set keeps its own palette; parts carry only class names. */
-.art-set--chibi .part { fill: #5aa0f0; stroke: #2a1d16; stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.art-set--chibi .part--back { fill: #3f78c0; }
-.art-set--chibi .part--skin { fill: #ffd9bd; }
-.art-set--chibi .part--skin-back { fill: #e9b993; }
-.art-set--chibi .part--pants { fill: #34416e; }
-.art-set--chibi .part--pants-back { fill: #273257; }
-.art-set--chibi .part--shoe { fill: #8f5a33; }
-.art-set--chibi .part--shoe-back { fill: #6e4325; }
-.art-set--chibi .part--hair { fill: #7b4a2b; }
-.art-set--chibi .part--accent { fill: #f3c552; }
-.art-set--chibi .part--eye { fill: #2b2140; stroke: none; }
-.art-set--chibi .part--shine { fill: #fff; stroke: none; }
-.art-set--chibi .part--blush { fill: #ff9fb3; stroke: none; opacity: 0.65; }
-.art-set--chibi .detail { fill: none; stroke: #6b2f26; stroke-width: 1.1; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-/* Weapons share the chibi's outline, gold, wood and cloth, plus a steel tone. */
-.art-set--weapons .part { fill: #dfe6ee; stroke: #2a1d16; stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.art-set--weapons .part--steel-dark { fill: #a9b8c8; }
-.art-set--weapons .part--wood { fill: #8f5a33; }
-.art-set--weapons .part--wood-dark { fill: #6e4325; }
-.art-set--weapons .part--grip { fill: #34416e; }
-.art-set--weapons .part--accent { fill: #f3c552; }
-.art-set--weapons .part--gem { fill: #5aa0f0; }
-.art-set--weapons .detail { fill: none; stroke: #2a1d16; stroke-width: 0.8; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.6; }
+/* Each art set's palette comes from its library palette.json; main.tsx adds them as one stylesheet. */
 .ghost line { stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.35; }
 .ghost--previous line { stroke: #ff8f6b; }
 .ghost--next line { stroke: #6bc4ff; }
@@ -225,6 +202,7 @@ button, select, input { font: inherit; color: inherit; }
 .status__message { flex: 1; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status__message--error { color: var(--danger); }
 .status__cursor { font-variant-numeric: tabular-nums; min-width: 8rem; text-align: end; }
+.status__library { color: var(--muted); font-size: 0.85em; white-space: nowrap; }
 .status__controls { display: flex; align-items: center; gap: 0.35rem; }
 .status__zoom { min-width: 3.5rem; }
 .status__field { display: flex; align-items: center; gap: 0.3rem; margin-inline-start: 0.5rem; }
