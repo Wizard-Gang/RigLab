@@ -1,4 +1,4 @@
-// Hexframe's eleven machine-generated part SVGs, parsed as data. Nothing here ever becomes markup.
+// Part art parsed as data (Hexframe's eleven fighter parts here); nothing here ever becomes markup.
 import armLowerL from "../../vendor/hexframe/characters/fighter/parts/arm_lower_l.svg?raw";
 import armLowerR from "../../vendor/hexframe/characters/fighter/parts/arm_lower_r.svg?raw";
 import armUpperL from "../../vendor/hexframe/characters/fighter/parts/arm_upper_l.svg?raw";
@@ -19,8 +19,10 @@ export interface PartPath {
 }
 
 export interface Part {
-  /** The bone Hexframe drew this part on. */
+  /** The bone the part was drawn for. */
   readonly bone: string;
+  /** The art set it belongs to, such as `fighter` or `chibi`; each set has its own palette. */
+  readonly set: string;
   readonly paths: readonly PartPath[];
 }
 
@@ -31,7 +33,7 @@ const PATH = /<path class="([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*)" d="([MmLlHhVv
  * Accept exactly Hexframe's part shape: one svg root naming its bone, holding only `<path class d/>`
  * elements with conservative attribute values. Anything else is refused rather than rendered.
  */
-export function parsePart(markup: string): Part {
+export function parsePart(markup: string, set: string): Part {
   const root = ROOT.exec(markup);
   if (!root) throw new Error("part: expected one <svg> root with only xmlns and data-bone");
   const body = root[2]!;
@@ -44,7 +46,7 @@ export function parsePart(markup: string): Part {
     paths.push({ className: match[1]!, d: match[2]! });
   }
   if (!paths.length) throw new Error(`part '${root[1]}': has no paths`);
-  return { bone: root[1]!, paths };
+  return { bone: root[1]!, set, paths };
 }
 
 /** Parts keyed by art slot: a rig binds art through each bone's `slot`, not its name. */
@@ -60,4 +62,4 @@ export const HEXFRAME_PARTS: Readonly<Record<string, Part>> = Object.freeze(Obje
   leg_upper_r: legUpperR,
   pelvis,
   torso,
-}).map(([slot, markup]) => [slot, parsePart(markup)])));
+}).map(([slot, markup]) => [slot, parsePart(markup, "fighter")])));

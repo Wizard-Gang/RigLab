@@ -5,6 +5,7 @@ import type { RigLabDocument } from "../format/document";
 import type { Constraints } from "../solve/constraints";
 import type { History } from "./history";
 import type { RigEdit } from "./rigEdits";
+import type { TemplateId } from "./templates";
 import type { TimelineEdit } from "./timeline";
 import type { View } from "./view";
 
@@ -50,7 +51,7 @@ export interface EditorState {
 }
 
 export type Action =
-  | { readonly type: "new" }
+  | { readonly type: "new"; readonly template?: TemplateId }
   | { readonly type: "open"; readonly document: RigLabDocument; readonly fileName: string }
   | { readonly type: "saved"; readonly document: RigLabDocument; readonly fileName: string }
   | { readonly type: "imported"; readonly document: RigLabDocument; readonly source: string }

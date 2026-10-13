@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseDocument, serializeDocument, validateDocument } from "../../src/format/document";
-import { blankAnimation, restPose, templateDocument, uniqueName } from "../../src/editor/animations";
+import { blankAnimation, restPose, uniqueName } from "../../src/editor/animations";
+import { templateDocument } from "../../src/editor/templates";
 import { HUMANOID_RIG } from "../../src/hexframe/humanoid";
 
 type Mutable = Record<string, any>;

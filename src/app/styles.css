@@ -60,6 +60,7 @@ button, select, input { font: inherit; color: inherit; }
 .tool:hover:not(:disabled), .mode:hover { border-color: var(--acid-dim); }
 .tool:disabled { opacity: 0.4; cursor: default; }
 .tool--small { padding: 0.15rem 0.5rem; }
+.tool--menu { padding-inline: 0.45rem; }
 .mode[aria-selected="true"] { background: var(--acid-wash); border-color: var(--acid-dim); color: var(--acid); }
 .tool:focus-visible, .mode:focus-visible, .list__item:focus-visible, .hierarchy__bone:focus-visible, .field:focus-visible {
   outline: 2px solid var(--acid);
@@ -123,11 +124,26 @@ button, select, input { font: inherit; color: inherit; }
 .tip-handle--selected { fill: var(--acid); stroke: var(--acid); }
 .prop { stroke: #c9a46a; stroke-width: 5; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.85; }
 .prop-handle { fill: var(--bg); stroke: #e8c58a; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: move; }
-.art .part { fill: #a8cf46; stroke: #07090c; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
-.art .part--accent { fill: #efffc7; }
-.art .part--skin { fill: #c4ed64; }
-.art .part--back { fill: #61792d; }
-.art .detail { fill: none; stroke: #101622; stroke-width: 1.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+/* Each art set keeps its own palette; parts carry only class names. */
+.art-set--fighter .part { fill: #a8cf46; stroke: #07090c; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.art-set--fighter .part--accent { fill: #efffc7; }
+.art-set--fighter .part--skin { fill: #c4ed64; }
+.art-set--fighter .part--back { fill: #61792d; }
+.art-set--fighter .detail { fill: none; stroke: #101622; stroke-width: 1.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.art-set--chibi .part { fill: #5aa0f0; stroke: #2a1d16; stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.art-set--chibi .part--back { fill: #3f78c0; }
+.art-set--chibi .part--skin { fill: #ffd9bd; }
+.art-set--chibi .part--skin-back { fill: #e9b993; }
+.art-set--chibi .part--pants { fill: #34416e; }
+.art-set--chibi .part--pants-back { fill: #273257; }
+.art-set--chibi .part--shoe { fill: #8f5a33; }
+.art-set--chibi .part--shoe-back { fill: #6e4325; }
+.art-set--chibi .part--hair { fill: #7b4a2b; }
+.art-set--chibi .part--accent { fill: #f3c552; }
+.art-set--chibi .part--eye { fill: #2b2140; stroke: none; }
+.art-set--chibi .part--shine { fill: #fff; stroke: none; }
+.art-set--chibi .part--blush { fill: #ff9fb3; stroke: none; opacity: 0.65; }
+.art-set--chibi .detail { fill: none; stroke: #6b2f26; stroke-width: 1.1; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .ghost line { stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.35; }
 .ghost--previous line { stroke: #ff8f6b; }
 .ghost--next line { stroke: #6bc4ff; }

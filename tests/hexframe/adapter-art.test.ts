@@ -71,7 +71,8 @@ describe("art overlay", () => {
 
   it("refuses anything beyond plain paths", () => {
     const ok = '<svg xmlns="http://www.w3.org/2000/svg" data-bone="head"><path class="part" d="M0 0L1 1Z"/></svg>';
-    expect(parsePart(ok).paths).toHaveLength(1);
+    expect(parsePart(ok, "test")).toMatchObject({ bone: "head", set: "test" });
+    expect(parsePart(ok, "test").paths).toHaveLength(1);
     for (const bad of [
       ok.replace("<path", '<script>alert(1)</script><path'),
       ok.replace('class="part"', 'class="part" onclick="x()"'),
@@ -79,7 +80,7 @@ describe("art overlay", () => {
       ok.replace('data-bone="head"', 'data-bone="head" style="x"'),
       ok.replace("<path", "<image href='x.png'/><path"),
       '<svg xmlns="http://www.w3.org/2000/svg" data-bone="head"></svg>',
-    ]) expect(() => parsePart(bad), bad).toThrow(/part/);
+    ]) expect(() => parsePart(bad, "test"), bad).toThrow(/part/);
   });
 
   it("places each part at its bone's FK transform in Hexframe's paint order", () => {

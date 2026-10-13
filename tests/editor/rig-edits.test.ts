@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validateDocument } from "../../src/format/document";
 import type { RigLabDocument } from "../../src/format/document";
-import { templateDocument } from "../../src/editor/animations";
+import { templateDocument } from "../../src/editor/templates";
 import { applyRigEdit, subtreeOf } from "../../src/editor/rigEdits";
 import type { RigEdit } from "../../src/editor/rigEdits";
 import { documentOf, editorReducer, initialState } from "../../src/editor/state";

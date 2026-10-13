@@ -1,12 +1,9 @@
-// Pure document helpers: rest poses, unique names, blank animations and the starting document.
+// Pure document helpers: rest poses, unique names and blank animations.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { DEFAULT_FPS } from "../format/animation";
 import type { RigLabAnimation } from "../format/animation";
-import { DOCUMENT_FORMAT, DOCUMENT_VERSION } from "../format/document";
-import type { RigLabDocument } from "../format/document";
 import type { RigLabRig } from "../format/rig";
 import { NAME } from "../format/validate";
-import { HUMANOID_ANIMATIONS, HUMANOID_RIG } from "../hexframe/humanoid";
 
 /** Every bone at its rest rotation, and the root at the rig origin. */
 export function restPose(rig: RigLabRig): Pose {
@@ -41,15 +38,5 @@ export function blankAnimation(rig: RigLabRig, name: string): RigLabAnimation {
     length: DEFAULT_FPS,
     loop: false,
     keys: [{ frame: 0, interpolation: "hold", pose: restPose(rig) }],
-  };
-}
-
-/** A new document: Hexframe's humanoid with its 13 clips as reference animations. */
-export function templateDocument(): RigLabDocument {
-  return {
-    format: DOCUMENT_FORMAT,
-    version: DOCUMENT_VERSION,
-    rig: HUMANOID_RIG,
-    animations: Object.values(HUMANOID_ANIMATIONS),
   };
 }
