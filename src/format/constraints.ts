@@ -84,6 +84,11 @@ function validateHeldWeapon(issues: Issues, at: string, value: unknown, weapons:
   for (const name of free) if (!placed.has(name)) issues.add(`${at}.bodies`, `must place free body '${name}'`);
 }
 
+/** A weapon held on its own, outside any key: a placement for each free body, and nothing else gripping. */
+export function validateHeldWeaponAlone(issues: Issues, at: string, value: unknown, weapon: RigLabWeapon): void {
+  validateHeldWeapon(issues, at, value, [weapon], new Set());
+}
+
 /**
  * Validate a key's optional `pins`, `prop` and `weapon`. A key holds a prop or a weapon, never both, and a chain
  * end is pinned, on the prop or on the weapon, never two of them.

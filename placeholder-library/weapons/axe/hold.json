@@ -1,0 +1,13 @@
+{
+  "format": "riglab.hold",
+  "version": 1,
+  "name": "axe",
+  "bodies": [
+    {
+      "body": "axe",
+      "x": 7,
+      "y": -36,
+      "rotation": 35
+    }
+  ]
+}

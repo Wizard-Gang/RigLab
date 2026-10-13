@@ -22,11 +22,13 @@ Nothing under `vendor/` is edited in place. `npm run vendor:hexframe -- <hexfram
 
 ## RigLab formats
 
-`src/format/` defines RigLab's portable, versioned contract. Both validators are closed: an unknown field, bone or value fails with the JSON path it names.
+`src/format/` defines RigLab's portable, versioned contract. Every validator is closed: an unknown field, bone or value fails with the JSON path it names.
 
 - **`riglab.rig` version 1** keeps Hexframe's rig contract fields (`space`, `root`, and bones with `name`, `parent`, `offset`, `tip`, `slot`, `artHeight` and `hand`) and adds a `format`/`version` header, a `name`, nullable per-bone angle `limits` (`min`/`max` local degrees) and two-bone `chains`. A chain's `lower` bone hangs off its `upper` bone: the upper segment is `lower.offset`, the lower segment is `lower.tip`, and `bend` (`1` or `-1`) is the sign of `lower`'s local rotation away from straight. The space must be SVG units, x right, y down and rotation clockwise-positive, because the FK math assumes it. `depthProfiles` is optional consumer layering data in Hexframe's shape. Every valid RigLab rig resolves through Hexframe's own `createRig`.
 - **`riglab.anim` version 2** names its rig and its `kind`, and carries `fps`, `length`, `loop` and its keys. The kind fixes all of them (see Engine timing): `fps` is always 60, and the keys sit exactly at the kind's frames, so validation refuses any other rate, length, looping or key frame. Each key holds a full Hexframe pose, with a rotation for every bone and `x`/`y` on the root only, so no pose can stretch a limb. Its `interpolation` (`hold`, `linear` or `smoothstep`) shapes the transition to the next key.
 - **`riglab.weapon` version 1** (`src/format/weapon.ts`) is a weapon rig: a `name` and one or more rigid `bodies`, each with a `name`, an art `slot`, an `axis` (its butt and tip in its own frame, for its line and turn handle) and one or two `grips`. A grip is a fixed point `at` in the body's frame, held by the end of a hand `chain`, and a chain grips at most once per weapon. A body with two grips is free: a key places it, and both hands solve to its grips. A body with one grip rides that hand: its grip also carries an `angle`, the body's rotation relative to the chain's lower bone, so the body follows the hand and nothing else places it. Dual daggers are two one-grip bodies; a two-handed sword is one free body.
+- **`riglab.palette` version 1** (`src/format/palette.ts`) is an art set's look as data: `classes` maps each class token its parts use to a `fill`, `stroke` (`#rrggbb` or `none`), `strokeWidth`, `opacity` and `linecap`, in cascade order, and `pixel` marks a pixel-art set. `paletteCss` turns a validated palette into CSS scoped to `.art-set--<set>`, so no unvalidated text reaches a stylesheet.
+- **`riglab.hold` version 1** (`src/format/hold.ts`) is where a weapon's free bodies first sit when the rig, standing at rest, takes it: the weapon's `name` and one placement per free body, checked the way a key's `weapon` is.
 - **Key constraints.** A key may carry `pins` (a chain end held at a world point, such as a planted foot) and either one `prop` (a rigid body with a name, position, rotation and one or two `grips`, each holding a chain end at a point in the prop's frame) or one `weapon` (the name of one of the document's weapons, and `bodies` placing each of its free bodies with `body`, `x`, `y` and `rotation`). A key never holds both, a chain end is pinned, on the prop or on the weapon, never two of them, and every chain must exist in the rig. The prop is the older, ad hoc hold, whose grip spacing comes from where the hands were; documents that use it validate and play as before.
 - **`sampleAnimation(animation, frame)`** interpolates key poses deterministically. A looping animation samples `frame mod length`, and its last key runs to key 0 at `length`. A non-looping animation clamps to `[0, length]` and holds its last key. Blending uses Hexframe's `start + (end - start) * progress`.
 - **`samplePose(rig, animation, frame, weapons)`** (in `src/solve/constraints.ts`) samples the key poses, then holds the frame's constraints, re-solving every pinned or gripped chain by IK: pins, then the prop's grips, then the grips of the weapon's free bodies. Bodies that ride a hand need no solve; `bodyTransforms` (in `src/solve/weapons.ts`) places them on the solved hands. Pins, the prop and free bodies move between keys with the same segment and easing as the pose (a free body only to a key holding the same weapon), and hold still when only the key in force has them. An animation with no constraints samples exactly as `sampleAnimation` does. This is how each of Hexframe's 13 poses is made.
@@ -116,6 +118,17 @@ New starts the chibi (`src/editor/templates.ts`) with no animations. It is RigLa
 
 At chibi scale (91 units tall, arms 10 + 11, mitten fists about 7.6 units across) the grips fit two fists and stay reachable. `readyHold` gives each free body a ready placement in front of the chibi at the waist, tilted toward the facing side, so both hands reach their grips and the big head never hides the blade. `tests/weapons/` holds each two-handed weapon there with both feet planted and proves that both hands reach their grips without stretching. It also shows that in a raised guard each dagger's blade points down along its forearm.
 
+## Library folders
+
+A library folder holds a rig, its skins, the weapons it holds and the animations new documents start with, mapped by a `config.txt` (`src/library/config.ts`). Each other line of `config.txt` is `<kind> <name> = <path>`, after blank lines and `#` comments are skipped. `kind` is `rig`, `skin`, `weapon` or `animation`, `name` is a RigLab name, and `path` is relative to the folder, with plain `/`-separated segments and no `..`. Line order is list order, and a library has exactly one rig.
+
+- A **rig** line names a `riglab.rig` file whose `name` is the line's name.
+- A **skin** line names a directory with one part SVG per rig slot, named after the slot without its first `_`-separated prefix (`chibi_arm_lower_l` → `arm_lower_l.svg`), whose `data-bone` is the bone that owns the slot. Next to the parts is a `palette.json` that defines every class token they use. A skin's art set is its config name.
+- A **weapon** line names a directory with `weapon.json` (a `riglab.weapon` valid for the rig and named as the line is), one part SVG per body slot under the same naming rule, a `palette.json`, and a `hold.json` when the weapon has free bodies. Bodies may share a slot, as the daggers do, so a weapon part's `data-bone` is its slot's stem. No weapon may draw a slot the rig or another weapon draws.
+- An **animation** line names a `riglab.anim` version 2 file for the rig, named as the line is.
+
+`loadLibrary(files)` (`src/library/load.ts`) takes folder-relative paths to file text and returns the rig, skins, weapons with their parts, palettes and holds, and animations, all in config order. Every part goes through the strict part parser. A failure lists every problem it found, each under its file or `config.txt` line. `placeholder-library/` is a library in this layout. Its rig and weapon rigs are the real ones and its art is plain boxes, so tests load it through the same path a real folder takes.
+
 ## Acceptance
 
 `tests/acceptance/spear-thrust.test.ts` drives the editor's own reducer through the RigLab recommendation's first acceptance path. It starts the chibi and lengthens both forearms in Rig setup. It then adds an attack (keys at 0, 8, 16 and 24) and authors a spear thrust in Pose mode: both feet pinned, both hands on one spear, a wind-up with the elbows back, a linear transition with them centered, an extension with the hands pushed forward, and the recovery. It exports the bundle with baked frames, zips and unzips it, and reloads it. The reloaded document must equal the original, and re-baking must equal the exported bake. On every frame, every joint must sit at its offset from its parent and every tip must keep its length (to 1e-5), both feet must stay on their pins, the reloaded playback must equal the original, and Hexframe's own sampler on the exported clip must place every bone where RigLab baked it. Breaking connectivity by 0.01 units, or letting a non-root bone translate, fails it.
@@ -127,11 +140,13 @@ At chibi scale (91 units tall, arms 10 + 11, mitten fists about 7.6 units across
 | Path | Responsibility |
 | --- | --- |
 | `vendor/hexframe/` | Hexframe's pinned rig engine: rig contract, FK, paint order and clip sampler. |
-| `src/format/` | The `riglab.rig`, `riglab.anim`, `riglab.weapon` and `riglab.document` types, their closed validators, engine timing and kinds, and the key sampler. |
+| `src/format/` | The `riglab.rig`, `riglab.anim`, `riglab.weapon`, `riglab.palette`, `riglab.hold` and `riglab.document` types, their closed validators, engine timing and kinds, and the key sampler. |
 | `characters/chibi/` | The chibi rig and its 11 original part SVGs. |
 | `src/chibi/` | Loads the chibi rig and parses its art as the `chibi` set. |
 | `characters/weapons/` | The sword, spear, axe and daggers as `riglab.weapon` files, with their original part SVGs. |
 | `src/weapons/` | Loads the weapons, parses their art as the `weapons` set, and gives each its ready hold. |
+| `src/library/` | Parses a library folder's `config.txt` and loads its rig, skins, weapons and animations. |
+| `placeholder-library/` | A library folder with the real rig and weapon rigs and plain-box art, for tests. |
 | `src/hexframe/` | Adapts RigLab rigs and animations to Hexframe's shapes, parses part art and places it. |
 | `src/editor/` | The editor's pure state (`types.ts`, `core.ts`, `documentEdits.ts`, `state.ts`), undo history, rig setup, pose, weapon and timeline edits, view math, shortcuts, document helpers and browser file access. |
 | `src/export/` | Bundle building and verified reading, baking, and the ZIP writer and reader. |
@@ -141,6 +156,7 @@ At chibi scale (91 units tall, arms 10 + 11, mitten fists about 7.6 units across
 | `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/`, `tests/export/`, `tests/hexframe/` | Vitest suites for the rig engine, viewer geometry, formats and engine timing, the sampler and engine playback, editor state, the solver, export bundles and the Hexframe adapter. |
 | `tests/acceptance/` | The end-to-end spear-thrust acceptance test. |
 | `tests/chibi/` | The chibi rig, art and template. |
+| `tests/library/` | `config.txt`, palettes and library loading, against the placeholder library. |
 | `tests/weapons/` | The four weapons, their art and their two-hand and guard holds. |
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |

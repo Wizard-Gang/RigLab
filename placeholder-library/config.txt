@@ -1,0 +1,18 @@
+# RigLab placeholder library: the same layout as a real library folder, with plain boxes for art.
+# One line per thing: <kind> <name> = <path>, relative to this folder. Line order is list order.
+
+rig chibi = rigs/chibi.rig.json
+
+skin plain = skins/plain
+skin block = skins/block
+
+weapon sword = weapons/sword
+weapon spear = weapons/spear
+weapon axe = weapons/axe
+weapon daggers = weapons/daggers
+
+animation idle = animations/idle.anim.json
+animation walk = animations/walk.anim.json
+animation jump = animations/jump.anim.json
+animation attack = animations/attack.anim.json
+animation hit = animations/hit.anim.json
