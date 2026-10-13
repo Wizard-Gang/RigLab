@@ -8,12 +8,12 @@ import { dragTip } from "../../src/solve";
 
 const run = (state: EditorState, ...actions: Action[]): EditorState => actions.reduce(editorReducer, state);
 
-/** Pose mode on a new attack (keys at 0, 8, 16 and 24) at `frame`, after an idle. */
+/** Pose mode on the seeded attack (keys at 0, 8, 16 and 24) at `frame`, after the idle. */
 function posing(frame: number): EditorState {
   return run(
     initialState(),
-    { type: "addAnimation", kind: "idle" },
-    { type: "addAnimation", kind: "attack" },
+    { type: "activateAnimation", name: "idle" },
+    { type: "activateAnimation", name: "attack" },
     { type: "setMode", mode: "pose" },
     { type: "setFrame", frame },
   );

@@ -9,8 +9,8 @@ import { readyHold, WEAPONS } from "../../src/weapons/weapons";
 const run = (state: EditorState, ...actions: Action[]): EditorState => actions.reduce(editorReducer, state);
 const rig = CHIBI_RIG;
 
-/** Pose mode on a new attack (keys at 0, 8, 16 and 24) at `frame`. */
-const posing = (frame = 0): EditorState => run(initialState(), { type: "addAnimation", kind: "attack" }, { type: "setMode", mode: "pose" }, { type: "setFrame", frame });
+/** Pose mode on the seeded attack (keys at 0, 8, 16 and 24) at `frame`. */
+const posing = (frame = 0): EditorState => run(initialState(), { type: "activateAnimation", name: "attack" }, { type: "setMode", mode: "pose" }, { type: "setFrame", frame });
 const keyAt = (state: EditorState, frame: number) => activeAnimationOf(state)!.keys.find((key) => key.frame === frame)!;
 
 describe("picking a weapon", () => {
@@ -78,7 +78,7 @@ describe("picking a weapon", () => {
   it("drops a weapon copy when its last animation is deleted", () => {
     let state = run(posing(), { type: "holdWeapon", name: "axe" });
     state = run(state, { type: "select", selection: { kind: "animation", name: "attack" } }, { type: "deleteSelection" });
-    expect(documentOf(state).animations).toEqual([]);
+    expect(documentOf(state).animations.map((animation) => animation.name)).toEqual(["idle", "walk", "jump", "hit"]);
     expect("weapons" in documentOf(state)).toBe(false);
   });
 });

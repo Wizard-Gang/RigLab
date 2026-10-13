@@ -15,8 +15,8 @@ const bytes = (value: unknown): Uint8Array => new TextEncoder().encode(`${JSON.s
 function armed(): RigLabDocument {
   return documentOf(run(
     initialState(),
-    { type: "addAnimation", kind: "attack" },
-    { type: "addAnimation", kind: "idle" },
+    { type: "activateAnimation", name: "attack" },
+    { type: "activateAnimation", name: "idle" },
     { type: "setMode", mode: "pose" },
     { type: "holdWeapon", name: "daggers" },
     { type: "activateAnimation", name: "attack" },

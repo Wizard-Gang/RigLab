@@ -15,9 +15,9 @@ const names = (state: EditorState): string[] => documentOf(state).animations.map
 const moves = (): RigLabDocument => ({ ...templateDocument(), animations: ANIMATION_KINDS.map((kind) => blankAnimation(CHIBI_RIG, kind, kind)) });
 
 describe("editor state", () => {
-  it("opens on the chibi with no animations, clean and with no history", () => {
+  it("opens on the chibi with the library's seed animations, clean and with no history", () => {
     const state = initialState();
-    expect([documentOf(state).rig.name, documentOf(state).animations, state.activeAnimation]).toEqual(["chibi", [], null]);
+    expect([documentOf(state).rig.name, names(state), state.activeAnimation]).toEqual(["chibi", ["idle", "walk", "jump", "attack", "hit"], "idle"]);
     expect(state.mode).toBe("animate");
     expect(isDirty(state)).toBe(false);
     expect(state.history.past).toHaveLength(0);
@@ -25,7 +25,7 @@ describe("editor state", () => {
   });
 
   it("adds animations by kind, and duplicates, renames and deletes them as undoable edits", () => {
-    let state = run(initialState(), { type: "addAnimation", kind: "idle" });
+    let state = run(initialState({ ...templateDocument(), animations: [] }), { type: "addAnimation", kind: "idle" });
     expect(names(state)).toEqual(["idle"]);
     expect(state.selection).toEqual({ kind: "animation", name: "idle" });
     expect(state.status?.text).toBe("Added idle: 4 keys over 60 frames");

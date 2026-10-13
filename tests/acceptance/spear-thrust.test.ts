@@ -46,8 +46,8 @@ function author(): RigLabDocument {
   state = run(state,
     { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-front", tip: [0, 14] } },
     { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-back", tip: [0, 14] } });
-  // An attack has four keys, at 0, 8, 16 and 24 on Hexframe's clock.
-  state = run(state, { type: "addAnimation", kind: "attack" }, { type: "renameAnimation", from: "attack", to: "spear-thrust" });
+  // The seeded attack has four keys, at 0, 8, 16 and 24 on Hexframe's clock.
+  state = run(state, { type: "activateAnimation", name: "attack" }, { type: "renameAnimation", from: "attack", to: "spear-thrust" });
   state = run(state, { type: "setMode", mode: "pose" });
   // At each key: plant both feet, put both hands on one spear, then drag the spear. The keys are a wind-up with
   // the elbows back, a transition with them centered, an extension with the hands pushed forward, and the recovery.

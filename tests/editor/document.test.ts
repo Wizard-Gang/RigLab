@@ -12,10 +12,10 @@ type Mutable = Record<string, any>;
 const moves = (): RigLabDocument => ({ ...templateDocument(), animations: ANIMATION_KINDS.map((kind) => blankAnimation(CHIBI_RIG, kind, kind)) });
 
 describe("riglab.document", () => {
-  it("starts new documents from the chibi, with no animations", () => {
+  it("starts new documents from the library's chibi and its seed animations", () => {
     const document = templateDocument();
     expect(validateDocument(document).ok).toBe(true);
-    expect([document.rig.name, document.animations]).toEqual(["chibi", []]);
+    expect([document.rig.name, document.animations.map((animation) => animation.name)]).toEqual(["chibi", ["idle", "walk", "jump", "attack", "hit"]]);
   });
 
   it("reopens a saved document deep-equal", () => {
