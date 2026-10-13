@@ -102,6 +102,19 @@ New starts the chibi (`src/editor/templates.ts`) with no animations. It is RigLa
 - **Chibi art.** `characters/chibi/parts/` holds 11 original part SVGs in Hexframe's part format, read by the same strict parser. The style is MapleStory-like: a big round head with hair, bangs, big eyes and blush, a short tunic with a gold collar and belt, puffy sleeves, mitten hands, shorts and big shoes. It copies no MapleStory asset. Following Hexframe's depth profile, which paints `arm-front` and `leg-front` behind the body when facing right, those limbs use the darker shades.
 - **Art set.** Parts are keyed by slot and belong to the `chibi` art set. The art layer tags each part with its set, and the set keeps its own palette in the stylesheet.
 
+## Weapons
+
+`characters/weapons/` holds the chibi's four weapons as `riglab.weapon` files, and `src/weapons/weapons.ts` validates them against the chibi and parses their parts into the `weapons` art set. The parts are original, drawn in the strict part format, and their palette reuses the chibi's outline, gold, wood and cloth with a steel tone.
+
+| Weapon | Bodies | Grips | Shape |
+| --- | --- | --- | --- |
+| `sword` | One free body | `upper` (`arm-front`) and `lower` (`arm-back`), 7 apart on the hilt | Blade up from a gold crossguard, 51 units long |
+| `spear` | One free body | `front` (`arm-front`) and `rear` (`arm-back`), 16 apart on the shaft | Leaf point toward +x, the facing direction, 70 units long |
+| `axe` | One free body | `upper` (`arm-front`) and `lower` (`arm-back`), 10 apart on the haft | Crescent head up, its edge toward +x, 53 units long |
+| `daggers` | `dagger-front` and `dagger-back`, one per hand | `fist` on `arm-front` and on `arm-back`, at 180° | Reverse grip: the blade leaves the pinky side of the fist and lies back along the forearm |
+
+At chibi scale (91 units tall, arms 10 + 11, mitten fists about 7.6 units across) the grips fit two fists and stay reachable. `readyHold` gives each free body a ready placement in front of the chibi at the waist, tilted toward the facing side, so both hands reach their grips and the big head never hides the blade. `tests/weapons/` holds each two-handed weapon there with both feet planted and proves that both hands reach their grips without stretching. It also shows that in a raised guard each dagger's blade points down along its forearm.
+
 ## Acceptance
 
 `tests/acceptance/spear-thrust.test.ts` drives the editor's own reducer through the RigLab recommendation's first acceptance path. It starts the chibi and lengthens both forearms in Rig setup. It then adds an attack (keys at 0, 8, 16 and 24) and authors a spear thrust in Pose mode: both feet pinned, both hands on one spear, a wind-up with the elbows back, a linear transition with them centered, an extension with the hands pushed forward, and the recovery. It exports the bundle with baked frames, zips and unzips it, and reloads it. The reloaded document must equal the original, and re-baking must equal the exported bake. On every frame, every joint must sit at its offset from its parent and every tip must keep its length (to 1e-5), both feet must stay on their pins, the reloaded playback must equal the original, and Hexframe's own sampler on the exported clip must place every bone where RigLab baked it. Breaking connectivity by 0.01 units, or letting a non-root bone translate, fails it.
@@ -114,6 +127,8 @@ New starts the chibi (`src/editor/templates.ts`) with no animations. It is RigLa
 | `src/format/` | The `riglab.rig`, `riglab.anim`, `riglab.weapon` and `riglab.document` types, their closed validators, engine timing and kinds, and the key sampler. |
 | `characters/chibi/` | The chibi rig and its 11 original part SVGs. |
 | `src/chibi/` | Loads the chibi rig and parses its art as the `chibi` set. |
+| `characters/weapons/` | The sword, spear, axe and daggers as `riglab.weapon` files, with their original part SVGs. |
+| `src/weapons/` | Loads the weapons, parses their art as the `weapons` set, and gives each its ready hold. |
 | `src/hexframe/` | Adapts RigLab rigs and animations to Hexframe's shapes, parses part art and places it. |
 | `src/editor/` | The editor's pure state (`types.ts`, `core.ts`, `documentEdits.ts`, `state.ts`), undo history, rig setup, pose and timeline edits, view math, shortcuts, document helpers and browser file access. |
 | `src/export/` | Bundle building and verified reading, baking, and the ZIP writer and reader. |
@@ -123,6 +138,7 @@ New starts the chibi (`src/editor/templates.ts`) with no animations. It is RigLa
 | `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/`, `tests/export/`, `tests/hexframe/` | Vitest suites for the rig engine, viewer geometry, formats and engine timing, the sampler and engine playback, editor state, the solver, export bundles and the Hexframe adapter. |
 | `tests/acceptance/` | The end-to-end spear-thrust acceptance test. |
 | `tests/chibi/` | The chibi rig, art and template. |
+| `tests/weapons/` | The four weapons, their art and their two-hand and guard holds. |
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |
 

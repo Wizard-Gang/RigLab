@@ -1,0 +1,39 @@
+{
+  "format": "riglab.weapon",
+  "version": 1,
+  "name": "axe",
+  "bodies": [
+    {
+      "name": "axe",
+      "slot": "weapon_axe",
+      "axis": [
+        [
+          0,
+          20.1
+        ],
+        [
+          0,
+          -33
+        ]
+      ],
+      "grips": [
+        {
+          "name": "upper",
+          "chain": "arm-front",
+          "at": [
+            0,
+            0
+          ]
+        },
+        {
+          "name": "lower",
+          "chain": "arm-back",
+          "at": [
+            0,
+            10
+          ]
+        }
+      ]
+    }
+  ]
+}

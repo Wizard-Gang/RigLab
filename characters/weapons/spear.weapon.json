@@ -1,0 +1,39 @@
+{
+  "format": "riglab.weapon",
+  "version": 1,
+  "name": "spear",
+  "bodies": [
+    {
+      "name": "spear",
+      "slot": "weapon_spear",
+      "axis": [
+        [
+          -27.5,
+          0
+        ],
+        [
+          43,
+          0
+        ]
+      ],
+      "grips": [
+        {
+          "name": "front",
+          "chain": "arm-front",
+          "at": [
+            8,
+            0
+          ]
+        },
+        {
+          "name": "rear",
+          "chain": "arm-back",
+          "at": [
+            -8,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}
