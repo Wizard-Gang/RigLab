@@ -20,15 +20,26 @@ The conventions that follow from that code:
 
 Nothing under `vendor/` is edited in place. `npm run vendor:hexframe -- <hexframe-checkout> <commit>` re-vendors from a commit's Git objects and rewrites the lock; `npm run check:vendor` (part of `npm run check`) fails on any edited, missing or unpinned file.
 
+## RigLab formats
+
+`src/format/` defines RigLab's portable, versioned contract. Both validators are closed: an unknown field, bone or value fails with the JSON path it names.
+
+- **`riglab.rig` version 1** keeps Hexframe's rig contract fields (`space`, `root`, and bones with `name`, `parent`, `offset`, `tip`, `slot`, `artHeight` and `hand`) and adds a `format`/`version` header, a `name`, nullable per-bone angle `limits` (`min`/`max` local degrees) and two-bone `chains`. A chain's `lower` bone hangs off its `upper` bone: the upper segment is `lower.offset`, the lower segment is `lower.tip`, and `bend` (`1` or `-1`) is the sign of `lower`'s local rotation away from straight. The space must be SVG units, x right, y down and rotation clockwise-positive, because the FK math assumes it. `depthProfiles` is optional consumer layering data in Hexframe's shape. Every valid RigLab rig resolves through Hexframe's own `createRig`.
+- **`riglab.anim` version 1** names its rig and carries an integer `fps` (default 14), a `length` in frames, `loop`, and sparse keys at integer frames from 0 to `length`. Each key holds a full Hexframe pose, with a rotation for every bone and `x`/`y` on the root only, so no pose can stretch a limb. Its `interpolation` (`hold`, `linear` or `smoothstep`) shapes the transition to the next key.
+- **`sampleAnimation(animation, frame)`** is the single deterministic sampler. A looping animation samples `frame mod length`, and its last key runs to key 0 at `length`. A non-looping animation clamps to `[0, length]` and holds its last key. Blending uses Hexframe's `start + (end - start) * progress`.
+
+`src/hexframe/import.ts` imports Hexframe data losslessly. Rig import finds the two-bone chains structurally (a tipped bone whose non-root parent has no other child) and takes their bends from the caller. `src/hexframe/humanoid.ts` gives arms `-1` and legs `+1`, because the fighter faces right. Clip import uses the smallest frame rate that puts all 13 poses on integer frames (`60 × 12 / gcd(duration, 12)`, at most 720). `tests/format/hexframe-import.test.ts` shows that every imported clip reproduces Hexframe's `sampleClip` on every frame, including loop wraps. A clip whose poses carry different channel sets, or that translates a non-root bone, is refused rather than approximated.
+
 ## Source layout
 
 | Path | Responsibility |
 | --- | --- |
 | `vendor/hexframe/` | Pinned Hexframe rig core and fighter data. |
-| `src/hexframe/` | Loads the vendored rig and clips through Hexframe's own `createRig`. |
+| `src/format/` | The `riglab.rig` and `riglab.anim` types, their closed validators and the shared sampler. |
+| `src/hexframe/` | Loads the vendored rig and clips through Hexframe's own `createRig` and imports them as the RigLab `humanoid`. |
 | `src/viewer/` | Skeleton geometry from FK placements, the SVG rig canvas with its grid, the bone hierarchy, and integer-frame playback. |
 | `src/app/` | The application shell and its stylesheet. |
-| `tests/rig/` | Vitest suites for the rig model and viewer geometry. |
+| `tests/rig/`, `tests/format/` | Vitest suites for the rig model, viewer geometry, formats, sampler and Hexframe import. |
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |
 

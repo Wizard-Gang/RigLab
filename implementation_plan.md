@@ -2,32 +2,13 @@
 
 ## Open tasks
 
-### RL-002 — [FEAT] Define the versioned rig and animation formats
-
-- Dependency: None.
-- Why: RigLab's output must be a portable, artwork-independent contract before any large editor UI exists. Hexframe's rig JSON is game-specific, and its fixed 13-pose clips force extra poses and cannot express holds, limits or IK.
-- Scope:
-  - `riglab.rig` version 1: Hexframe's rig contract fields (`space`, `root`, bones with `name`, `parent`, `offset`, `tip`, `slot`, `artHeight`, `hand`, and `depthProfiles`) plus `format`, `version`, `name`, nullable per-bone angle `limits` (`min`/`max` local degrees) and two-bone `chains` (`name`, `upper`, `lower`, `bend` of `1` or `-1`). The vendored Hexframe `createRig` must accept every valid RigLab rig unchanged.
-  - `riglab.anim` version 1: `rig` name, `fps` (default 14), `length` in frames, `loop`, and sparse keys sorted by integer `frame` from 0 to `length`. Each key carries an `interpolation` for the transition to the next key (`hold` by default, `linear` or `smoothstep`) and a full Hexframe `Pose`: a rotation for every bone, and `x`/`y` only on the root.
-  - Closed validators for both formats that reject unknown fields, unknown or missing bones, non-root translation, cycles, bad limits or chains, and unsorted or out-of-range keys, with a JSON path in every message.
-  - One deterministic `sampleAnimation(animation, frame)` that returns a Hexframe `Pose`. A looping animation samples `frame mod length` and its last transition runs to key 0 at `length`; a non-looping one clamps to `[0, length]` and holds its last key. Preview, bake and export all use this sampler.
-  - Lossless Hexframe importers: `fighter.rig.json` to `riglab.rig` with arm and leg chains and null limits, and each Hexframe clip to `riglab.anim` at the smallest frame rate that puts all 13 poses on integer frames (`60 × 12 / gcd(duration, 12)`), with interpolation taken from the clip's easing.
-- Non-goals: Editor UI, IK solving, anatomical limit values, export packaging.
-- Acceptance:
-  - Hexframe's `createRig` accepts the imported humanoid, and its rest FK equals the vendored rig's.
-  - Every one of the 13 imported clips, sampled at each Hexframe frame from 0 to `duration`, equals Hexframe's `sampleClip` for every bone and channel within 1e-9.
-  - Each validator failure class has a test, and hold, linear, smoothstep, loop wrap and clamp sampling are tested at key and in-between frames.
-  - `npm run check` passes.
-- Validation: Pinned `npm ci`, focused Vitest format and sampler suites, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check` and exact-head CI.
-- Authorities: `docs/ARCHITECTURE.md`, `vendor/hexframe/`, and the RigLab recommendation's portable export format.
-
 ### RL-003 — [FEAT] Add the editor document, canvas and file commands
 
-- Dependency: RL-002.
+- Dependency: None.
 - Why: Authoring needs a document with undo history and Paint-style file handling before any editing tool can land.
 - Scope:
   - A document holding one `riglab.rig` and its `riglab.anim` set, plus editor state: mode (Rig setup, Pose, Animation, Export), selection, active animation and frame, grid spacing, snap toggle and rotation-snap increment. Edits go through a pure reducer with bounded undo and redo.
-  - New (from the imported Hexframe humanoid), Open, Save and Save As with the File System Access API when the browser offers it, and file input and download otherwise. Opening validates with the RL-002 validators and reports the first failing path.
+  - New (from the imported Hexframe humanoid), Open, Save and Save As with the File System Access API when the browser offers it, and file input and download otherwise. Opening validates with `validateRig` and `validateAnimation` and reports the first failing path.
   - Canvas zoom and pan, adjustable grid spacing and snap toggle, joint selection on the canvas and in the hierarchy, a read-only inspector and a status bar.
   - Keyboard shortcuts: New, Open, Save, Save As, Undo, Redo, Delete and Escape, using Cmd on macOS and Ctrl elsewhere.
 - Non-goals: Changing bones or poses (RL-004 to RL-006), timeline editing (RL-007), export bundles (RL-008).
@@ -39,7 +20,7 @@
 
 - Dependency: RL-003.
 - Why: Proportions belong to the rig, not to poses. Only Rig Setup may change them.
-- Scope: Drag a joint to move its rest offset (snapped to the grid when snap is on). Edit offsets, tips, slots and names numerically. Add a child joint, and delete a joint with its subtree. Set per-bone angle limits and per-chain bend direction, and define chains. Every edit is validated by the RL-002 validator and Hexframe's `createRig` before it is committed to the document.
+- Scope: Drag a joint to move its rest offset (snapped to the grid when snap is on). Edit offsets, tips, slots and names numerically. Add a child joint, and delete a joint with its subtree. Set per-bone angle limits and per-chain bend direction, and define chains. Every edit is validated by `validateRig` and Hexframe's `createRig` before it is committed to the document.
 - Non-goals: Pose editing, IK, a parent-change tool.
 - Acceptance: Tests show that setup edits change only rest data, that invalid edits are refused with a message, and that undo restores the exact prior rig. Pose and Animation modes expose no control that changes an offset or tip. `npm run check` passes.
 - Validation: Pinned `npm ci`, focused setup-reducer tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
