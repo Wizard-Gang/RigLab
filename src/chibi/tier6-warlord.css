@@ -1,0 +1,25 @@
+/* Tier 6 Warlord: optional, 2x2-pixel chibi armor skin. No base-skin changes. */
+.art-set--tier6-warlord { shape-rendering: crispEdges; }
+.art-set--tier6-warlord .part--ink { fill: #18121a; stroke: none; }
+.art-set--tier6-warlord .part--black-steel { fill: #29202a; stroke: none; }
+.art-set--tier6-warlord .part--dark-steel { fill: #45343a; stroke: none; }
+.art-set--tier6-warlord .part--steel { fill: #685253; stroke: none; }
+.art-set--tier6-warlord .part--steel-light { fill: #886c67; stroke: none; }
+.art-set--tier6-warlord .part--blood-shadow { fill: #421922; stroke: none; }
+.art-set--tier6-warlord .part--maroon { fill: #68232b; stroke: none; }
+.art-set--tier6-warlord .part--crimson { fill: #96332e; stroke: none; }
+.art-set--tier6-warlord .part--vermillion { fill: #c04931; stroke: none; }
+.art-set--tier6-warlord .part--red-light { fill: #d56e40; stroke: none; }
+.art-set--tier6-warlord .part--dark-gold { fill: #77502c; stroke: none; }
+.art-set--tier6-warlord .part--gold { fill: #b98a48; stroke: none; }
+.art-set--tier6-warlord .part--gold-light { fill: #e6b66a; stroke: none; }
+.art-set--tier6-warlord .part--gold-glint { fill: #f7d795; stroke: none; }
+.art-set--tier6-warlord .part--skin-shadow { fill: #976b63; stroke: none; }
+.art-set--tier6-warlord .part--skin { fill: #c99c88; stroke: none; }
+.art-set--tier6-warlord .part--skin-light { fill: #f0c9a5; stroke: none; }
+.art-set--tier6-warlord .part--beard-shadow { fill: #25252b; stroke: none; }
+.art-set--tier6-warlord .part--beard { fill: #484046; stroke: none; }
+.art-set--tier6-warlord .part--beard-light { fill: #665b5e; stroke: none; }
+.art-set--tier6-warlord .part--ember-shadow { fill: #8d2927; stroke: none; }
+.art-set--tier6-warlord .part--ember { fill: #e47c42; stroke: none; }
+.art-set--tier6-warlord .part--ember-light { fill: #ffe4a2; stroke: none; }
