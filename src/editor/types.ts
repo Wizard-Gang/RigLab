@@ -2,10 +2,10 @@
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabDocument } from "../format/document";
+import type { AnimationKind } from "../format/timing";
 import type { Constraints } from "../solve/constraints";
 import type { History } from "./history";
 import type { RigEdit } from "./rigEdits";
-import type { TemplateId } from "./templates";
 import type { TimelineEdit } from "./timeline";
 import type { View } from "./view";
 
@@ -51,14 +51,14 @@ export interface EditorState {
 }
 
 export type Action =
-  | { readonly type: "new"; readonly template?: TemplateId }
+  | { readonly type: "new" }
   | { readonly type: "open"; readonly document: RigLabDocument; readonly fileName: string }
   | { readonly type: "saved"; readonly document: RigLabDocument; readonly fileName: string }
   | { readonly type: "imported"; readonly document: RigLabDocument; readonly source: string }
   | { readonly type: "status"; readonly status: Status | null }
   | { readonly type: "undo" }
   | { readonly type: "redo" }
-  | { readonly type: "addAnimation" }
+  | { readonly type: "addAnimation"; readonly kind: AnimationKind }
   | { readonly type: "duplicateAnimation"; readonly name: string }
   | { readonly type: "renameAnimation"; readonly from: string; readonly to: string }
   | { readonly type: "deleteSelection" }

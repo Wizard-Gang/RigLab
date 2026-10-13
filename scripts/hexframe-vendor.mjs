@@ -1,4 +1,4 @@
-// The Hexframe rig core, fighter data and part art that RigLab vendors byte-for-byte, and the lock that pins them.
+// Hexframe's rig engine (its rig contract, FK and clip sampler) that RigLab vendors byte-for-byte, and the lock that pins it.
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -7,23 +7,10 @@ export const VENDOR_DIR = 'vendor/hexframe';
 export const LOCK_FILE = 'lock.json';
 export const SOURCE_REPOSITORY = 'Wizard-Gang/Hexframe';
 
-const CLIPS = [
-  'crouch', 'crouchGuard', 'jump', 'labGuard', 'labIdle', 'labOverhead', 'labStagger',
-  'labStrike', 'labWalk', 'labWave', 'launched', 'sweep', 'uppercut',
-];
-
-const PARTS = [
-  'arm_lower_l', 'arm_lower_r', 'arm_upper_l', 'arm_upper_r', 'head', 'leg_lower_l',
-  'leg_lower_r', 'leg_upper_l', 'leg_upper_r', 'pelvis', 'torso',
-];
-
 // Paths are Hexframe repository paths; the vendored copy mirrors them under vendor/hexframe/.
-export const VENDORED_PATHS = Object.freeze([
-  ...['clip-types', 'depth', 'fk', 'index', 'paint-order', 'rig', 'sample', 'types'].map((name) => `src/rig/${name}.ts`),
-  'characters/fighter/fighter.rig.json',
-  ...CLIPS.map((name) => `characters/fighter/clips/${name}.json`),
-  ...PARTS.map((name) => `characters/fighter/parts/${name}.svg`),
-].sort());
+export const VENDORED_PATHS = Object.freeze(
+  ['clip-types', 'depth', 'fk', 'index', 'paint-order', 'rig', 'sample', 'types'].map((name) => `src/rig/${name}.ts`).sort(),
+);
 
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 

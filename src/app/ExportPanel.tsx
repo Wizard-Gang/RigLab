@@ -94,22 +94,21 @@ export function ExportPanel({ document, active, dirty, onImported, onStatus }: E
       </div>
       <h3 className="panel__title panel__title--section">Hexframe</h3>
       <p className="panel__note">
-        Hexframe's own shapes: <code>fighter.rig.json</code>, and the active animation as a 13-pose clip on Hexframe's 60 Hz clock.
+        Hexframe's own shapes: the rig, and the active animation as the 13-pose clip RigLab already plays on Hexframe's 60 Hz clock.
       </p>
       <div className="setup__actions">
         <button type="button" className="tool" onClick={() => {
           const adapted = toHexframeRig(document.rig);
           if (!adapted.ok) return onStatus({ tone: "error", text: adapted.error });
-          download(`${JSON.stringify(adapted.value, null, 2)}\n`, "fighter.rig.json");
-          onStatus({ tone: "info", text: ["Downloaded fighter.rig.json", ...adapted.notes].join("; ") });
+          const name = `${document.rig.name}.rig.json`;
+          download(`${JSON.stringify(adapted.value, null, 2)}\n`, name);
+          onStatus({ tone: "info", text: [`Downloaded ${name}`, ...adapted.notes].join("; ") });
         }}>Download Hexframe rig</button>
         <button type="button" className="tool" disabled={!active} onClick={() => {
           if (!active) return;
-          const adapted = toHexframeClip(document.rig, active);
-          if (!adapted.ok) return onStatus({ tone: "error", text: adapted.error });
-          download(`${JSON.stringify(adapted.value.clip, null, 2)}\n`, `${active.name}.json`);
-          const text = [`Downloaded ${active.name}.json`, ...adapted.notes].join("; ");
-          onStatus({ tone: adapted.value.approximated.length ? "error" : "info", text });
+          const clip = toHexframeClip(document.rig, active);
+          download(`${JSON.stringify(clip, null, 2)}\n`, `${active.name}.json`);
+          onStatus({ tone: "info", text: `Downloaded ${active.name}.json: ${clip.duration} frames at 60 Hz, 13 poses, as RigLab plays it` });
         }}>Download Hexframe clip</button>
       </div>
     </div>

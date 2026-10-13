@@ -1,8 +1,8 @@
 import type { Interpolation, RigLabAnimation } from "../format/animation";
 import { INTERPOLATIONS } from "../format/animation";
 import { keyIndexAt } from "../format/sample";
+import { KINDS } from "../format/timing";
 import type { TimelineEdit } from "../editor/timeline";
-import { NumberField } from "./fields";
 import { TimelineTrack } from "./TimelineTrack";
 
 interface TimelineProps {
@@ -23,7 +23,7 @@ interface TimelineProps {
 
 const LABELS: Readonly<Record<Interpolation, string>> = { hold: "Hold", linear: "Linear", smoothstep: "Smooth" };
 
-/** Keys on integer frames at the animation's rate: play, scrub, add, duplicate, move, delete and ease them. */
+/** The kind's keys on Hexframe's 60 Hz clock: play, scrub, step and choose how each key moves to the next. */
 export function Timeline(props: TimelineProps) {
   const { animation, frame, selectedKey, playing, canPlay, onion, onToggle, onSeek, onStepKey, onSelectKey, onEdit, onOnion } = props;
   const keyHere = animation.keys.find((key) => key.frame === frame);
@@ -41,14 +41,9 @@ export function Timeline(props: TimelineProps) {
           <button type="button" className="tool tool--small" aria-label="Next key" title="Next key (⇧→)" onClick={() => onStepKey(1)}>⏭</button>
         </div>
         <output className="transport__frame">
-          <code>{animation.name}</code> · frame {frame} / {animation.length} · {keyHere ? "key" : `holding key ${inForce.frame}`}
+          <code>{animation.name}</code> · frame {frame} / {animation.length} · {keyHere ? "key" : `after key ${inForce.frame}`}
         </output>
         <div className="toolbar timeline__keys" role="toolbar" aria-label="Keys">
-          <button type="button" className="tool" disabled={Boolean(keyHere)} onClick={() => onEdit({ kind: "addKey", frame })}>Add key</button>
-          <button type="button" className="tool" onClick={() => onEdit({ kind: "duplicateKey", frame })}>Duplicate</button>
-          <button type="button" className="tool tool--danger" disabled={!targetKey || targetKey.frame === 0} onClick={() => targetKey && onEdit({ kind: "deleteKey", frame: targetKey.frame })}>
-            Delete key
-          </button>
           <div className="segmented" role="radiogroup" aria-label="Interpolation to the next key">
             {INTERPOLATIONS.map((interpolation) => (
               <button
@@ -58,7 +53,7 @@ export function Timeline(props: TimelineProps) {
                 className="tool tool--small"
                 aria-checked={targetKey?.interpolation === interpolation}
                 disabled={!targetKey}
-                onClick={() => targetKey && onEdit({ kind: "setInterpolation", frame: targetKey.frame, interpolation })}
+                onClick={() => targetKey && targetKey.interpolation !== interpolation && onEdit({ kind: "setInterpolation", frame: targetKey.frame, interpolation })}
               >
                 {LABELS[interpolation]}
               </button>
@@ -72,26 +67,16 @@ export function Timeline(props: TimelineProps) {
         selectedKey={selectedKey}
         onSeek={onSeek}
         onSelectKey={onSelectKey}
-        onMoveKey={(from, to) => onEdit({ kind: "moveKey", from, to })}
       />
       <div className="timeline__row timeline__timing">
-        <label className="status__field">
-          <span>Rate</span>
-          <NumberField label="Frames per second" value={animation.fps} onCommit={(fps) => onEdit({ kind: "setTiming", fps })} />
-        </label>
-        <label className="status__field">
-          <span>Length</span>
-          <NumberField label="Length in frames" value={animation.length} onCommit={(length) => onEdit({ kind: "setTiming", length })} />
-        </label>
-        <label className="status__field">
-          <input type="checkbox" aria-label="Loop" checked={animation.loop} onChange={(event) => onEdit({ kind: "setTiming", loop: event.target.checked })} />
-          <span>Loop</span>
-        </label>
         <label className="status__field">
           <input type="checkbox" aria-label="Onion skins" checked={onion} onChange={(event) => onOnion(event.target.checked)} />
           <span>Onion skins</span>
         </label>
-        <span className="timeline__seconds">{(animation.length / animation.fps).toFixed(2)} s · {animation.keys.length} {animation.keys.length === 1 ? "key" : "keys"}</span>
+        <span className="timeline__seconds">
+          {KINDS[animation.kind].label} · {animation.fps} fps · {animation.length} frames · {(animation.length / animation.fps).toFixed(2)} s
+          {" · "}{animation.loop ? "loops" : "plays once"} · {animation.keys.length} keys
+        </span>
       </div>
     </section>
   );

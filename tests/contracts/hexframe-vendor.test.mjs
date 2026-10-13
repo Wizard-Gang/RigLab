@@ -21,6 +21,7 @@ test('the committed vendor tree matches its Hexframe pin', () => {
   assert.equal(lock.source, 'Wizard-Gang/Hexframe');
   assert.match(lock.commit, /^[0-9a-f]{40}$/);
   assert.deepEqual(Object.keys(lock.files), [...VENDORED_PATHS]);
+  assert.ok(VENDORED_PATHS.every((path) => path.startsWith('src/rig/')), 'only the rig engine is vendored: no characters, clips or art');
 });
 
 test('an edited, missing or unpinned vendored file fails', () => {
@@ -29,7 +30,7 @@ test('an edited, missing or unpinned vendored file fails', () => {
   assert.match(validateVendorAt(edited).join('\n'), /differs from its pin: src\/rig\/fk\.ts/);
 
   const missing = copy();
-  rmSync(join(missing, VENDOR_DIR, 'characters/fighter/clips/jump.json'));
+  rmSync(join(missing, VENDOR_DIR, 'src/rig/sample.ts'));
   assert.match(validateVendorAt(missing).join('\n'), /pinned vendored file is missing/);
 
   const extra = copy();

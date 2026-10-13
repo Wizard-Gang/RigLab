@@ -38,15 +38,9 @@ export function chainEnd(rig: RigLabRig, pose: Pose, chain: Chain): Vector {
 
 const lerp = (from: number, to: number, progress: number): number => from + (to - from) * progress;
 
-/**
- * Constraints in force at a frame, eased like the pose: a pin or prop present in both keys moves between
- * them, and one present only in the key in force holds still.
- */
-export function constraintsAt(animation: RigLabAnimation, frame: number): Constraints {
-  const { from, to, progress } = segmentAt(animation, frame);
-  const start = constraintsOf(from);
-  if (!to || isEmpty(start)) return start;
-  const end = constraintsOf(to);
+/** Constraints part-way to `end`: a pin or prop in both moves between them, and one only in `start` holds still. */
+export function blendConstraints(start: Constraints, end: Constraints, progress: number): Constraints {
+  if (isEmpty(start)) return start;
   const pins = start.pins.map((pin) => {
     const next = end.pins.find((candidate) => candidate.chain === pin.chain);
     return next ? { chain: pin.chain, x: lerp(pin.x, next.x, progress), y: lerp(pin.y, next.y, progress) } : pin;
@@ -60,6 +54,13 @@ export function constraintsAt(animation: RigLabAnimation, frame: number): Constr
     }
     : start.prop;
   return { pins, prop };
+}
+
+/** Constraints in force at a frame, eased like the pose between the key in force and the next. */
+export function constraintsAt(animation: RigLabAnimation, frame: number): Constraints {
+  const { from, to, progress } = segmentAt(animation, frame);
+  const start = constraintsOf(from);
+  return to ? blendConstraints(start, constraintsOf(to), progress) : start;
 }
 
 export interface Held {
@@ -84,7 +85,7 @@ export function holdConstraints(rig: RigLabRig, pose: Pose, constraints: Constra
   return { pose: next, violations };
 }
 
-/** The pose the editor previews and the exporter bakes: the sampled keys, with their constraints held. */
+/** The keys sampled at a frame, with their constraints held: how each of Hexframe's 13 poses is made. */
 export function samplePose(rig: RigLabRig, animation: RigLabAnimation, frame: number): Held {
   return holdConstraints(rig, sampleAnimation(animation, frame), constraintsAt(animation, frame));
 }

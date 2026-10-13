@@ -1,15 +1,4 @@
-// Part art parsed as data (Hexframe's eleven fighter parts here); nothing here ever becomes markup.
-import armLowerL from "../../vendor/hexframe/characters/fighter/parts/arm_lower_l.svg?raw";
-import armLowerR from "../../vendor/hexframe/characters/fighter/parts/arm_lower_r.svg?raw";
-import armUpperL from "../../vendor/hexframe/characters/fighter/parts/arm_upper_l.svg?raw";
-import armUpperR from "../../vendor/hexframe/characters/fighter/parts/arm_upper_r.svg?raw";
-import head from "../../vendor/hexframe/characters/fighter/parts/head.svg?raw";
-import legLowerL from "../../vendor/hexframe/characters/fighter/parts/leg_lower_l.svg?raw";
-import legLowerR from "../../vendor/hexframe/characters/fighter/parts/leg_lower_r.svg?raw";
-import legUpperL from "../../vendor/hexframe/characters/fighter/parts/leg_upper_l.svg?raw";
-import legUpperR from "../../vendor/hexframe/characters/fighter/parts/leg_upper_r.svg?raw";
-import pelvis from "../../vendor/hexframe/characters/fighter/parts/pelvis.svg?raw";
-import torso from "../../vendor/hexframe/characters/fighter/parts/torso.svg?raw";
+// Part art parsed as data; nothing here ever becomes markup.
 
 export interface PartPath {
   /** Space-separated class tokens, each a lowercase word such as `part`, `part--skin` or `detail`. */
@@ -21,7 +10,7 @@ export interface PartPath {
 export interface Part {
   /** The bone the part was drawn for. */
   readonly bone: string;
-  /** The art set it belongs to, such as `fighter` or `chibi`; each set has its own palette. */
+  /** The art set it belongs to, such as `chibi`; each set has its own palette. */
   readonly set: string;
   readonly paths: readonly PartPath[];
 }
@@ -48,18 +37,3 @@ export function parsePart(markup: string, set: string): Part {
   if (!paths.length) throw new Error(`part '${root[1]}': has no paths`);
   return { bone: root[1]!, set, paths };
 }
-
-/** Parts keyed by art slot: a rig binds art through each bone's `slot`, not its name. */
-export const HEXFRAME_PARTS: Readonly<Record<string, Part>> = Object.freeze(Object.fromEntries(Object.entries({
-  arm_lower_l: armLowerL,
-  arm_lower_r: armLowerR,
-  arm_upper_l: armUpperL,
-  arm_upper_r: armUpperR,
-  head,
-  leg_lower_l: legLowerL,
-  leg_lower_r: legLowerR,
-  leg_upper_l: legUpperL,
-  leg_upper_r: legUpperR,
-  pelvis,
-  torso,
-}).map(([slot, markup]) => [slot, parsePart(markup, "fighter")])));

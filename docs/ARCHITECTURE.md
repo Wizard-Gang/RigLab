@@ -1,23 +1,22 @@
 # Architecture
 
-RigLab authors skeletons and motion, not character artwork. Its rig model is Hexframe's: RigLab vendors Hexframe's rig core and fighter data byte-for-byte and builds on them, so a skeleton or pose authored here is placed by exactly the code Hexframe draws with.
+RigLab authors skeletons and motion, not character artwork. Its rig model and its clock are Hexframe's: RigLab vendors Hexframe's rig engine byte-for-byte and builds on it, so a skeleton or pose authored here is placed by exactly the code Hexframe draws with, and an animation plays through exactly the sampler Hexframe plays its clips with.
 
 ## The Hexframe rig model
 
 `vendor/hexframe/` mirrors these Hexframe repository paths at the commit pinned in `vendor/hexframe/lock.json`:
 
 - `src/rig/` — rig contract types, `createRig` (single root, no cycles, every bone reached), `hierarchyOrder`, `forwardKinematics`, `inBone`, the 13-pose clip type and `sampleClip`, depth profiles and paint order.
-- `characters/fighter/fighter.rig.json` — the 11-bone humanoid.
-- `characters/fighter/clips/` — the 13 clips Hexframe plays.
-- `characters/fighter/parts/` — the fighter's 11 machine-generated part SVGs.
+
+RigLab vendors no Hexframe character, clip or part art. The chibi is RigLab's own, and `tests/chibi/` pins it to Hexframe's 11-bone tree, chains and bend sides.
 
 The conventions that follow from that code:
 
-- **Space.** SVG units, x right, y down, rotation clockwise-positive. The humanoid stands 104 units tall with its feet near y = 0.
+- **Space.** SVG units, x right, y down, rotation clockwise-positive. The chibi stands 91 units tall with its feet at y = 0.
 - **Parent-relative transforms.** Each bone's `offset` is its joint position in its parent's frame; the root's offset is in rig space. `tip`, when present, is the bone's end point in its own frame.
 - **Forward kinematics.** A bone's world rotation is its parent's world rotation plus its local rotation (degrees in a pose, radians once placed). Its world position is the parent's position plus the parent-rotated sum of its offset and any local translation.
-- **Proportions.** Limb and segment lengths are the lengths of child offsets and tips. Hexframe's clips translate only the root (`pelvis.y`), so every limb keeps its rest length on every frame; `tests/rig/hexframe-rig.test.ts` proves that for all 13 clips.
-- **Clips.** A Hexframe clip is 13 evenly spaced poses over `duration` frames of Hexframe's 60 Hz clock, eased `linear` or `smoothstep` between neighbours.
+- **Proportions.** Limb and segment lengths are the lengths of child offsets and tips. Poses translate only the root, so every limb keeps its rest length on every frame; `tests/rig/hexframe-rig.test.ts` proves that for every frame the engine plays, for every kind.
+- **Clips.** A Hexframe clip is 13 evenly spaced poses (`POSE_INTERVALS` = 12) over `duration` frames of Hexframe's fixed 60 Hz simulation clock, eased `linear` or `smoothstep` between neighbours.
 
 Nothing under `vendor/` is edited in place. `npm run vendor:hexframe -- <hexframe-checkout> <commit>` re-vendors from a commit's Git objects and rewrites the lock; `npm run check:vendor` (part of `npm run check`) fails on any edited, missing or unpinned file.
 
@@ -26,22 +25,39 @@ Nothing under `vendor/` is edited in place. `npm run vendor:hexframe -- <hexfram
 `src/format/` defines RigLab's portable, versioned contract. Both validators are closed: an unknown field, bone or value fails with the JSON path it names.
 
 - **`riglab.rig` version 1** keeps Hexframe's rig contract fields (`space`, `root`, and bones with `name`, `parent`, `offset`, `tip`, `slot`, `artHeight` and `hand`) and adds a `format`/`version` header, a `name`, nullable per-bone angle `limits` (`min`/`max` local degrees) and two-bone `chains`. A chain's `lower` bone hangs off its `upper` bone: the upper segment is `lower.offset`, the lower segment is `lower.tip`, and `bend` (`1` or `-1`) is the sign of `lower`'s local rotation away from straight. The space must be SVG units, x right, y down and rotation clockwise-positive, because the FK math assumes it. `depthProfiles` is optional consumer layering data in Hexframe's shape. Every valid RigLab rig resolves through Hexframe's own `createRig`.
-- **`riglab.anim` version 1** names its rig and carries an integer `fps` (default 14), a `length` in frames, `loop`, and sparse keys at integer frames from 0 to `length`. Each key holds a full Hexframe pose, with a rotation for every bone and `x`/`y` on the root only, so no pose can stretch a limb. Its `interpolation` (`hold`, `linear` or `smoothstep`) shapes the transition to the next key.
+- **`riglab.anim` version 2** names its rig and its `kind`, and carries `fps`, `length`, `loop` and its keys. The kind fixes all of them (see Engine timing): `fps` is always 60, and the keys sit exactly at the kind's frames, so validation refuses any other rate, length, looping or key frame. Each key holds a full Hexframe pose, with a rotation for every bone and `x`/`y` on the root only, so no pose can stretch a limb. Its `interpolation` (`hold`, `linear` or `smoothstep`) shapes the transition to the next key.
 - **Key constraints.** A key may carry `pins` (a chain end held at a world point, such as a planted foot) and one `prop` (a rigid body with a name, position, rotation and one or two `grips`, each holding a chain end at a point in the prop's frame). A chain end is pinned or gripped, never both, and every chain must exist in the rig.
 - **`sampleAnimation(animation, frame)`** interpolates key poses deterministically. A looping animation samples `frame mod length`, and its last key runs to key 0 at `length`. A non-looping animation clamps to `[0, length]` and holds its last key. Blending uses Hexframe's `start + (end - start) * progress`.
-- **`samplePose(rig, animation, frame)`** (in `src/solve/constraints.ts`) is what preview and bake use. It samples the key poses, then holds the frame's constraints, re-solving every pinned or gripped chain by IK. Pins and the prop move between keys with the same segment and easing as the pose, and hold still when only the key in force has them. An animation with no constraints samples exactly as `sampleAnimation` does.
+- **`samplePose(rig, animation, frame)`** (in `src/solve/constraints.ts`) samples the key poses, then holds the frame's constraints, re-solving every pinned or gripped chain by IK. Pins and the prop move between keys with the same segment and easing as the pose, and hold still when only the key in force has them. An animation with no constraints samples exactly as `sampleAnimation` does. This is how each of Hexframe's 13 poses is made.
 
-`src/hexframe/import.ts` imports Hexframe data losslessly. Rig import finds the two-bone chains structurally (a tipped bone whose non-root parent has no other child) and takes their bends from the caller. `src/hexframe/humanoid.ts` gives arms `-1` and legs `+1`, because the fighter faces right. Clip import uses the smallest frame rate that puts all 13 poses on integer frames (`60 × 12 / gcd(duration, 12)`, at most 720). `tests/format/hexframe-import.test.ts` shows that every imported clip reproduces Hexframe's `sampleClip` on every frame, including loop wraps. A clip whose poses carry different channel sets, or that translates a non-root bone, is refused rather than approximated.
+## Engine timing
+
+Every animation runs on Hexframe's engine timing (`src/format/timing.ts`, `src/solve/engine.ts`), so what RigLab previews, bakes and exports is what Hexframe plays.
+
+- **Rate.** Hexframe advances on a fixed 60 Hz simulation clock (`FPS = 60` in its combat constants). One RigLab frame is one Hexframe tick, so `ENGINE_FPS` is 60 and an animation's `length` is its Hexframe clip `duration`. Nothing is converted or rounded on export.
+- **Kinds.** An animation's kind fixes its length, looping and keys. The lengths come from Hexframe's own clips, rounded to multiples of 12 so each of the 13 poses falls on a whole frame. Keys are evenly spaced on that pose grid from frame 0; a looping animation's last key runs back to its first at `length`.
+
+| Kind | Keys at frames | Length | Plays | From Hexframe's |
+| --- | --- | --- | --- | --- |
+| `idle` | 0, 15, 30, 45 | 60 | Loops | `labIdle` (60, looping) |
+| `walk` | 0, 12, 24, 36 | 48 | Loops | `labWalk` (48, looping) |
+| `jump` | 0, 12, 24, 36 | 36 | Once | `jump` (38) |
+| `attack` | 0, 8, 16, 24 | 24 | Once | `labStrike` (20) |
+| `hit` | 0, 12, 24 | 24 | Once | `labStagger` (24) |
+
+- **Playback.** `engineOf(rig, animation)` makes the animation's Hexframe clip: `samplePose` at each of the 13 pose frames (`i × length / 12`), with `linear` easing between poses, as most of Hexframe's own clips use. `playAt(engine, frame)` returns that pose exactly on a pose frame, and Hexframe's vendored `sampleClip` between two of them. Pins and the prop move linearly between the same two poses. A key's interpolation therefore shapes the poses between keys, and Hexframe's sampler moves between those poses: a `hold` keeps its pose until the pose before the next key, then moves to it over one pose interval, and a `smoothstep` eases across the poses. The canvas, playback, onion skins, the baked frames and the Hexframe clip export all play through `playAt`, and `tests/solve/engine.test.ts` shows that Hexframe's sampler on the exported clip matches it on every frame of every kind.
+- **Why.** Before this, animations had any rate and any key frames. 24 frames at 14 fps is 102.86 Hexframe frames, which export had to round, and keys between Hexframe's poses played differently in RigLab and in Hexframe. Engine timing makes that impossible: the rate is Hexframe's, every length is a whole number of ticks, and every key is one of Hexframe's poses.
 
 ## Editor
 
 The editor is a pure state machine in `src/editor/state.ts`. Its document is a `riglab.document` (version 1): one `riglab.rig` and the `riglab.anim` animations authored against it, validated as a whole by `validateDocument`, with every nested message re-rooted at its document path. Document edits go through a bounded snapshot history (`src/editor/history.ts`, 100 steps); selection, mode, frame, view, grid and snap stay outside it. The editor tracks the document as last created, opened or saved, so it is unsaved exactly when the present snapshot differs.
 
-- **Modes.** Rig setup shows the rest pose. Pose scrubs the active animation without playing it. Animation plays it at its own frame rate. Export plays it too, beside the export panel.
-- **Selection.** One selection: a bone, an animation or a key. Delete removes a selected animation, a selected key (never the first), or the selected joint and its subtree in Rig setup. Escape clears the selection.
-- **Timeline.** In Pose and Animation modes the timeline (`src/editor/timeline.ts`, `src/app/Timeline.tsx`) shows the active animation's integer frames at its own rate (14 fps by default), its keys and a playhead. It adds a key holding what the frame shows (pose, pins and prop), duplicates the key in force onto the next frame, deletes keys, and moves a key by dragging it to a free frame (the first key stays at frame 0). It sets each key's transition to hold (the default for new animations), linear or smooth, and sets the rate, the length (never before the last key) and looping. Each of these is one undo step. Arrows step frames, Shift+arrows step keys and Space plays. Onion skins draw the previous and next keys as faint skeletons. Preview and playback show `samplePose`, so what plays is exactly what the sampler produces.
+- **Modes.** Rig setup shows the rest pose. Pose scrubs the active animation without playing it. Animation plays it at 60 fps. Export plays it too, beside the export panel.
+- **Selection.** One selection: a bone, an animation or a key. Delete removes a selected animation, or the selected joint and its subtree in Rig setup. Keys stay: an animation keeps every key its kind gives it. Escape clears the selection.
+- **Animations.** The Animations panel's New menu adds an animation of a kind, named after it (`idle`, `idle-2`, …): the kind's keys, all at the rest pose and `smoothstep`. Duplicate, rename and delete work on any animation.
+- **Timeline.** In Pose and Animation modes the timeline (`src/editor/timeline.ts`, `src/app/Timeline.tsx`) shows the active animation's frames, ticked at Hexframe's 13 poses, its keys and a playhead. Its only edit sets a key's transition to hold, linear or smooth, as one undo step; the kind fixes the keys, rate, length and looping, and the timeline shows them. Arrows step frames, Shift+arrows step keys and Space plays. Onion skins draw the previous and next keys as faint skeletons. Preview and playback show `playAt`, so what plays is exactly what Hexframe plays.
 - **Rig setup.** Only Rig setup changes anatomy: the reducer refuses a rig edit in any other mode. `src/editor/rigEdits.ts` moves a joint (dragged on the canvas, snapped in rest space and stored as an offset in its parent's frame, or typed), sets tips, slots and names, adds a child joint, deletes a joint with its subtree, sets angle limits and adds, removes or re-bends chains. Every edit must leave the whole document valid. Renaming a bone renames it in parents, chains, depth profiles and every animation key; deleting one drops it from chains and keys, and drops depth profiles that would name a deleted bone. Pose values never change.
-- **Files.** `src/editor/files.ts` (documents) and `src/editor/bundleFiles.ts` (export bundles) use the File System Access API when the browser offers it, and a file input and a download otherwise. Opening parses and validates before anything changes, and a refusal names the first failing path. New starts from the humanoid with its 13 reference animations.
+- **Files.** `src/editor/files.ts` (documents) and `src/editor/bundleFiles.ts` (export bundles) use the File System Access API when the browser offers it, and a file input and a download otherwise. Opening parses and validates before anything changes, and a refusal names the first failing path. New starts the chibi with no animations.
 - **View.** `src/editor/view.ts` keeps zoom and pan in rig units. The wheel zooms about the cursor, dragging empty canvas pans, and zoom 1 fits the rig's viewBox plus a margin. Grid lines sit on multiples of the spacing, and minor lines drop out when they would crowd the screen.
 - **Shortcuts.** `src/editor/shortcuts.ts` maps Mod (⌘ on macOS, Ctrl elsewhere) plus O, S, Shift+S, Z, Shift+Z and Y, and Delete and Escape. New is Mod+Alt+N, because browsers reserve Mod+N. Keys typed into a field stay with the field.
 
@@ -55,56 +71,55 @@ The editor is a pure state machine in `src/editor/state.ts`. Its document is a `
 
 - **Pins and grips.** Pin end holds a chain's end where it is. Hold a prop creates a prop at that hand, and Grip prop with a second hand turns the prop into a straight shaft through both hands, keeping their spacing as its rigid grip. After any body move every pin and grip is re-solved, so lowering the pelvis with both feet pinned bends the knees instead of sinking the feet. Dragging a pinned end moves its pin. Dragging a gripped hand, or the prop's move handle, carries the prop, and its turn handle rotates it, with both hands following. A pin or grip that cannot be held is reported, and the limb is never stretched.
 
-In Pose mode a drop writes the solved pose and its pins and prop into the active animation's key at the current frame. If no key is there, it inserts one that continues the interpolation in force and the constraints in force. The pose inspector types a rotation, or the root's position, and toggles pins and grips the same way. Each drop is one undo step, and poses change only in Pose mode.
+In Pose mode a drop writes the solved pose and its pins and prop into the active animation's key at the current frame. A frame between keys has no key, so a drop there is refused with the frames that do. The pose inspector types a rotation, or the root's position, and toggles pins and grips the same way. Each drop is one undo step, and poses change only in Pose mode.
 
 ## Export bundles
 
 Export mode builds a `riglab-export/` bundle (`src/export/bundle.ts`) for consumers. Some will evaluate keys and constraints themselves; others only draw solved transforms.
 
 - `manifest.json` (`riglab.export`, version 1) names the generator and lists the rig, every animation and any baked files, each with its SHA-256. File names follow from validated names: `<rig>.rig.json`, `animations/<name>.anim.json` and `baked/<name>.baked.json`.
-- A baked file (`riglab.baked`, version 1, `src/export/bake.ts`) holds, for every output frame (0 to `length - 1` when looping, 0 to `length` otherwise), each bone's world `[x, y, rotation°]` in rig order, computed with `samplePose` and Hexframe's FK, plus the held prop's transform when there is one.
+- A baked file (`riglab.baked`, version 1, `src/export/bake.ts`) holds, for every Hexframe tick (0 to `length - 1` when looping, 0 to `length` otherwise), each bone's world `[x, y, rotation°]` in rig order, computed with `playAt` and Hexframe's FK, plus the held prop's transform when there is one.
 - Export writes the bundle into a `riglab-export` folder through the File System Access API when the browser offers it. It can also download `riglab-export.zip`, built by a dependency-free ZIP writer (`src/export/zip.ts`) whose stored entries and fixed timestamps make the same bundle produce the same bytes.
-- Import reads a folder or a zip (stored or deflated entries, every CRC checked) and verifies the whole bundle before the document changes: the manifest is closed and versioned, every listed file exists and matches its SHA-256, and every file validates against the rig and agrees with the manifest's names. Baked files must name a bundled animation and match its rate, looping, frame count and the rig's bones. Any failure is refused with its file and JSON path, such as `manifest.json $.animations[1].sha256: does not match animations/labWalk.anim.json`.
+- Import reads a folder or a zip (stored or deflated entries, every CRC checked) and verifies the whole bundle before the document changes: the manifest is closed and versioned, every listed file exists and matches its SHA-256, and every file validates against the rig and agrees with the manifest's names. Baked files must name a bundled animation and match its rate, looping, frame count and the rig's bones. Any failure is refused with its file and JSON path, such as `manifest.json $.animations[1].sha256: does not match animations/walk.anim.json`.
 
 ## Hexframe consumer adapter and art
 
 Hexframe stays a consumer; RigLab hands it the shapes it already loads (`src/hexframe/adapter.ts`).
 
-- `toHexframeRig` returns the rig in `fighter.rig.json`'s shape, with no format header, limits or chains, and its depth profiles. For the imported humanoid it equals the vendored `fighter.rig.json`. Hexframe paints by depth profile, so a rig without depth profiles is refused, and the left-out limits and chains are reported.
-- `toHexframeClip` resamples an animation, constraints held, into Hexframe's 13 evenly spaced poses over a 60 Hz duration of `length × 60 / fps`. A non-integer duration is rounded and reported. Easing is `smoothstep` when every key is smooth, and `linear` otherwise. Hexframe's vendored `sampleClip` then plays the result. Every Hexframe frame that differs from RigLab's playback by more than 1e-6 is reported, which is how hold transitions show up. Each of the 13 Hexframe clips round-trips through import and this adapter with Hexframe's sampler unchanged to 1e-9.
+- `toHexframeRig` returns the rig in Hexframe's rig file shape, with no format header, limits or chains, and its depth profiles; Hexframe's own `createRig` loads it. Hexframe paints by depth profile, so a rig without depth profiles is refused, and the left-out limits and chains are reported.
+- `toHexframeClip` writes the clip RigLab's engine playback already plays (`engineOf`): the animation's 13 poses, constraints held, over `duration` = `length` ticks, `linear` between poses, with Hexframe's `key` and `note`. Hexframe's `sampleClip` plays it exactly as RigLab previews and bakes it, to 1e-9 on every frame.
 
-Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses part SVGs (the vendored fighter parts and the chibi parts) as data: one `<svg>` root naming its bone, holding only `<path class d/>` elements with conservative values. Anything else (scripts, other elements or attributes, `url()` data) is refused, and nothing is injected as markup. `src/hexframe/art.ts` places each bone's part, found by the bone's `slot`, at that bone's FK transform, in Hexframe's paint order for facing right when the rig's depth profiles still fit it, and in bone order otherwise. The Art toggle draws it under the skeleton in every mode. The Export panel downloads the Hexframe rig and the active animation's clip.
+Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses part SVGs (the chibi parts) as data: one `<svg>` root naming its bone, holding only `<path class d/>` elements with conservative values. Anything else (scripts, other elements or attributes, `url()` data) is refused, and nothing is injected as markup. `src/hexframe/art.ts` places each bone's part, found by the bone's `slot`, at that bone's FK transform, in Hexframe's paint order for facing right when the rig's depth profiles still fit it, and in bone order otherwise. The Art toggle draws it under the skeleton in every mode. The Export panel downloads the Hexframe rig and the active animation's clip.
 
-## Templates and the chibi
+## The chibi
 
-New starts from a template (`src/editor/templates.ts`): the imported Hexframe humanoid, or the chibi.
+New starts the chibi (`src/editor/templates.ts`) with no animations. It is RigLab's only rig template.
 
 - **Chibi rig.** `characters/chibi/chibi.rig.json` is a `riglab.rig` with Hexframe's 11 bone names, parents, chains, bend sides and depth profiles at chibi proportions. It stands 91 units tall, and the head bone is 44 of them, so it is about two heads tall. The pelvis sits 25 units up, the legs are 12 + 13 units, the arms 10 + 11, and both feet rest at y = 0. Its bones use their own `chibi_*` slots.
 - **Chibi art.** `characters/chibi/parts/` holds 11 original part SVGs in Hexframe's part format, read by the same strict parser. The style is MapleStory-like: a big round head with hair, bangs, big eyes and blush, a short tunic with a gold collar and belt, puffy sleeves, mitten hands, shorts and big shoes. It copies no MapleStory asset. Following Hexframe's depth profile, which paints `arm-front` and `leg-front` behind the body when facing right, those limbs use the darker shades.
-- **Retargeting.** `src/editor/retarget.ts` plays an animation authored for one rig on another with the same bones and root. Rotations carry over unchanged, and root, pin and prop translation scales by the ratio of the rigs' root heights (25 / 42 from the humanoid to the chibi). The chibi template carries Hexframe's 13 clips retargeted this way, every one validated against the chibi rig.
-- **Art sets.** Parts are keyed by slot and belong to an art set (`fighter` or `chibi`). Every rig's slots are its own, so the Art toggle draws each rig's art. The art layer tags each part with its set, and each set keeps its own palette in the stylesheet.
+- **Art set.** Parts are keyed by slot and belong to the `chibi` art set. The art layer tags each part with its set, and the set keeps its own palette in the stylesheet.
 
 ## Acceptance
 
-`tests/acceptance/spear-thrust.test.ts` drives the editor's own reducer through the RigLab recommendation's first acceptance path. It starts from the imported Hexframe humanoid and lengthens both forearms in Rig setup. It then authors a three-key spear thrust in Pose mode: both feet pinned, both hands on one spear, a wind-up with the elbows back, a linear transition with them centered, and an extension with the hands pushed forward. It exports the bundle with baked frames, zips and unzips it, and reloads it. The reloaded document must equal the original, and re-baking must equal the exported bake. On every frame, every joint must sit at its offset from its parent and every tip must keep its length (to 1e-5), both feet must stay on their pins, and the reloaded playback must sample exactly as the original. Breaking connectivity by 0.01 units, or letting a non-root bone translate, fails it.
+`tests/acceptance/spear-thrust.test.ts` drives the editor's own reducer through the RigLab recommendation's first acceptance path. It starts the chibi and lengthens both forearms in Rig setup. It then adds an attack (keys at 0, 8, 16 and 24) and authors a spear thrust in Pose mode: both feet pinned, both hands on one spear, a wind-up with the elbows back, a linear transition with them centered, an extension with the hands pushed forward, and the recovery. It exports the bundle with baked frames, zips and unzips it, and reloads it. The reloaded document must equal the original, and re-baking must equal the exported bake. On every frame, every joint must sit at its offset from its parent and every tip must keep its length (to 1e-5), both feet must stay on their pins, the reloaded playback must equal the original, and Hexframe's own sampler on the exported clip must place every bone where RigLab baked it. Breaking connectivity by 0.01 units, or letting a non-root bone translate, fails it.
 
 ## Source layout
 
 | Path | Responsibility |
 | --- | --- |
-| `vendor/hexframe/` | Pinned Hexframe rig core, fighter data and part art. |
-| `src/format/` | The `riglab.rig`, `riglab.anim` and `riglab.document` types, their closed validators and the shared sampler. |
+| `vendor/hexframe/` | Hexframe's pinned rig engine: rig contract, FK, paint order and clip sampler. |
+| `src/format/` | The `riglab.rig`, `riglab.anim` and `riglab.document` types, their closed validators, engine timing and kinds, and the key sampler. |
 | `characters/chibi/` | The chibi rig and its 11 original part SVGs. |
-| `src/chibi/` | Loads the chibi rig, parses its art as the `chibi` set and retargets Hexframe's clips onto it. |
-| `src/hexframe/` | Loads the vendored rig, clips and parts; imports them as the RigLab `humanoid`; adapts RigLab rigs and animations back to Hexframe's shapes; places part art. |
+| `src/chibi/` | Loads the chibi rig and parses its art as the `chibi` set. |
+| `src/hexframe/` | Adapts RigLab rigs and animations to Hexframe's shapes, parses part art and places it. |
 | `src/editor/` | The editor's pure state (`types.ts`, `core.ts`, `documentEdits.ts`, `state.ts`), undo history, rig setup, pose and timeline edits, view math, shortcuts, document helpers and browser file access. |
 | `src/export/` | Bundle building and verified reading, baking, and the ZIP writer and reader. |
-| `src/solve/` | Rotation-only posing, two-bone IK, angle limits, rotation snap, grid-snapped targets, pins, the held prop and `samplePose`. |
+| `src/solve/` | Rotation-only posing, two-bone IK, angle limits, rotation snap, grid-snapped targets, pins, the held prop, `samplePose` and engine playback. |
 | `src/viewer/` | Skeleton geometry from FK placements, the zoomable SVG rig canvas and its grid, pins, prop, onion-skin and art layers, the bone hierarchy, and integer-frame playback. |
 | `src/app/` | The application shell: toolbar, panels, inspector, transport, status bar, file and shortcut wiring, and the stylesheet. |
-| `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/`, `tests/export/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import, editor state, the solver and export bundles. |
+| `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/`, `tests/export/`, `tests/hexframe/` | Vitest suites for the rig engine, viewer geometry, formats and engine timing, the sampler and engine playback, editor state, the solver, export bundles and the Hexframe adapter. |
 | `tests/acceptance/` | The end-to-end spear-thrust acceptance test. |
-| `tests/chibi/` | The chibi rig, art, retargeting and template. |
+| `tests/chibi/` | The chibi rig, art and template. |
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |
 

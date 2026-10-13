@@ -3,7 +3,7 @@ import type { RigLabAnimation } from "../format/animation";
 import type { RigLabRig } from "../format/rig";
 import { checkInteger, checkName, closedObject, isFiniteNumber, Issues } from "../format/validate";
 import type { Validation } from "../format/validate";
-import { constraintsAt, place, samplePose } from "../solve";
+import { engineOf, place, playAt } from "../solve";
 
 export const BAKED_FORMAT = "riglab.baked";
 export const BAKED_VERSION = 1;
@@ -39,18 +39,20 @@ export function frameCount(animation: RigLabAnimation): number {
   return animation.loop ? animation.length : animation.length + 1;
 }
 
-/** Bake through samplePose and Hexframe's FK, the same path the editor previews. */
+/** Bake every Hexframe tick as Hexframe plays it, through the same engine playback the editor previews. */
 export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation): RigLabBaked {
   const bones = rig.bones.map((bone) => bone.name);
+  const engine = engineOf(rig, animation);
   const frames: Transform[][] = [];
   const props: (BakedProp | null)[] = [];
   for (let frame = 0; frame < frameCount(animation); frame += 1) {
-    const placed = place(rig, samplePose(rig, animation, frame).pose);
+    const played = playAt(engine, frame);
+    const placed = place(rig, played.pose);
     frames.push(bones.map((name) => {
       const at = placed.get(name)!;
       return [round(at.x), round(at.y), round((at.rotation * 180) / Math.PI)];
     }));
-    const prop = constraintsAt(animation, frame).prop;
+    const prop = played.constraints.prop;
     props.push(prop ? { name: prop.name, x: round(prop.x), y: round(prop.y), rotation: round(prop.rotation) } : null);
   }
   return {
