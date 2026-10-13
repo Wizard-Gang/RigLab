@@ -86,6 +86,17 @@ describe("keyboard shortcuts", () => {
     expect(commandFor(key("KeyQ", mod), "mac")).toBeNull();
   });
 
+  it("steps frames with the arrows, keys with Shift and plays with Space", () => {
+    const plain = (name: string, extra: Partial<KeyInput> = {}): KeyInput => ({ ...key(name), key: name, ...extra });
+    expect(commandFor(plain("ArrowLeft"), "mac")).toBe("previousFrame");
+    expect(commandFor(plain("ArrowRight"), "other")).toBe("nextFrame");
+    expect(commandFor(plain("ArrowLeft", { shiftKey: true }), "mac")).toBe("previousKey");
+    expect(commandFor(plain("ArrowRight", { shiftKey: true }), "mac")).toBe("nextKey");
+    expect(commandFor({ ...key("Space"), key: " " }, "mac")).toBe("togglePlay");
+    expect(commandFor(plain("ArrowRight", { altKey: true }), "mac")).toBeNull();
+    expect(shortcutLabel("nextKey", "mac")).toBe("⇧→");
+  });
+
   it("labels shortcuts for the platform", () => {
     expect(shortcutLabel("saveAs", "mac")).toBe("⌘⇧S");
     expect(shortcutLabel("new", "other")).toBe("Ctrl+Alt+N");

@@ -26,6 +26,8 @@ interface RigCanvasProps {
   readonly drag?: { readonly tips: boolean; readonly onDrag: (handle: Handle, point: Point, done: boolean) => void };
   /** Pins and the prop for this frame. */
   readonly constraints?: ConstraintGeometry;
+  /** Faint skeletons of neighbouring keys. */
+  readonly ghosts?: readonly { readonly skeleton: Skeleton; readonly tone: "previous" | "next" }[];
   readonly children?: ReactNode;
 }
 
@@ -35,7 +37,7 @@ const TIP_PX = 4;
 const DRAG_THRESHOLD_PX = 3;
 
 /** The rig's SVG space in its own units (x right, y down), with wheel zoom at the cursor and drag to pan. */
-export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, constraints, children }: RigCanvasProps) {
+export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, constraints, ghosts, children }: RigCanvasProps) {
   const svg = useRef<SVGSVGElement>(null);
   const size = useElementSize(svg);
   const latest = useRef({ view, onView });
@@ -135,6 +137,13 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
       <line className="axis" x1={visible.x} x2={visible.x + visible.width} y1={0} y2={0} />
       <line className="axis" x1={0} x2={0} y1={visible.y} y2={visible.y + visible.height} />
       {children}
+      {ghosts?.map((ghost) => (
+        <g key={ghost.tone} className={`ghost ghost--${ghost.tone}`} pointerEvents="none">
+          {ghost.skeleton.segments.map((segment) => (
+            <line key={`${segment.bone}:${segment.kind}`} x1={segment.from.x} y1={segment.from.y} x2={segment.to.x} y2={segment.to.y} />
+          ))}
+        </g>
+      ))}
       {constraints ? (
         <g className="constraints">
           {constraints.prop ? (

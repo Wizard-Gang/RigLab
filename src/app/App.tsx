@@ -17,7 +17,7 @@ import { Inspector } from "./Inspector";
 import { PoseInspector } from "./PoseInspector";
 import { StatusBar } from "./StatusBar";
 import { Toolbar } from "./Toolbar";
-import { Transport } from "./Transport";
+import { Timeline } from "./Timeline";
 import { useCanvasDrags } from "./useCanvasDrags";
 import { useFileCommands } from "./useFileCommands";
 import { useShortcuts } from "./useShortcuts";
@@ -54,6 +54,15 @@ export function App() {
     () => (posed ? constraintGeometry(document.rig, pose, drags.constraints) : undefined),
     [posed, document.rig, pose, drags.constraints],
   );
+  const ghosts = useMemo(() => {
+    if (!posed || !state.onion || playback.playing) return undefined;
+    const previous = animation.keys.filter((key) => key.frame < state.frame).at(-1);
+    const next = animation.keys.find((key) => key.frame > state.frame);
+    return [
+      ...(previous ? [{ tone: "previous" as const, skeleton: skeletonFor(rig, samplePose(document.rig, animation, previous.frame).pose) }] : []),
+      ...(next ? [{ tone: "next" as const, skeleton: skeletonFor(rig, samplePose(document.rig, animation, next.frame).pose) }] : []),
+    ];
+  }, [posed, state.onion, playback.playing, animation, state.frame, rig, document.rig]);
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
 
   const run = useCallback((command: Command) => {
@@ -63,8 +72,15 @@ export function App() {
     else if (command === "saveAs") void files.saveAs();
     else if (command === "undo" || command === "redo") dispatch({ type: command });
     else if (command === "delete") dispatch({ type: "deleteSelection" });
-    else dispatch({ type: "select", selection: null });
-  }, [files]);
+    else if (command === "togglePlay") playback.toggle();
+    else if (command === "previousFrame" || command === "nextFrame") {
+      playback.pause();
+      dispatch({ type: "setFrame", frame: state.frame + (command === "nextFrame" ? 1 : -1) });
+    } else if (command === "previousKey" || command === "nextKey") {
+      playback.pause();
+      dispatch({ type: "stepKey", direction: command === "nextKey" ? 1 : -1 });
+    } else dispatch({ type: "select", selection: null });
+  }, [files, playback, state.frame]);
   useShortcuts(platform, run);
 
   useEffect(() => {
@@ -115,6 +131,7 @@ export function App() {
           grid={state.grid}
           drag={drags.drag}
           constraints={markers}
+          ghosts={ghosts}
         />
       </main>
 
@@ -138,6 +155,7 @@ export function App() {
           <Inspector
             rig={document.rig}
             selection={state.selection}
+            active={animation}
             pose={pose}
             placed={skeleton.placed}
             animations={document.animations}
@@ -147,16 +165,31 @@ export function App() {
       </aside>
 
       {state.mode !== "setup" && animation ? (
-        <Transport
+        <Timeline
           animation={animation}
           frame={state.frame}
+          selectedKey={state.selection?.kind === "key" ? state.selection.frame : null}
           playing={playback.playing}
           canPlay={state.mode === "animate"}
+          onion={state.onion}
           onToggle={playback.toggle}
           onSeek={(frame) => {
             playback.pause();
             dispatch({ type: "setFrame", frame });
           }}
+          onStepKey={(direction) => {
+            playback.pause();
+            dispatch({ type: "stepKey", direction });
+          }}
+          onSelectKey={(frame) => {
+            playback.pause();
+            dispatch({ type: "select", selection: { kind: "key", frame } });
+          }}
+          onEdit={(edit) => {
+            playback.pause();
+            dispatch({ type: "timeline", edit });
+          }}
+          onOnion={(onion) => dispatch({ type: "setOnion", onion })}
         />
       ) : null}
 
