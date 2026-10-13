@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -55,6 +55,9 @@ describe("writing a library save", () => {
     expect(read(dir, `${result.backup}/animations/walk.anim.json`)).toBe(files["animations/walk.anim.json"]);
     expect(existsSync(join(dir, `${result.backup}/animations/stride.anim.json`))).toBe(false);
     expect(allFiles(dir).filter((path) => path.includes(TEMP_MARK))).toEqual([]);
+    const real = realpathSync(dir);
+    expect(result.touched).toEqual(expect.arrayContaining([join(real, "backups"), join(real, result.backup!), join(real, result.backup!, "animations"), join(real, "config.txt")]));
+    expect(result.touched).not.toContain(real);
     expect(readLibraryFolder(dir).errors).toEqual([]);
     const reloaded = loadLibrary(readLibraryFolder(dir).files);
     expect(reloaded.ok && reloaded.value.animations.map((item) => item.name)).toEqual(["idle", "stride", "jump", "attack", "hit"]);

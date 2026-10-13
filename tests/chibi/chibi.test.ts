@@ -4,8 +4,8 @@ import type { RigContract } from "../../vendor/hexframe/src/rig";
 import { CHIBI_PARTS, CHIBI_RIG, CHIBI_SKIN } from "../../src/chibi/chibi";
 import { blankAnimation } from "../../src/editor/animations";
 import { ANIMATION_KINDS } from "../../src/format/timing";
-import { documentOf, editorReducer, initialState } from "../../src/editor/state";
-import { ART_PARTS, templateDocument } from "../../src/editor/templates";
+import { documentOf, initialState, isDirty } from "../../src/editor/state";
+import { ART_PARTS, libraryDocument } from "../../src/editor/templates";
 import { validateDocument } from "../../src/format";
 import type { RigLabRig } from "../../src/format";
 import { toHexframeRig } from "../../src/hexframe/adapter";
@@ -96,13 +96,13 @@ describe("chibi art", () => {
   });
 });
 
-describe("chibi template", () => {
-  it("opens a valid chibi document with one rest-pose animation per kind from New", () => {
-    const document = templateDocument();
+describe("the library document", () => {
+  it("starts the editor on the library's chibi and its rest-pose animation per kind, saved", () => {
+    const document = libraryDocument();
     expect(validateDocument(document).ok).toBe(true);
     expect([document.rig, document.animations]).toEqual([chibi, ANIMATION_KINDS.map((kind) => blankAnimation(chibi, kind, kind))]);
-    const state = editorReducer(editorReducer(initialState(), { type: "addAnimation", kind: "idle" }), { type: "new" });
+    const state = initialState();
     expect(documentOf(state)).toEqual(document);
-    expect([state.activeAnimation, state.status?.text]).toEqual(["idle", "New chibi document"]);
+    expect([state.activeAnimation, isDirty(state)]).toEqual(["idle", false]);
   });
 });

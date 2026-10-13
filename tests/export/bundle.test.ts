@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { blankAnimation, restPose } from "../../src/editor/animations";
-import { templateDocument } from "../../src/editor/templates";
+import { libraryDocument } from "../../src/editor/templates";
 import { setKeyPose } from "../../src/editor/poseEdits";
 import { bakeAnimation, frameCount } from "../../src/export/bake";
 import { buildBundle, EXPORT_ROOT, readBundle } from "../../src/export/bundle";
@@ -34,7 +34,7 @@ function authored(): RigLabDocument {
   if (raised.status !== "ok") throw new Error(raised.message ?? raised.status);
   const keyed = setKeyPose(rig, ready.animation, 15, raised.pose, raised.constraints);
   if (!keyed.ok) throw new Error(keyed.error);
-  return { ...templateDocument(), animations: [blankAnimation(rig, "idle", "idle"), blankAnimation(rig, "walk", "walk"), keyed.animation] };
+  return { ...libraryDocument(), animations: [blankAnimation(rig, "idle", "idle"), blankAnimation(rig, "walk", "walk"), keyed.animation] };
 }
 
 const text = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);

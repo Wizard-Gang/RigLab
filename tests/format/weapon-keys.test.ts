@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CHIBI_RIG } from "../../src/chibi/chibi";
 import { blankAnimation } from "../../src/editor/animations";
-import { templateDocument } from "../../src/editor/templates";
+import { libraryDocument } from "../../src/editor/templates";
 import { parseDocument, serializeDocument, validateDocument } from "../../src/format/document";
 import type { RigLabDocument } from "../../src/format/document";
 import { STAFF, TWIN } from "./weapon-fixtures";
@@ -15,7 +15,7 @@ function armed(): RigLabDocument {
     index === 0 ? { ...key, weapon: { name: "staff", bodies: [{ body: "staff", x: -6, y: -30, rotation: 0 }] } }
       : index === 1 ? { ...key, weapon: { name: "twin", bodies: [] } } : key
   ));
-  return { ...templateDocument(), animations: [{ ...idle, keys }], weapons: [STAFF, TWIN] };
+  return { ...libraryDocument(), animations: [{ ...idle, keys }], weapons: [STAFF, TWIN] };
 }
 
 function errorsOf(change: (value: Mutable) => void): string {
@@ -37,7 +37,7 @@ describe("keys that hold weapons", () => {
   });
 
   it("leave documents without weapons as they were", () => {
-    const plain = templateDocument();
+    const plain = libraryDocument();
     expect("weapons" in plain).toBe(false);
     expect(validateDocument({ ...plain, weapons: [] }).ok).toBe(true);
   });

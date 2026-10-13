@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { record, redo, startHistory, undo } from "../../src/editor/history";
-import { commandFor, platformOf, shortcutLabel } from "../../src/editor/shortcuts";
+import { commandFor, platformOf, SHORTCUTS, shortcutLabel } from "../../src/editor/shortcuts";
 import type { KeyInput } from "../../src/editor/shortcuts";
 import { fitView, MAX_ZOOM, MIN_ZOOM, panBy, snapToGrid, VIEW_MARGIN, viewBoxFor, zoomAbout, zoomAt } from "../../src/editor/view";
 import { CHIBI_RIG } from "../../src/chibi/chibi";
@@ -70,12 +70,15 @@ describe("keyboard shortcuts", () => {
     expect(platformOf("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")).toBe("other");
   });
 
-  it("covers every file and edit command", () => {
+  it("covers Save and every edit command, with no New, Open or Save As", () => {
     const mod = { metaKey: true };
-    expect(commandFor(key("KeyN", { ...mod, altKey: true }), "mac")).toBe("new");
+    expect(["new", "open", "saveAs"].filter((command) => Object.hasOwn(SHORTCUTS, command))).toEqual([]);
+    expect(commandFor(key("KeyS", mod), "mac")).toBe("save");
+    expect(commandFor(key("KeyS", { ctrlKey: true }), "other")).toBe("save");
+    expect(commandFor(key("KeyN", { ...mod, altKey: true }), "mac")).toBeNull();
     expect(commandFor(key("KeyN", mod), "mac")).toBeNull();
-    expect(commandFor(key("KeyO", mod), "mac")).toBe("open");
-    expect(commandFor(key("KeyS", { ...mod, shiftKey: true }), "mac")).toBe("saveAs");
+    expect(commandFor(key("KeyO", mod), "mac")).toBeNull();
+    expect(commandFor(key("KeyS", { ...mod, shiftKey: true }), "mac")).toBeNull();
     expect(commandFor(key("KeyZ", mod), "mac")).toBe("undo");
     expect(commandFor(key("KeyZ", { ...mod, shiftKey: true }), "mac")).toBe("redo");
     expect(commandFor(key("KeyY", { ctrlKey: true }), "other")).toBe("redo");
@@ -98,8 +101,8 @@ describe("keyboard shortcuts", () => {
   });
 
   it("labels shortcuts for the platform", () => {
-    expect(shortcutLabel("saveAs", "mac")).toBe("⌘⇧S");
-    expect(shortcutLabel("new", "other")).toBe("Ctrl+Alt+N");
+    expect(shortcutLabel("save", "mac")).toBe("⌘S");
+    expect(shortcutLabel("redo", "other")).toBe("Ctrl+Shift+Z");
     expect(shortcutLabel("delete", "other")).toBe("Delete");
   });
 });

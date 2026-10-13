@@ -9,6 +9,7 @@ import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
 import { activeAnimationOf, documentOf, editorReducer, initialState, isDirty } from "../editor/state";
 import { fitView, zoomAbout } from "../editor/view";
+import { LIBRARY_LABEL } from "../library/active";
 import type { Point } from "../editor/view";
 import { Hierarchy } from "../viewer/Hierarchy";
 import { RigCanvas } from "../viewer/RigCanvas";
@@ -21,8 +22,8 @@ import { StatusBar } from "./StatusBar";
 import { Toolbar } from "./Toolbar";
 import { Timeline } from "./Timeline";
 import { useCanvasDrags } from "./useCanvasDrags";
-import { useFileCommands } from "./useFileCommands";
 import { usePanels } from "./usePanels";
+import { useLibrarySave } from "./useLibrarySave";
 import { useShortcuts } from "./useShortcuts";
 
 const platform = platformOf(navigator.userAgent);
@@ -35,7 +36,7 @@ export function App() {
   const document = documentOf(state);
   const animation = activeAnimationOf(state);
   const dirty = isDirty(state);
-  const files = useFileCommands(state, dispatch);
+  const save = useLibrarySave(state, dispatch);
   const onFrame = useCallback((frame: number) => dispatch({ type: "setFrame", frame }), []);
   const playback = usePlayback({
     fps: animation?.fps ?? 1,
@@ -81,10 +82,7 @@ export function App() {
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
 
   const run = useCallback((command: Command) => {
-    if (command === "new") files.newDocument();
-    else if (command === "open") void files.open();
-    else if (command === "save") void files.save();
-    else if (command === "saveAs") void files.saveAs();
+    if (command === "save") void save();
     else if (command === "undo" || command === "redo") dispatch({ type: command });
     else if (command === "delete") dispatch({ type: "deleteSelection" });
     else if (command === "togglePlay") playback.toggle();
@@ -95,7 +93,7 @@ export function App() {
       playback.pause();
       dispatch({ type: "stepKey", direction: command === "nextKey" ? 1 : -1 });
     } else dispatch({ type: "select", selection: null });
-  }, [files, playback, state.frame]);
+  }, [save, playback, state.frame]);
   useShortcuts(platform, run);
 
   useEffect(() => {
@@ -114,7 +112,7 @@ export function App() {
         onCommand={run}
         canUndo={state.history.past.length > 0}
         canRedo={state.history.future.length > 0}
-        title={state.fileName ?? "Untitled"}
+        title={LIBRARY_LABEL}
         dirty={dirty}
       />
 

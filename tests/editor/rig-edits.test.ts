@@ -4,7 +4,7 @@ import { ANIMATION_KINDS } from "../../src/format";
 import { validateDocument } from "../../src/format/document";
 import type { RigLabDocument } from "../../src/format/document";
 import { blankAnimation } from "../../src/editor/animations";
-import { templateDocument } from "../../src/editor/templates";
+import { libraryDocument } from "../../src/editor/templates";
 import { applyRigEdit, subtreeOf } from "../../src/editor/rigEdits";
 import type { RigEdit } from "../../src/editor/rigEdits";
 import { documentOf, editorReducer, initialState } from "../../src/editor/state";
@@ -12,7 +12,7 @@ import type { Action, EditorState } from "../../src/editor/state";
 
 /** The chibi with one animation of each kind, its keys swinging the front arm and lifting the root. */
 const base: RigLabDocument = {
-  ...templateDocument(),
+  ...libraryDocument(),
   animations: ANIMATION_KINDS.map((kind) => {
     const blank = blankAnimation(CHIBI_RIG, kind, kind);
     return {

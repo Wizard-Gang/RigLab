@@ -14,12 +14,6 @@ interface ToolbarProps {
   readonly dirty: boolean;
 }
 
-const FILE: readonly { readonly command: Command; readonly label: string }[] = [
-  { command: "new", label: "New" },
-  { command: "open", label: "Open" },
-  { command: "save", label: "Save" },
-  { command: "saveAs", label: "Save As" },
-];
 
 export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, title, dirty }: ToolbarProps) {
   const button = (command: Command, label: string, disabled = false) => (
@@ -37,8 +31,8 @@ export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, t
   return (
     <header className="app__bar">
       <h1 className="app__title">RigLab</h1>
-      <div className="toolbar" role="toolbar" aria-label="File">
-        {FILE.map(({ command, label }) => button(command, label))}
+      <div className="toolbar" role="toolbar" aria-label="Library">
+        {button("save", "Save")}
       </div>
       <div className="toolbar" role="toolbar" aria-label="Edit">
         {button("undo", "Undo", !canUndo)}
@@ -59,7 +53,7 @@ export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, t
         ))}
       </div>
       <a className="tool" href="wardrobe/" title="Step through every skin, part, weapon and animation in the library">Wardrobe</a>
-      <p className="app__document" title={dirty ? "Unsaved changes" : "Saved"}>
+      <p className="app__document" title={dirty ? "Unsaved changes: Save writes them to the library folder" : "The library folder holds everything shown"}>
         {title}
         {dirty ? <span className="app__dirty" aria-label="unsaved changes"> ●</span> : null}
       </p>
