@@ -13,3 +13,7 @@ export type { Segment } from "./sample";
 export { ANIMATION_KINDS, ENGINE_FPS, frameList, isKind, keyFrames, KINDS, poseFrames } from "./timing";
 export type { AnimationKind, KindTiming } from "./timing";
 export type { Validation } from "./validate";
+export { HOLD_FILE, HOLD_FORMAT, HOLD_VERSION, validateHold } from "./hold";
+export type { RigLabHold } from "./hold";
+export { CLASS_TOKEN, LINECAPS, PALETTE_FILE, PALETTE_FORMAT, PALETTE_VERSION, paletteCss, validatePalette } from "./palette";
+export type { Linecap, PaletteStyle, RigLabPalette } from "./palette";

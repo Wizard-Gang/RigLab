@@ -1,0 +1,11 @@
+{
+  "format": "riglab.palette",
+  "version": 1,
+  "classes": {
+    "part": {
+      "fill": "#e0b45a",
+      "stroke": "#6b4a1f",
+      "strokeWidth": 1
+    }
+  }
+}

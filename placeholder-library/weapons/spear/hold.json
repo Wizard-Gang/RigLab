@@ -1,0 +1,13 @@
+{
+  "format": "riglab.hold",
+  "version": 1,
+  "name": "spear",
+  "bodies": [
+    {
+      "body": "spear",
+      "x": 0,
+      "y": -32,
+      "rotation": 0
+    }
+  ]
+}
