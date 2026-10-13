@@ -45,7 +45,7 @@ npm start
 
 `npm start` runs `npm run dev`, the Vite dev server at <http://localhost:5180>. Local development needs no account, credential or network service.
 
-RigLab reads its rig, skins, weapons and seed animations from a library folder: the one `RIGLAB_LIBRARY` names, else `~/Documents/RigLab/` when it holds a `config.txt`, else the repository's `placeholder-library/`, which has the same layout with plain-box art. Each line of the folder's `config.txt` maps one thing, as `<kind> <name> = <path>`. The status bar names the folder in use, and `npm start` reloads when a mapped file changes. [Architecture](docs/ARCHITECTURE.md) (Library folders) describes the layout.
+RigLab reads its rig, skins, weapons and seed animations from a library folder: the one `RIGLAB_LIBRARY` names, else `~/Documents/RigLab/` when it holds a `config.txt`, else the repository's `placeholder-library/`, which has the same layout with plain-box art. Each line of the folder's `config.txt` maps one thing, as `<kind> <name> = <path>`. The status bar names the folder in use, and `npm start` reloads when a mapped file changes. The toolbar's Wardrobe link opens <http://localhost:5180/wardrobe/>, which steps through every skin, puts any skin's part on any slot, and shows the library's weapons and animations on the rig. [Architecture](docs/ARCHITECTURE.md) (Library folders) describes the layout.
 
 ## Command map
 
