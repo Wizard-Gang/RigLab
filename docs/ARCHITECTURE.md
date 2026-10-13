@@ -96,4 +96,4 @@ Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses t
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |
 
-The application is a React client rendered to native SVG and served by Vite. It needs no server, account or credential; `npm start` runs it locally.
+The application is a React and TypeScript client rendered to native SVG and served by Vite. It needs no server, account, credential or native toolchain; `npm start` runs it locally. The repository contract keeps it that way: it rejects Rust, Cargo and Tauri files, `@tauri-apps` dependencies and package scripts that run `tauri`, `cargo`, `rustc` or `rustup`.

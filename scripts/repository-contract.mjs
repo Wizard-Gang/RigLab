@@ -27,9 +27,17 @@ const OUTSIDE_CHECK = /audit|verify:github-settings|apply:github-settings|GH_ADM
 // A public repository never tracks credential-bearing files.
 const CREDENTIAL_FILE = /(^|\/)(\.env(\..*)?|\.dev\.vars(\..*)?|id_rsa|id_ed25519)$|\.(pem|key|p12|pfx)$/;
 
+// RigLab is React and TypeScript only: no Rust, Cargo or Tauri sources, toolchains or shells.
+const NATIVE_TOOLCHAIN_FILE = /(^|\/)(src-tauri\/.*|Cargo\.(toml|lock)|rust-toolchain(\.toml)?|tauri\.conf\.json5?)$|\.rs$/;
+const NATIVE_TOOLCHAIN_PACKAGE = /^@tauri-apps\/|^tauri$/;
+
 export function validateTrackedFiles(paths) {
-  return paths.filter((path) => CREDENTIAL_FILE.test(path) && !path.endsWith('.env.example'))
-    .map((path) => `credential-bearing file is tracked: ${path}`);
+  return [
+    ...paths.filter((path) => CREDENTIAL_FILE.test(path) && !path.endsWith('.env.example'))
+      .map((path) => `credential-bearing file is tracked: ${path}`),
+    ...paths.filter((path) => NATIVE_TOOLCHAIN_FILE.test(path))
+      .map((path) => `RigLab is React and TypeScript only; native toolchain file is tracked: ${path}`),
+  ];
 }
 
 export function validatePackage(pkg, lock) {
@@ -54,11 +62,13 @@ export function validatePackage(pkg, lock) {
   }
   for (const [name, script] of Object.entries(pkg.scripts ?? {})) {
     if (/wrangler|deploy/.test(script)) failures.push(`package script ${name} must never deploy`);
+    if (/\b(tauri|cargo|rustc|rustup)\b/.test(script)) failures.push(`RigLab is React and TypeScript only; package script ${name} must not run a native toolchain`);
   }
   for (const field of ['dependencies', 'devDependencies', 'optionalDependencies']) {
     if (pkg[field]?.wrangler) failures.push('RigLab must not depend on wrangler');
     for (const [name, version] of Object.entries(pkg[field] ?? {})) {
       if (!/^\d+\.\d+\.\d+$/.test(version)) failures.push(`${field} ${name} must pin an exact version`);
+      if (NATIVE_TOOLCHAIN_PACKAGE.test(name)) failures.push(`RigLab is React and TypeScript only; ${field} must not include ${name}`);
     }
   }
   return failures;
