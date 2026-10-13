@@ -30,10 +30,8 @@ export interface Status {
 
 export interface EditorState {
   readonly history: History<RigLabDocument>;
-  /** The document as last created, opened or saved; any other present document is unsaved. */
+  /** The library folder's rig and animations as last loaded or saved; any other present document is unsaved. */
   readonly saved: RigLabDocument;
-  /** The file the document was opened from or saved to, or null before the first save. */
-  readonly fileName: string | null;
   readonly mode: Mode;
   readonly selection: Selection;
   readonly activeAnimation: string | null;
@@ -51,9 +49,8 @@ export interface EditorState {
 }
 
 export type Action =
-  | { readonly type: "new" }
-  | { readonly type: "open"; readonly document: RigLabDocument; readonly fileName: string }
-  | { readonly type: "saved"; readonly document: RigLabDocument; readonly fileName: string }
+  /** The library folder now holds `document`; `note` says what was written. */
+  | { readonly type: "saved"; readonly document: RigLabDocument; readonly note: string }
   | { readonly type: "imported"; readonly document: RigLabDocument; readonly source: string }
   | { readonly type: "status"; readonly status: Status | null }
   | { readonly type: "undo" }

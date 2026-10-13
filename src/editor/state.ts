@@ -1,5 +1,4 @@
 // The editor's pure state machine. Document edits go through the undo history; view and selection do not.
-import { templateDocument } from "./templates";
 import { initialState, reconcile } from "./core";
 import { animationEdit, poseEdit, rigEdit, timelineEdit } from "./documentEdits";
 import { weaponEdit } from "./weaponEdits";
@@ -22,14 +21,11 @@ function steppedKey(state: EditorState, direction: -1 | 1): number {
 export function editorReducer(state: EditorState, action: Action): EditorState {
   const keep = { mode: state.mode, grid: state.grid, snap: state.snap, rotationSnap: state.rotationSnap, onion: state.onion, art: state.art };
   switch (action.type) {
-    case "new":
-      return { ...initialState(templateDocument()), ...keep, status: info("New chibi document") };
-    case "open":
-      return { ...initialState(action.document, action.fileName), ...keep, status: info(`Opened ${action.fileName}`) };
+    // An import is unsaved until Save writes it into the library folder.
     case "imported":
-      return { ...initialState(action.document, null), ...keep, status: info(`Imported ${action.source}`) };
+      return { ...initialState(action.document), ...keep, saved: state.saved, status: info(`Imported ${action.source}; Save writes it to the library`) };
     case "saved":
-      return { ...state, saved: action.document, fileName: action.fileName, status: info(`Saved ${action.fileName}`) };
+      return { ...state, saved: action.document, status: info(action.note) };
     case "status":
       return { ...state, status: action.status };
     case "undo":

@@ -53,17 +53,26 @@ export async function writeFolder(files: Files): Promise<string | null> {
   return `${parent.name}/${EXPORT_ROOT}`;
 }
 
-/** Download the bundle as riglab-export.zip, with every file under riglab-export/. */
-export function downloadZip(files: Files): string {
-  const name = `${EXPORT_ROOT}.zip`;
-  const archive = zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])));
-  const url = URL.createObjectURL(new Blob([archive as BlobPart], { type: "application/zip" }));
+function downloadBlob(blob: Blob, name: string): void {
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = name;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+/** Download the bundle as riglab-export.zip, with every file under riglab-export/. */
+export function downloadZip(files: Files): string {
+  const name = `${EXPORT_ROOT}.zip`;
+  const archive = zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])));
+  downloadBlob(new Blob([archive as BlobPart], { type: "application/zip" }), name);
   return name;
+}
+
+/** Download one JSON file, such as the Hexframe rig or clip. */
+export function downloadJson(text: string, name: string): void {
+  downloadBlob(new Blob([text], { type: "application/json" }), name);
 }
 
 async function readAll(folder: FolderHandle, prefix: string, into: Map<string, Uint8Array>): Promise<void> {

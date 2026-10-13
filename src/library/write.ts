@@ -13,7 +13,7 @@ export interface WriteResult {
   readonly removed: readonly string[];
   /** Folder-relative backup folder holding the previous version of every replaced or removed file, or null. */
   readonly backup: string | null;
-  /** Absolute paths RigLab touched, backups included, for the dev server to recognise its own changes. */
+  /** Absolute paths RigLab touched, backups and the directories above them included, so the dev server knows them. */
   readonly touched: readonly string[];
 }
 
@@ -62,7 +62,13 @@ export function writeLibrarySave(dir: string, plan: SavePlan, now = new Date()):
     rmSync(paths.get(relative)!, { force: true });
     touched.push(paths.get(relative)!);
   }
-  return { written: order, removed: [...plan.removes], backup, touched };
+  // Creating a backup or animation file can create its directories too, and the watcher reports each of them.
+  const parents = touched.flatMap((path) => {
+    const chain: string[] = [];
+    for (let parent = dirname(path); parent !== base && inside(parent); parent = dirname(parent)) chain.push(parent);
+    return chain;
+  });
+  return { written: order, removed: [...plan.removes], backup, touched: [...new Set([...touched, ...parents])] };
 }
 
 /**

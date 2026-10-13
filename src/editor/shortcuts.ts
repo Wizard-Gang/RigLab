@@ -1,8 +1,8 @@
-// Keyboard shortcuts. Browsers reserve Mod+N for a new window, so New is Mod+Alt+N.
-// Arrow keys step frames, Shift+arrows step keys, and Space plays or pauses.
+// Keyboard shortcuts. Save writes the library folder; there is no New, Open or Save As, because the folder is the
+// editor's only source. Arrow keys step frames, Shift+arrows step keys, and Space plays or pauses.
 
 export type Command =
-  | "new" | "open" | "save" | "saveAs" | "undo" | "redo" | "delete" | "escape"
+  | "save" | "undo" | "redo" | "delete" | "escape"
   | "previousFrame" | "nextFrame" | "previousKey" | "nextKey" | "togglePlay";
 
 export interface KeyInput {
@@ -17,10 +17,7 @@ export interface KeyInput {
 export type Platform = "mac" | "other";
 
 export const SHORTCUTS: Readonly<Record<Command, string>> = Object.freeze({
-  new: "Mod+Alt+N",
-  open: "Mod+O",
   save: "Mod+S",
-  saveAs: "Mod+Shift+S",
   undo: "Mod+Z",
   redo: "Mod+Shift+Z",
   delete: "Delete",
@@ -58,10 +55,8 @@ export function commandFor(input: KeyInput, platform: Platform): Command | null 
     return null;
   }
   const letter = input.code.startsWith("Key") ? input.code.slice(3) : "";
-  if (letter === "N" && input.altKey && !input.shiftKey) return "new";
   if (input.altKey) return null;
-  if (letter === "O" && !input.shiftKey) return "open";
-  if (letter === "S") return input.shiftKey ? "saveAs" : "save";
+  if (letter === "S" && !input.shiftKey) return "save";
   if (letter === "Z") return input.shiftKey ? "redo" : "undo";
   if (letter === "Y" && !input.shiftKey) return "redo";
   return null;

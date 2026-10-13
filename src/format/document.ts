@@ -1,4 +1,5 @@
-// riglab.document version 1: the editor's save file, one rig, the animations authored against it and the weapons they hold.
+// riglab.document version 1: the editor's in-memory model, one rig, the animations authored against it and the weapons
+// they hold. It is never a file: the library folder holds the rig and animations, and Save writes them there.
 import { validateAnimation } from "./animation";
 import type { RigLabAnimation } from "./animation";
 import { validateRig } from "./rig";
@@ -10,7 +11,6 @@ import type { RigLabWeapon } from "./weapon";
 
 export const DOCUMENT_FORMAT = "riglab.document";
 export const DOCUMENT_VERSION = 1;
-export const DOCUMENT_EXTENSION = ".riglab.json";
 
 export interface RigLabDocument {
   readonly format: typeof DOCUMENT_FORMAT;

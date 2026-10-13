@@ -2,10 +2,9 @@ import { Fragment, useEffect, useState } from "react";
 import { version } from "../../package.json";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabDocument } from "../format/document";
-import { download } from "../editor/files";
 import { clipNotes, toHexframeClip, toHexframeRig } from "../hexframe/adapter";
 import { buildBundle, EXPORT_ROOT, readBundle } from "../export/bundle";
-import { canUseFolders, downloadZip, readFolder, readZip, writeFolder } from "../editor/bundleFiles";
+import { canUseFolders, downloadJson, downloadZip, readFolder, readZip, writeFolder } from "../editor/bundleFiles";
 import type { Status } from "../editor/state";
 
 interface ExportPanelProps {
@@ -63,7 +62,7 @@ export function ExportPanel({ document, active, dirty, onImported, onStatus }: E
   };
 
   const importFrom = (read: typeof readZip) => run("Import", async () => {
-    if (dirty && !window.confirm("Discard the unsaved changes to this document?")) return null;
+    if (dirty && !window.confirm("Replace the unsaved changes in the editor with this bundle?")) return null;
     const source = await read();
     if (!source) return null;
     const result = await readBundle(source.files);
@@ -116,13 +115,13 @@ export function ExportPanel({ document, active, dirty, onImported, onStatus }: E
           const adapted = toHexframeRig(document.rig);
           if (!adapted.ok) return onStatus({ tone: "error", text: adapted.error });
           const name = `${document.rig.name}.rig.json`;
-          download(`${JSON.stringify(adapted.value, null, 2)}\n`, name);
+          downloadJson(`${JSON.stringify(adapted.value, null, 2)}\n`, name);
           onStatus({ tone: "info", text: [`Downloaded ${name}`, ...adapted.notes].join("; ") });
         }}>Download Hexframe rig</button>
         <button type="button" className="tool" disabled={!active} onClick={() => {
           if (!active) return;
           const clip = toHexframeClip(document.rig, active, document.weapons);
-          download(`${JSON.stringify(clip, null, 2)}\n`, `${active.name}.json`);
+          downloadJson(`${JSON.stringify(clip, null, 2)}\n`, `${active.name}.json`);
           const done = `Downloaded ${active.name}.json: ${clip.duration} frames at 60 Hz, 13 poses, as RigLab plays it`;
           onStatus({ tone: "info", text: [done, ...clipNotes(active)].join("; ") });
         }}>Download Hexframe clip</button>

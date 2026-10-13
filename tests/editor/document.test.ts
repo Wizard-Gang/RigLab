@@ -4,16 +4,16 @@ import { ANIMATION_KINDS, KINDS, keyFrames, validateAnimation } from "../../src/
 import { parseDocument, serializeDocument, validateDocument } from "../../src/format/document";
 import type { RigLabDocument } from "../../src/format/document";
 import { blankAnimation, restPose, uniqueName } from "../../src/editor/animations";
-import { templateDocument } from "../../src/editor/templates";
+import { libraryDocument } from "../../src/editor/templates";
 
 type Mutable = Record<string, any>;
 
 /** The chibi with one blank animation of each kind. */
-const moves = (): RigLabDocument => ({ ...templateDocument(), animations: ANIMATION_KINDS.map((kind) => blankAnimation(CHIBI_RIG, kind, kind)) });
+const moves = (): RigLabDocument => ({ ...libraryDocument(), animations: ANIMATION_KINDS.map((kind) => blankAnimation(CHIBI_RIG, kind, kind)) });
 
 describe("riglab.document", () => {
   it("starts new documents from the library's chibi and its seed animations", () => {
-    const document = templateDocument();
+    const document = libraryDocument();
     expect(validateDocument(document).ok).toBe(true);
     expect([document.rig.name, document.animations.map((animation) => animation.name)]).toEqual(["chibi", ["idle", "walk", "jump", "attack", "hit"]]);
   });
@@ -45,7 +45,7 @@ describe("riglab.document", () => {
     duplicate.animations[1].name = duplicate.animations[0].name;
     const named = validateDocument(duplicate);
     expect(named.ok ? "" : named.errors.join("\n")).toMatch(/\$\.animations\[1\]\.name: duplicates animation/);
-    expect(validateDocument({ ...templateDocument(), format: "riglab.rig" }).ok).toBe(false);
+    expect(validateDocument({ ...libraryDocument(), format: "riglab.rig" }).ok).toBe(false);
   });
 });
 

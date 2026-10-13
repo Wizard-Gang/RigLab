@@ -1,6 +1,6 @@
 // Starting state, recording edits, and keeping the editor pointed at things the document still has.
 import type { RigLabDocument } from "../format/document";
-import { templateDocument } from "./templates";
+import { libraryDocument } from "./templates";
 import { record, startHistory } from "./history";
 import { documentOf } from "./types";
 import type { EditorState } from "./types";
@@ -22,11 +22,10 @@ export function reconcile(state: EditorState): EditorState {
   return { ...state, activeAnimation, selection: stale ? null : selection, frame: Math.min(state.frame, active?.length ?? 0) };
 }
 
-export function initialState(document: RigLabDocument = templateDocument(), fileName: string | null = null): EditorState {
+export function initialState(document: RigLabDocument = libraryDocument()): EditorState {
   return reconcile({
     history: startHistory(document),
     saved: document,
-    fileName,
     mode: "animate",
     selection: null,
     activeAnimation: null,

@@ -108,6 +108,7 @@ describe("the dev server's save route", () => {
     for (const path of ["config.txt", "animations/stride.anim.json", "animations/walk.anim.json", `${answer.body.backup}/config.txt`]) {
       watcher.emit("all", "change", join(dir, path));
     }
+    for (const path of ["backups", String(answer.body.backup), `${answer.body.backup}/animations`]) watcher.emit("all", "addDir", join(dir, path));
     expect(send).not.toHaveBeenCalled();
     watcher.emit("all", "change", join(dir, "skins/plain/head.svg"));
     expect(send).toHaveBeenCalledWith({ type: "full-reload" });
