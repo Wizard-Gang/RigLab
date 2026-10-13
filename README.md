@@ -2,7 +2,7 @@
 
 RigLab is an art-agnostic SVG skeleton and keyframe animation authoring tool. It authors skeletons and motion for consumers such as Hexframe, which bind their own artwork to the exported joints. Its rig model is Hexframe's own: the rig core and the 11-bone humanoid are vendored byte-for-byte from [Wizard-Gang/Hexframe](https://github.com/Wizard-Gang/Hexframe) and pinned, so RigLab places every bone with the same forward kinematics Hexframe draws with.
 
-RigLab's output is a versioned, artwork-independent contract: `riglab.rig` skeletons with angle limits and two-bone IK chains, and `riglab.anim` animations with sparse keys and per-transition `hold`, `linear` or `smoothstep` interpolation. Today it imports Hexframe's humanoid and all 13 of its clips losslessly into those formats, and plays every clip through RigLab's own sampler, which reproduces Hexframe's frame for frame. The editor opens a `riglab.document` (one rig and its animations) with Paint-style New, Open, Save and Save As, undo and redo, Rig setup, Pose and Animation modes, a zoomable and pannable gridded SVG canvas, the bone hierarchy, an animations list (new, duplicate, rename, delete) and an inspector. The bone, constraint, timeline and export tools are queued in [implementation_plan.md](implementation_plan.md).
+RigLab's output is a versioned, artwork-independent contract: `riglab.rig` skeletons with angle limits and two-bone IK chains, and `riglab.anim` animations with sparse keys and per-transition `hold`, `linear` or `smoothstep` interpolation. Today it imports Hexframe's humanoid and all 13 of its clips losslessly into those formats, and plays every clip through RigLab's own sampler, which reproduces Hexframe's frame for frame. The editor opens a `riglab.document` (one rig and its animations) with Paint-style New, Open, Save and Save As, undo and redo, Rig setup, Pose and Animation modes, a zoomable and pannable gridded SVG canvas, the bone hierarchy, an animations list (new, duplicate, rename, delete) and an inspector. Rig setup is the only mode that changes anatomy: drag joints on the snap grid or type offsets, tips, slots and names, add and delete joints, and set angle limits and chain bends. The posing, constraint, timeline and export tools are queued in [implementation_plan.md](implementation_plan.md).
 
 | Command | macOS | Windows and Linux |
 | --- | --- | --- |
@@ -10,7 +10,7 @@ RigLab's output is a versioned, artwork-independent contract: `riglab.rig` skele
 | Open | ⌘O | Ctrl+O |
 | Save / Save As | ⌘S / ⌘⇧S | Ctrl+S / Ctrl+Shift+S |
 | Undo / Redo | ⌘Z / ⌘⇧Z | Ctrl+Z / Ctrl+Shift+Z or Ctrl+Y |
-| Delete the selected animation | Delete | Delete |
+| Delete the selected animation, or the selected joint in Rig setup | Delete | Delete |
 | Clear the selection | Escape | Escape |
 
 Browsers reserve ⌘N and Ctrl+N for a new window, so New adds Alt. Scroll to zoom about the cursor and drag empty canvas to pan.

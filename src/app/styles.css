@@ -106,6 +106,14 @@ button, select, input { font: inherit; color: inherit; }
 .inspector { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 0.75rem; margin: 0; }
 .inspector dt { color: var(--muted); }
 .inspector dd { margin: 0; text-align: end; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.setup { display: grid; gap: 0.9rem; }
+.setup__actions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.setup__chain { display: inline-flex; align-items: center; gap: 0.3rem; }
+.tool[aria-pressed="true"] { background: var(--acid-wash); border-color: var(--acid-dim); color: var(--acid); }
+.tool--danger:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+.check { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+.field--number { max-width: 7rem; }
+.joint--draggable { cursor: move; }
 .field {
   width: 100%;
   padding: 0.2rem 0.4rem;

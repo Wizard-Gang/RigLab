@@ -35,7 +35,8 @@ Nothing under `vendor/` is edited in place. `npm run vendor:hexframe -- <hexfram
 The editor is a pure state machine in `src/editor/state.ts`. Its document is a `riglab.document` (version 1): one `riglab.rig` and the `riglab.anim` animations authored against it, validated as a whole by `validateDocument`, with every nested message re-rooted at its document path. Document edits go through a bounded snapshot history (`src/editor/history.ts`, 100 steps); selection, mode, frame, view, grid and snap stay outside it. The editor tracks the document as last created, opened or saved, so it is unsaved exactly when the present snapshot differs.
 
 - **Modes.** Rig setup shows the rest pose. Pose scrubs the active animation without playing it. Animation plays it through `sampleAnimation` at its own frame rate.
-- **Selection.** One selection, either a bone or an animation. Delete removes a selected animation, and Escape clears the selection.
+- **Selection.** One selection, either a bone or an animation. Delete removes a selected animation, or the selected joint and its subtree in Rig setup, and Escape clears the selection.
+- **Rig setup.** Only Rig setup changes anatomy: the reducer refuses a rig edit in any other mode. `src/editor/rigEdits.ts` moves a joint (dragged on the canvas, snapped in rest space and stored as an offset in its parent's frame, or typed), sets tips, slots and names, adds a child joint, deletes a joint with its subtree, sets angle limits and adds, removes or re-bends chains. Every edit must leave the whole document valid. Renaming a bone renames it in parents, chains, depth profiles and every animation key; deleting one drops it from chains and keys, and drops depth profiles that would name a deleted bone. Pose values never change.
 - **Files.** `src/editor/files.ts` uses the File System Access API when the browser offers it, and a file input and a download otherwise. Opening parses and validates before anything changes, and a refusal names the first failing path. New starts from the humanoid with its 13 reference animations.
 - **View.** `src/editor/view.ts` keeps zoom and pan in rig units. The wheel zooms about the cursor, dragging empty canvas pans, and zoom 1 fits the rig's viewBox plus a margin. Grid lines sit on multiples of the spacing, and minor lines drop out when they would crowd the screen.
 - **Shortcuts.** `src/editor/shortcuts.ts` maps Mod (⌘ on macOS, Ctrl elsewhere) plus O, S, Shift+S, Z, Shift+Z and Y, and Delete and Escape. New is Mod+Alt+N, because browsers reserve Mod+N. Keys typed into a field stay with the field.
@@ -47,7 +48,7 @@ The editor is a pure state machine in `src/editor/state.ts`. Its document is a `
 | `vendor/hexframe/` | Pinned Hexframe rig core and fighter data. |
 | `src/format/` | The `riglab.rig`, `riglab.anim` and `riglab.document` types, their closed validators and the shared sampler. |
 | `src/hexframe/` | Loads the vendored rig and clips through Hexframe's own `createRig` and imports them as the RigLab `humanoid`. |
-| `src/editor/` | The editor's pure state, undo history, view math, shortcuts, document helpers and browser file access. |
+| `src/editor/` | The editor's pure state, undo history, rig setup edits, view math, shortcuts, document helpers and browser file access. |
 | `src/viewer/` | Skeleton geometry from FK placements, the zoomable SVG rig canvas and its grid, the bone hierarchy, and integer-frame playback. |
 | `src/app/` | The application shell: toolbar, panels, inspector, transport, status bar, file and shortcut wiring, and the stylesheet. |
 | `tests/rig/`, `tests/format/`, `tests/editor/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import and editor state. |

@@ -36,7 +36,7 @@ export function StatusBar({ status, cursor, zoom, grid, snap, onZoom, onFit, onG
           </select>
         </label>
         <label className="status__field">
-          <input type="checkbox" checked={snap} onChange={(event) => onSnap(event.target.checked)} />
+          <input type="checkbox" aria-label="Snap to grid" checked={snap} onChange={(event) => onSnap(event.target.checked)} />
           <span>Snap</span>
         </label>
       </div>

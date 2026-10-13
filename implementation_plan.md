@@ -2,19 +2,9 @@
 
 ## Open tasks
 
-### RL-004 — [FEAT] Edit anatomy in Rig Setup mode
-
-- Dependency: None.
-- Why: Proportions belong to the rig, not to poses. Only Rig Setup may change them.
-- Scope: Drag a joint to move its rest offset (snapped to the grid when snap is on). Edit offsets, tips, slots and names numerically. Add a child joint, and delete a joint with its subtree. Set per-bone angle limits and per-chain bend direction, and define chains. Every edit is validated by `validateRig` and Hexframe's `createRig` before it is committed to the document.
-- Non-goals: Pose editing, IK, a parent-change tool.
-- Acceptance: Tests show that setup edits change only rest data, that invalid edits are refused with a message, and that undo restores the exact prior rig. Pose and Animation modes expose no control that changes an offset or tip. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused setup-reducer tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
-- Authorities: `src/format/`, `docs/ARCHITECTURE.md`.
-
 ### RL-005 — [FEAT] Pose joints with fixed lengths, angle limits and two-bone IK
 
-- Dependency: RL-004.
+- Dependency: None.
 - Why: Dragging a wrist or ankle must bend the elbow or knee naturally without stretching a limb. This is the constraint gap that Hexframe's pose overrides leave open.
 - Scope:
   - A pure solver under `src/solve/`. Rotation-only FK posing for every non-root bone, and root translation. An analytic two-bone IK for each chain that keeps both segment lengths, honors the chain's bend direction, and clamps to the bones' angle limits. Rotation snapping, with a rotation-snap increment control beside the grid controls.

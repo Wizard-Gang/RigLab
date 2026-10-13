@@ -3,6 +3,8 @@ import type { RigLabAnimation } from "../format/animation";
 import type { RigLabDocument } from "../format/document";
 import { blankAnimation, isValidName, templateDocument, uniqueName } from "./animations";
 import { record, redo, startHistory, undo } from "./history";
+import { applyRigEdit } from "./rigEdits";
+import type { RigEdit } from "./rigEdits";
 import type { History } from "./history";
 import { fitView, GRID_SPACINGS } from "./view";
 import type { View } from "./view";
@@ -51,6 +53,7 @@ export type Action =
   | { readonly type: "duplicateAnimation"; readonly name: string }
   | { readonly type: "renameAnimation"; readonly from: string; readonly to: string }
   | { readonly type: "deleteSelection" }
+  | { readonly type: "rigEdit"; readonly edit: RigEdit }
   | { readonly type: "select"; readonly selection: Selection }
   | { readonly type: "activateAnimation"; readonly name: string }
   | { readonly type: "setMode"; readonly mode: Mode }
@@ -108,6 +111,15 @@ function withAnimations(document: RigLabDocument, animations: readonly RigLabAni
   return { ...document, animations };
 }
 
+/** Anatomy changes only in Rig setup; everywhere else the rig's proportions are fixed. */
+function rigEdit(state: EditorState, change: RigEdit): EditorState {
+  if (state.mode !== "setup") return { ...state, status: error("Switch to Rig setup to change the rig's anatomy") };
+  const result = applyRigEdit(documentOf(state), change);
+  if (!result.ok) return { ...state, status: error(result.error) };
+  const selection = result.select === undefined ? state.selection : result.select === null ? null : { kind: "bone" as const, name: result.select };
+  return edit(state, result.document, { selection, status: info(result.message) });
+}
+
 function animationEdit(state: EditorState, action: Action): EditorState {
   const document = documentOf(state);
   const animations = document.animations;
@@ -140,6 +152,9 @@ function animationEdit(state: EditorState, action: Action): EditorState {
       });
     }
     case "deleteSelection": {
+      if (state.selection?.kind === "bone" && state.mode === "setup") {
+        return rigEdit(state, { kind: "deleteBone", bone: state.selection.name });
+      }
       if (state.selection?.kind !== "animation") return state;
       const index = names.indexOf(state.selection.name);
       if (index < 0) return state;
@@ -189,6 +204,8 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
       return GRID_SPACINGS.includes(action.spacing) ? { ...state, grid: action.spacing } : state;
     case "setSnap":
       return { ...state, snap: action.snap };
+    case "rigEdit":
+      return rigEdit(state, action.edit);
     default:
       return animationEdit(state, action);
   }
