@@ -14,7 +14,7 @@ import torso from "../../characters/chibi/skins/armor/parts/torso.svg?raw";
 import { parsePart } from "../hexframe/parts";
 import type { Part } from "../hexframe/parts";
 
-/** Use instead of CHIBI_PARTS to draw the same CHIBI_RIG with armor. */
+/** Use in place of CHIBI_PARTS when drawing the same CHIBI_RIG with armor. */
 export const CHIBI_ARMOR_PARTS: Readonly<Record<string, Part>> = Object.freeze(
   Object.fromEntries(Object.entries({
     chibi_arm_lower_l: armLowerL,

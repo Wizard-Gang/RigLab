@@ -1,26 +1,9 @@
-# Optional chibi armor skin (11 SVG parts)
+# Optional uniform pixel-art chibi armor
 
-Alternate red-and-gold armor for RigLab's **existing** 11-bone chibi rig.
-All 11 source files retain the original `<svg xmlns=... data-bone=...>` root,
-classed `<path>`-only format, native artwork, bone pivots and local coordinates.
-No spear, weapon, animation, extra joint, IK change, or timeline behavior.
+11 independent, parser-compatible red/gold SVG armor parts matching the **existing** `chibi.rig.json` skeleton. They use the native filenames, bone-local pivots and `chibi_*` slots, but don't replace RigLab's default chibi art.
 
-## Layout
+**Grid:** Every visible cell is an independent 2 × 2 SVG-unit square (`M x yh2v2h-2z`, even X/Y), including dark exterior outlines and highlights. See the repository's [SVGPIXELART.md](../../../../SVGPIXELART.md) for the repeatable authoring and validation rules.
 
-- `parts/*.svg` — the 11 original-filename vector skins, one per chibi bone.
-- `src/chibi/armor.ts` — independently exported `CHIBI_ARMOR_PARTS` art
-  registry, keyed by RigLab's existing `chibi_*` slots.
-- `src/chibi/armor.css` — independent namespaced palette, imported by the
-  optional armor module. Native chibi styling remains untouched.
-- `tests/chibi/armor-skin.test.ts` — parse, slot, and path-preservation checks.
+**Integration:** `src/chibi/armor.ts` exposes `CHIBI_ARMOR_PARTS` to substitute for `CHIBI_PARTS` in `artPlacements` against the same `CHIBI_RIG`; `src/chibi/armor.css` provides separately namespaced flat colors. There is no skin-picker UI in this assets-only change.
 
-## Using the skin
-
-Pass `CHIBI_ARMOR_PARTS` in place of `CHIBI_PARTS` when rendering
-the same `CHIBI_RIG`, e.g.:
-`artPlacements(CHIBI_RIG, runtimeRig, placed, CHIBI_ARMOR_PARTS, animationName)`.
-
-RigLab's existing chibi template and default skin continue unchanged.
-An editor skin picker is separate feature work; this patch only adds the
-alternative assets and a reusable art registry. Do not modify
-`characters/chibi/parts/*.svg` or the vendored Hexframe sources.
+**Tests:** `tests/chibi/armor-skin.test.ts` verifies all 11 slots and parser contract, identical 2×2 cells, and a weapon-free art registry. No spear, additional bones, rig edits, interpolation, timeline changes, or gameplay assets.
