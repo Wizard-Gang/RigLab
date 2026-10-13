@@ -1,11 +1,17 @@
 import { useEffect, useRef } from "react";
-import type { ReactNode } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import type { Rig } from "../../vendor/hexframe/src/rig";
 import { panBy, viewBoxFor, zoomAt } from "../editor/view";
 import type { Point, View } from "../editor/view";
 import { GridLines } from "./GridLines";
 import type { Skeleton } from "./skeleton";
 import { useElementSize } from "./useElementSize";
+
+/** A draggable point on the skeleton: a bone's joint, or the end of a tipped bone. */
+export interface Handle {
+  readonly bone: string;
+  readonly kind: "joint" | "tip";
+}
 
 interface RigCanvasProps {
   readonly rig: Rig;
@@ -17,23 +23,24 @@ interface RigCanvasProps {
   readonly onCursor: (point: Point | null) => void;
   /** Grid spacing in rig units. */
   readonly grid: number;
-  /** When set, joints can be dragged; `done` marks the drop. */
-  readonly onJointDrag?: (bone: string, point: Point, done: boolean) => void;
+  /** Which handles can be dragged; `done` marks the drop, and a non-finite point a cancelled drag. */
+  readonly drag?: { readonly tips: boolean; readonly onDrag: (handle: Handle, point: Point, done: boolean) => void };
   readonly children?: ReactNode;
 }
 
 const JOINT_PX = 5;
 const ROOT_PX = 6.5;
+const TIP_PX = 4;
 const DRAG_THRESHOLD_PX = 3;
 
 /** The rig's SVG space in its own units (x right, y down), with wheel zoom at the cursor and drag to pan. */
-export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, onJointDrag, children }: RigCanvasProps) {
+export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, children }: RigCanvasProps) {
   const svg = useRef<SVGSVGElement>(null);
   const size = useElementSize(svg);
   const latest = useRef({ view, onView });
   latest.current = { view, onView };
   const pan = useRef<{ x: number; y: number; view: View; scale: number; moved: boolean } | null>(null);
-  const jointDrag = useRef<{ bone: string; x: number; y: number; moved: boolean } | null>(null);
+  const handleDrag = useRef<{ handle: Handle; x: number; y: number; moved: boolean } | null>(null);
   const viewBox = viewBoxFor(rig.contract.space, view);
   const scale = size.width && size.height ? Math.min(size.width / viewBox[2], size.height / viewBox[3]) : 1;
 
@@ -59,6 +66,14 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
     return () => element.removeEventListener("wheel", wheel);
   }, []);
 
+  const grab = (handle: Handle) => (event: ReactPointerEvent<SVGElement>): void => {
+    event.stopPropagation();
+    onSelect(handle.bone);
+    if (!drag || event.button !== 0) return;
+    svg.current?.setPointerCapture(event.pointerId);
+    handleDrag.current = { handle, x: event.clientX, y: event.clientY, moved: false };
+  };
+
   const visible = {
     x: view.centerX - size.width / scale / 2,
     y: view.centerY - size.height / scale / 2,
@@ -81,11 +96,11 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
       onPointerMove={(event) => {
         const point = toRig(event.clientX, event.clientY);
         onCursor(point);
-        const drag = jointDrag.current;
-        if (drag) {
-          if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < DRAG_THRESHOLD_PX) return;
-          drag.moved = true;
-          if (point) onJointDrag?.(drag.bone, point, false);
+        const dragging = handleDrag.current;
+        if (dragging) {
+          if (!dragging.moved && Math.hypot(event.clientX - dragging.x, event.clientY - dragging.y) < DRAG_THRESHOLD_PX) return;
+          dragging.moved = true;
+          if (point) drag?.onDrag(dragging.handle, point, false);
           return;
         }
         const start = pan.current;
@@ -97,21 +112,21 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
         onView(panBy(start.view, dx / start.scale, dy / start.scale));
       }}
       onPointerUp={(event) => {
-        const drag = jointDrag.current;
-        jointDrag.current = null;
-        if (drag) {
+        const dragging = handleDrag.current;
+        handleDrag.current = null;
+        if (dragging) {
           const point = toRig(event.clientX, event.clientY);
-          if (drag.moved && point) onJointDrag?.(drag.bone, point, true);
+          if (dragging.moved && point) drag?.onDrag(dragging.handle, point, true);
           return;
         }
         if (pan.current && !pan.current.moved) onSelect(null);
         pan.current = null;
       }}
       onPointerCancel={() => {
-        const drag = jointDrag.current;
-        jointDrag.current = null;
+        const dragging = handleDrag.current;
+        handleDrag.current = null;
         pan.current = null;
-        if (drag?.moved) onJointDrag?.(drag.bone, { x: Number.NaN, y: Number.NaN }, true);
+        if (dragging?.moved) drag?.onDrag(dragging.handle, { x: Number.NaN, y: Number.NaN }, true);
       }}
       onPointerLeave={() => onCursor(null)}
     >
@@ -130,20 +145,30 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
             y2={segment.to.y}
           />
         ))}
+        {drag?.tips
+          ? skeleton.segments.filter((segment) => segment.kind === "tip").map((segment) => (
+            <rect
+              key={`${segment.bone}:tip`}
+              className={segment.bone === selected ? "tip-handle tip-handle--selected" : "tip-handle"}
+              x={segment.to.x - TIP_PX / scale}
+              y={segment.to.y - TIP_PX / scale}
+              width={(TIP_PX * 2) / scale}
+              height={(TIP_PX * 2) / scale}
+              transform={`rotate(45 ${segment.to.x} ${segment.to.y})`}
+              onPointerDown={grab({ bone: segment.bone, kind: "tip" })}
+            >
+              <title>{`${segment.bone} end`}</title>
+            </rect>
+          ))
+          : null}
         {skeleton.joints.map((joint) => (
           <circle
             key={joint.bone}
-            className={["joint", joint.root ? "joint--root" : "", joint.bone === selected ? "joint--selected" : "", onJointDrag ? "joint--draggable" : ""].join(" ").trim()}
+            className={["joint", joint.root ? "joint--root" : "", joint.bone === selected ? "joint--selected" : "", drag ? "joint--draggable" : ""].join(" ").trim()}
             cx={joint.x}
             cy={joint.y}
             r={(joint.root ? ROOT_PX : JOINT_PX) / scale}
-            onPointerDown={(event) => {
-              event.stopPropagation();
-              onSelect(joint.bone);
-              if (!onJointDrag || event.button !== 0) return;
-              svg.current?.setPointerCapture(event.pointerId);
-              jointDrag.current = { bone: joint.bone, x: event.clientX, y: event.clientY, moved: false };
-            }}
+            onPointerDown={grab({ bone: joint.bone, kind: "joint" })}
           >
             <title>{joint.bone}</title>
           </circle>

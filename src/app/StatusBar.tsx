@@ -1,4 +1,4 @@
-import { GRID_SPACINGS, MAX_ZOOM, MIN_ZOOM, snapToGrid } from "../editor/view";
+import { GRID_SPACINGS, MAX_ZOOM, MIN_ZOOM, ROTATION_SNAPS, snapToGrid } from "../editor/view";
 import type { Point } from "../editor/view";
 import type { Status } from "../editor/state";
 import { fixed } from "./Inspector";
@@ -13,9 +13,11 @@ interface StatusBarProps {
   readonly onFit: () => void;
   readonly onGrid: (spacing: number) => void;
   readonly onSnap: (snap: boolean) => void;
+  readonly rotationSnap: number;
+  readonly onRotationSnap: (degrees: number) => void;
 }
 
-export function StatusBar({ status, cursor, zoom, grid, snap, onZoom, onFit, onGrid, onSnap }: StatusBarProps) {
+export function StatusBar({ status, cursor, zoom, grid, snap, onZoom, onFit, onGrid, onSnap, rotationSnap, onRotationSnap }: StatusBarProps) {
   const shown = cursor && snap ? snapToGrid(cursor, grid) : cursor;
   return (
     <footer className="status">
@@ -38,6 +40,12 @@ export function StatusBar({ status, cursor, zoom, grid, snap, onZoom, onFit, onG
         <label className="status__field">
           <input type="checkbox" aria-label="Snap to grid" checked={snap} onChange={(event) => onSnap(event.target.checked)} />
           <span>Snap</span>
+        </label>
+        <label className="status__field">
+          <span>Rotate</span>
+          <select aria-label="Rotation snap" value={rotationSnap} onChange={(event) => onRotationSnap(Number(event.target.value))}>
+            {ROTATION_SNAPS.map((degrees) => <option key={degrees} value={degrees}>{degrees === 0 ? "free" : `${degrees}°`}</option>)}
+          </select>
         </label>
       </div>
     </footer>
