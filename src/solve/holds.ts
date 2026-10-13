@@ -21,17 +21,25 @@ function withoutGrip(prop: Prop | null, chain: string): Prop | null {
   return grips.length ? { ...prop, grips } : null;
 }
 
-/** Pin a chain's end where it is now, or release its pin. A pinned end leaves the prop. */
+/** The weapon's name when it grips `chain`. */
+function weaponGripping(constraints: Constraints, chain: string): string | null {
+  const weapon = constraints.weapon?.weapon;
+  return weapon?.bodies.some((body) => body.grips.some((grip) => grip.chain === chain)) ? weapon.name : null;
+}
+
+/** Pin a chain's end where it is now, or release its pin. A pinned end leaves the prop; a hand on a weapon stays. */
 export function togglePin(rig: RigLabRig, pose: Pose, constraints: Constraints, chainName: string): HoldResult {
   const chain = rig.chains.find((candidate) => candidate.name === chainName);
   if (!chain) return { ok: false, error: `The rig has no chain '${chainName}'` };
   if (constraints.pins.some((pin) => pin.chain === chainName)) {
     return { ok: true, constraints: { ...constraints, pins: constraints.pins.filter((pin) => pin.chain !== chainName) }, message: `Released ${chainName}` };
   }
+  const wielding = weaponGripping(constraints, chainName);
+  if (wielding) return { ok: false, error: `${chainName} holds the ${wielding}; let go of the weapon to pin it` };
   const end = tidyPoint(chainEnd(rig, pose, chain));
   return {
     ok: true,
-    constraints: { pins: [...constraints.pins, { chain: chainName, ...end }], prop: withoutGrip(constraints.prop, chainName) },
+    constraints: { ...constraints, pins: [...constraints.pins, { chain: chainName, ...end }], prop: withoutGrip(constraints.prop, chainName) },
     message: `Pinned ${chainName} at ${end.x}, ${end.y}`,
   };
 }
@@ -44,6 +52,7 @@ export function toggleGrip(rig: RigLabRig, pose: Pose, constraints: Constraints,
   const chain = rig.chains.find((candidate) => candidate.name === chainName);
   if (!chain) return { ok: false, error: `The rig has no chain '${chainName}'` };
   const prop = constraints.prop;
+  if (constraints.weapon) return { ok: false, error: `The key holds the ${constraints.weapon.weapon.name}; let go of it to hold a prop` };
   if (prop?.grips.some((grip) => grip.chain === chainName)) {
     return { ok: true, constraints: { ...constraints, prop: withoutGrip(prop, chainName) }, message: `${chainName} let go of ${prop.name}` };
   }
