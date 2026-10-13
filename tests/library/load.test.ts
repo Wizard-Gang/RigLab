@@ -15,7 +15,7 @@ const original = placeholderFiles();
 const edited = (path: string, edit: (value: Record<string, unknown>) => unknown): string => json(edit(JSON.parse(original[path]!)));
 
 describe("library loading", () => {
-  it("loads the placeholder: today's chibi rig and weapons, two skins, holds and one animation per kind", () => {
+  it("loads the placeholder: today's chibi rig and weapons, three skins, holds and one animation per kind", () => {
     const result = loadLibrary(original);
     expect(result.ok ? [] : result.errors).toEqual([]);
     if (!result.ok) return;
@@ -23,7 +23,7 @@ describe("library loading", () => {
     expect(rig).toEqual(CHIBI_RIG);
     expect(weapons.map((item) => item.weapon)).toEqual(WEAPONS);
     expect(weapons.map((item) => item.hold)).toEqual(WEAPONS.map(readyHold));
-    expect(skins.map((skin) => skin.name)).toEqual(["plain", "block"]);
+    expect(skins.map((skin) => skin.name)).toEqual(["plain", "block", "pixel"]);
     for (const skin of skins) {
       expect(Object.keys(skin.parts).sort()).toEqual(rig.bones.map((bone) => bone.slot).sort());
       for (const bone of rig.bones) expect(skin.parts[bone.slot]).toMatchObject({ bone: bone.name, set: skin.name });
@@ -57,7 +57,7 @@ describe("library loading", () => {
 
   it("refuses a weapon whose name, hold or slots do not fit", () => {
     const weapon = "weapons/sword/weapon.json";
-    expect(errorsOf(withChanges({ [weapon]: edited(weapon, (value) => ({ ...value, name: "blade" })) }))).toEqual(["weapons/sword/weapon.json: is named 'blade', but config.txt:9 maps it as 'sword'"]);
+    expect(errorsOf(withChanges({ [weapon]: edited(weapon, (value) => ({ ...value, name: "blade" })) }))).toEqual(["weapons/sword/weapon.json: is named 'blade', but config.txt:10 maps it as 'sword'"]);
     expect(errorsOf(withChanges({ "weapons/sword/hold.json": null }))).toEqual(["weapons/sword/hold.json: is missing"]);
     const hold = "weapons/spear/hold.json";
     expect(errorsOf(withChanges({ [hold]: edited(hold, (value) => ({ ...value, bodies: [] })) }))).toEqual([`${hold}: $.bodies: must place free body 'spear'`]);
@@ -70,7 +70,7 @@ describe("library loading", () => {
   it("refuses an animation for another rig or under another name", () => {
     const path = "animations/walk.anim.json";
     expect(errorsOf(withChanges({ [path]: edited(path, (value) => ({ ...value, rig: "fighter" })) }))).toEqual([`${path}: $.rig: must name rig 'chibi'`]);
-    expect(errorsOf(withChanges({ [path]: edited(path, (value) => ({ ...value, name: "stroll" })) }))).toEqual([`${path}: is named 'stroll', but config.txt:15 maps it as 'walk'`]);
+    expect(errorsOf(withChanges({ [path]: edited(path, (value) => ({ ...value, name: "stroll" })) }))).toEqual([`${path}: is named 'stroll', but config.txt:16 maps it as 'walk'`]);
   });
 
   it("names a rig file that is missing or not a rig", () => {
