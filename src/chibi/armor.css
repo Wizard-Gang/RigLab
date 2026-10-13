@@ -1,0 +1,26 @@
+/* Optional chibi armor art set. Original chibi styles remain unchanged. */
+.art-set--chibi-armor .part { fill: #5aa0f0; stroke: #2a1d16; stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.art-set--chibi-armor .part--back { fill: #3f78c0; }
+.art-set--chibi-armor .part--skin { fill: #ffd9bd; }
+.art-set--chibi-armor .part--skin-back { fill: #e9b993; }
+.art-set--chibi-armor .part--pants { fill: #34416e; }
+.art-set--chibi-armor .part--pants-back { fill: #273257; }
+.art-set--chibi-armor .part--shoe { fill: #8f5a33; }
+.art-set--chibi-armor .part--shoe-back { fill: #6e4325; }
+.art-set--chibi-armor .part--hair { fill: #7b4a2b; }
+.art-set--chibi-armor .part--accent { fill: #f3c552; }
+.art-set--chibi-armor .part--eye { fill: #2b2140; stroke: none; }
+.art-set--chibi-armor .part--shine { fill: #fff; stroke: none; }
+.art-set--chibi-armor .part--blush { fill: #ff9fb3; stroke: none; opacity: 0.65; }
+.art-set--chibi-armor .detail { fill: none; stroke: #6b2f26; stroke-width: 1.1; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.art-set--chibi-armor .part--armor { fill: #df4969; stroke: #321d37; stroke-width: 1.1; }
+.art-set--chibi-armor .part--armor-back { fill: #a73356; stroke: #321d37; stroke-width: 1.1; }
+.art-set--chibi-armor .part--trim { fill: #f0ba6f; stroke: #44243d; stroke-width: 0.7; }
+.art-set--chibi-armor .part--trim-back { fill: #b88b5b; stroke: #321d37; stroke-width: 0.7; }
+.art-set--chibi-armor .part--plate { fill: #fa8f8e; stroke: #9c3d61; stroke-width: 0.65; }
+.art-set--chibi-armor .part--plate-back { fill: #b95a70; stroke: #82344e; stroke-width: 0.65; }
+.art-set--chibi-armor .part--goldlight { fill: #fff2cb; stroke: #b48152; stroke-width: 0.5; }
+.art-set--chibi-armor .part--undercloth { fill: #fff1db; stroke: #5e3a49; stroke-width: 0.7; }
+.art-set--chibi-armor .part--glove { fill: #513248; stroke: #2c2137; stroke-width: 0.8; }
+.art-set--chibi-armor .part--boot { fill: #513248; stroke: #241b35; stroke-width: 0.9; }
+.art-set--chibi-armor .detail--armor { fill: none; stroke: #7b3459; stroke-width: .9; }
