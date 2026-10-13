@@ -2,22 +2,9 @@
 
 ## Open tasks
 
-### RL-005 — [FEAT] Pose joints with fixed lengths, angle limits and two-bone IK
-
-- Dependency: None.
-- Why: Dragging a wrist or ankle must bend the elbow or knee naturally without stretching a limb. This is the constraint gap that Hexframe's pose overrides leave open.
-- Scope:
-  - A pure solver under `src/solve/`. Rotation-only FK posing for every non-root bone, and root translation. An analytic two-bone IK for each chain that keeps both segment lengths, honors the chain's bend direction, and clamps to the bones' angle limits. Rotation snapping, with a rotation-snap increment control beside the grid controls.
-  - Constraint priority: connectivity and fixed lengths, then angle limits and bend direction, then grid snap of the drag target where feasible. An unreachable target leaves the limb at its closest reach and is reported in the status bar, never by stretching.
-  - Canvas dragging in Pose mode: rotate about the parent for FK joints, solve IK when a chain end is dragged, translate the root.
-- Non-goals: Pins and grips (RL-006), keyframes (RL-007).
-- Acceptance: Property tests over random targets show segment lengths unchanged to 1e-9, limits never exceeded, and bend sign preserved. Reachable targets are hit to 1e-6; unreachable ones are flagged. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused solver tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
-- Authorities: `src/format/`, `docs/ARCHITECTURE.md`.
-
 ### RL-006 — [FEAT] Plant feet and hold two-handed grips
 
-- Dependency: RL-005.
+- Dependency: None.
 - Why: Lunges need planted feet and deliberate pelvis movement instead of collapsing. Two-handed axe swings need both hands to stay on one rigid weapon.
 - Scope: Pins that lock a chain end to a world point and re-solve that chain whenever the root or an ancestor moves. A rigid weapon attachment with two grip points that both arm chains solve to, moved and rotated as one body. Violations are reported when a pin or grip cannot be held within limits. Pins and grips are stored with the pose and the animation key.
 - Non-goals: Physics, collision, more than two hands on one prop.

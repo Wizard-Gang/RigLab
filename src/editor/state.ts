@@ -1,12 +1,14 @@
 // The editor's pure state machine. Document edits go through the undo history; view and selection do not.
+import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabDocument } from "../format/document";
 import { blankAnimation, isValidName, templateDocument, uniqueName } from "./animations";
 import { record, redo, startHistory, undo } from "./history";
+import { setKeyPose } from "./poseEdits";
 import { applyRigEdit } from "./rigEdits";
 import type { RigEdit } from "./rigEdits";
 import type { History } from "./history";
-import { fitView, GRID_SPACINGS } from "./view";
+import { fitView, GRID_SPACINGS, ROTATION_SNAPS } from "./view";
 import type { View } from "./view";
 
 export type Mode = "setup" | "pose" | "animate";
@@ -39,6 +41,8 @@ export interface EditorState {
   readonly view: View;
   readonly grid: number;
   readonly snap: boolean;
+  /** Rotation-snap increment in degrees for rotating joints; 0 is off. */
+  readonly rotationSnap: number;
   readonly status: Status | null;
 }
 
@@ -54,13 +58,15 @@ export type Action =
   | { readonly type: "renameAnimation"; readonly from: string; readonly to: string }
   | { readonly type: "deleteSelection" }
   | { readonly type: "rigEdit"; readonly edit: RigEdit }
+  | { readonly type: "setPose"; readonly pose: Pose; readonly message: string | null }
   | { readonly type: "select"; readonly selection: Selection }
   | { readonly type: "activateAnimation"; readonly name: string }
   | { readonly type: "setMode"; readonly mode: Mode }
   | { readonly type: "setFrame"; readonly frame: number }
   | { readonly type: "setView"; readonly view: View }
   | { readonly type: "setGrid"; readonly spacing: number }
-  | { readonly type: "setSnap"; readonly snap: boolean };
+  | { readonly type: "setSnap"; readonly snap: boolean }
+  | { readonly type: "setRotationSnap"; readonly degrees: number };
 
 export const documentOf = (state: EditorState): RigLabDocument => state.history.present;
 export const isDirty = (state: EditorState): boolean => state.history.present !== state.saved;
@@ -95,6 +101,7 @@ export function initialState(document: RigLabDocument = templateDocument(), file
     view: fitView(document.rig.space),
     grid: 5,
     snap: true,
+    rotationSnap: 0,
     status: null,
   });
 }
@@ -118,6 +125,19 @@ function rigEdit(state: EditorState, change: RigEdit): EditorState {
   if (!result.ok) return { ...state, status: error(result.error) };
   const selection = result.select === undefined ? state.selection : result.select === null ? null : { kind: "bone" as const, name: result.select };
   return edit(state, result.document, { selection, status: info(result.message) });
+}
+
+/** Poses change only in Pose mode, and only by writing the active animation's key at the current frame. */
+function poseEdit(state: EditorState, pose: Pose, message: string | null): EditorState {
+  if (state.mode !== "pose") return { ...state, status: error("Switch to Pose to change poses") };
+  const document = documentOf(state);
+  const animation = activeAnimationOf(state);
+  if (!animation) return { ...state, status: error("Add an animation to pose") };
+  const result = setKeyPose(document.rig, animation, state.frame, pose);
+  if (!result.ok) return { ...state, status: error(result.error) };
+  const animations = document.animations.map((candidate) => (candidate === animation ? result.animation : candidate));
+  const done = `${result.inserted ? "Keyed" : "Posed"} ${animation.name} at frame ${state.frame}`;
+  return edit(state, { ...document, animations }, { status: message ? error(`${done}; ${message}`) : info(done) });
 }
 
 function animationEdit(state: EditorState, action: Action): EditorState {
@@ -172,9 +192,9 @@ function animationEdit(state: EditorState, action: Action): EditorState {
 export function editorReducer(state: EditorState, action: Action): EditorState {
   switch (action.type) {
     case "new":
-      return { ...initialState(templateDocument()), mode: state.mode, grid: state.grid, snap: state.snap, status: info("New document") };
+      return { ...initialState(templateDocument()), mode: state.mode, grid: state.grid, snap: state.snap, rotationSnap: state.rotationSnap, status: info("New document") };
     case "open":
-      return { ...initialState(action.document, action.fileName), mode: state.mode, grid: state.grid, snap: state.snap, status: info(`Opened ${action.fileName}`) };
+      return { ...initialState(action.document, action.fileName), mode: state.mode, grid: state.grid, snap: state.snap, rotationSnap: state.rotationSnap, status: info(`Opened ${action.fileName}`) };
     case "saved":
       return { ...state, saved: action.document, fileName: action.fileName, status: info(`Saved ${action.fileName}`) };
     case "status":
@@ -206,6 +226,10 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
       return { ...state, snap: action.snap };
     case "rigEdit":
       return rigEdit(state, action.edit);
+    case "setPose":
+      return poseEdit(state, action.pose, action.message);
+    case "setRotationSnap":
+      return ROTATION_SNAPS.includes(action.degrees) ? { ...state, rotationSnap: action.degrees } : state;
     default:
       return animationEdit(state, action);
   }

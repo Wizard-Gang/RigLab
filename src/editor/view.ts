@@ -11,6 +11,8 @@ export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 16;
 export const VIEW_MARGIN = 12;
 export const GRID_SPACINGS: readonly number[] = [1, 2, 5, 10, 20];
+/** Rotation-snap increments in degrees; 0 turns snapping off. */
+export const ROTATION_SNAPS: readonly number[] = [0, 1, 5, 15, 45];
 
 export interface Point {
   readonly x: number;

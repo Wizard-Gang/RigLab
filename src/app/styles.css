@@ -114,6 +114,8 @@ button, select, input { font: inherit; color: inherit; }
 .check { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; }
 .field--number { max-width: 7rem; }
 .joint--draggable { cursor: move; }
+.tip-handle { fill: var(--bg); stroke: var(--acid-dim); stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: crosshair; }
+.tip-handle--selected { fill: var(--acid); stroke: var(--acid); }
 .field {
   width: 100%;
   padding: 0.2rem 0.4rem;

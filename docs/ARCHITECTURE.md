@@ -41,6 +41,16 @@ The editor is a pure state machine in `src/editor/state.ts`. Its document is a `
 - **View.** `src/editor/view.ts` keeps zoom and pan in rig units. The wheel zooms about the cursor, dragging empty canvas pans, and zoom 1 fits the rig's viewBox plus a margin. Grid lines sit on multiples of the spacing, and minor lines drop out when they would crowd the screen.
 - **Shortcuts.** `src/editor/shortcuts.ts` maps Mod (⌘ on macOS, Ctrl elsewhere) plus O, S, Shift+S, Z, Shift+Z and Y, and Delete and Escape. New is Mod+Alt+N, because browsers reserve Mod+N. Keys typed into a field stay with the field.
 
+## Posing and constraints
+
+`src/solve/` poses the rig by rotation alone, so every limb keeps its length by construction: no solve can translate a bone other than the root. Its priorities are fixed lengths and connectivity first, then angle limits and the chain's bend side, then grid snap of the drag target where the limb can reach it.
+
+- **FK posing.** Dragging a joint swings its parent bone about the parent's joint, so the joint points at the cursor. Dragging the end of a tipped bone that is not a chain end aims that bone itself. Dragging the root translates it. Rotation snaps to the chosen increment (free, 1°, 5°, 15° or 45°) and is then held inside the bone's limits. Every new rotation is the equivalent nearest the current one, so a keyed rotation never spins a full turn on its way between keys.
+- **Two-bone IK.** Dragging a chain's end (the lower bone's tip) solves the chain analytically with the law of cosines. Both segment lengths are kept and the bend stays on the chain's `bend` side. If an angle limit caps the bend, the capped chain is aimed so that its end still points at the target. A target beyond full extension, or inside the folded reach, leaves the limb at its closest reach and reports the shortfall.
+- **Grid snap.** The drag target snaps to the grid when the limb can reach the grid point. Otherwise the exact pointer position is used if it is reachable, and the status bar says so.
+
+In Pose mode a drop writes the solved pose into the active animation's key at the current frame. If no key is there, it inserts one that continues the interpolation in force. The pose inspector types a rotation, or the root's position, the same way. Each drop is one undo step, and poses change only in Pose mode.
+
 ## Source layout
 
 | Path | Responsibility |
@@ -48,10 +58,11 @@ The editor is a pure state machine in `src/editor/state.ts`. Its document is a `
 | `vendor/hexframe/` | Pinned Hexframe rig core and fighter data. |
 | `src/format/` | The `riglab.rig`, `riglab.anim` and `riglab.document` types, their closed validators and the shared sampler. |
 | `src/hexframe/` | Loads the vendored rig and clips through Hexframe's own `createRig` and imports them as the RigLab `humanoid`. |
-| `src/editor/` | The editor's pure state, undo history, rig setup edits, view math, shortcuts, document helpers and browser file access. |
+| `src/editor/` | The editor's pure state, undo history, rig setup and pose edits, view math, shortcuts, document helpers and browser file access. |
+| `src/solve/` | Rotation-only posing, two-bone IK, angle limits, rotation snap and grid-snapped targets. |
 | `src/viewer/` | Skeleton geometry from FK placements, the zoomable SVG rig canvas and its grid, the bone hierarchy, and integer-frame playback. |
 | `src/app/` | The application shell: toolbar, panels, inspector, transport, status bar, file and shortcut wiring, and the stylesheet. |
-| `tests/rig/`, `tests/format/`, `tests/editor/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import and editor state. |
+| `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import, editor state and the solver. |
 | `tests/contracts/` | Node test suites for the repository's delivery contracts. |
 | `scripts/` | Controlled-change, repository, vendor, settings and release contracts and their commands. |
 
