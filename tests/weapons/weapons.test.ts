@@ -34,6 +34,12 @@ describe("the chibi's weapons", () => {
     expect(Object.keys(WEAPON_PARTS).sort()).toEqual(["weapon_axe", "weapon_dagger", "weapon_spear", "weapon_sword"]);
   });
 
+  it("use only the weapons palette's classes", () => {
+    const palette = new Set(["part", "part--steel", "part--steel-dark", "part--wood", "part--wood-dark", "part--grip", "part--accent", "part--gem", "detail"]);
+    const used = Object.values(WEAPON_PARTS).flatMap((part) => part.paths.flatMap((path) => path.className.split(" ")));
+    expect(used.filter((name) => !palette.has(name))).toEqual([]);
+  });
+
   it("hold two-handed weapons by two grips on one free body, spaced for two fists", () => {
     for (const name of ["sword", "spear", "axe"] as const) {
       const [body, ...rest] = weapon(name).bodies;

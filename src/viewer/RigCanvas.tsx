@@ -8,8 +8,9 @@ import type { ConstraintGeometry } from "./constraintGeometry";
 import { GridLines } from "./GridLines";
 import type { Skeleton } from "./skeleton";
 import { useElementSize } from "./useElementSize";
+import { WeaponHandles, WeaponLines } from "./WeaponMarkers";
 
-/** A draggable point: a bone's joint, the end of a tipped bone, or the prop's move and turn handles. */
+/** A draggable point: a bone's joint, the end of a tipped bone, or a prop's or free weapon body's move and turn handles. */
 export type Handle = DragHandle;
 
 interface RigCanvasProps {
@@ -24,8 +25,10 @@ interface RigCanvasProps {
   readonly grid: number;
   /** Which handles can be dragged; `done` marks the drop, and a non-finite point a cancelled drag. */
   readonly drag?: { readonly tips: boolean; readonly onDrag: (handle: Handle, point: Point, done: boolean) => void };
-  /** Pins and the prop for this frame. */
+  /** Pins, the prop and the weapon for this frame. */
   readonly constraints?: ConstraintGeometry;
+  /** Draw held weapon bodies as lines, for when no art draws them. */
+  readonly weaponLines?: boolean;
   /** Faint skeletons of neighbouring keys. */
   readonly ghosts?: readonly { readonly skeleton: Skeleton; readonly tone: "previous" | "next" }[];
   readonly children?: ReactNode;
@@ -37,7 +40,7 @@ const TIP_PX = 4;
 const DRAG_THRESHOLD_PX = 3;
 
 /** The rig's SVG space in its own units (x right, y down), with wheel zoom at the cursor and drag to pan. */
-export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, constraints, ghosts, children }: RigCanvasProps) {
+export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, constraints, weaponLines = true, ghosts, children }: RigCanvasProps) {
   const svg = useRef<SVGSVGElement>(null);
   const size = useElementSize(svg);
   const latest = useRef({ view, onView });
@@ -146,6 +149,7 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
       ))}
       {constraints ? (
         <g className="constraints">
+          {weaponLines ? <WeaponLines markers={constraints.weapons} /> : null}
           {constraints.prop ? (
             <line className="prop" x1={constraints.prop.start.x} y1={constraints.prop.start.y} x2={constraints.prop.end.x} y2={constraints.prop.end.y} />
           ) : null}
@@ -201,6 +205,7 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
           </circle>
         ))}
       </g>
+      {constraints && drag ? <WeaponHandles markers={constraints.weapons} scale={scale} grab={grab} /> : null}
       {constraints?.prop && drag ? (
         <g className="prop-handles">
           <circle className="prop-handle" cx={constraints.prop.origin.x} cy={constraints.prop.origin.y} r={4.5 / scale} onPointerDown={grab({ kind: "prop-move" })}>

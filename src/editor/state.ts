@@ -2,6 +2,7 @@
 import { templateDocument } from "./templates";
 import { initialState, reconcile } from "./core";
 import { animationEdit, poseEdit, rigEdit, timelineEdit } from "./documentEdits";
+import { weaponEdit } from "./weaponEdits";
 import { redo, undo } from "./history";
 import { activeAnimationOf, info } from "./types";
 import type { Action, EditorState } from "./types";
@@ -71,6 +72,8 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
       return poseEdit(state, action.pose, action.note ?? null, action.warning ?? null, action.constraints);
     case "timeline":
       return timelineEdit(state, action.edit);
+    case "holdWeapon":
+      return weaponEdit(state, action.name);
     default:
       return animationEdit(state, action);
   }

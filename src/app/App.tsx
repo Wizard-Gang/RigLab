@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { createRigLabRig } from "../format";
-import { engineOf, NO_CONSTRAINTS, playAt } from "../solve";
+import { bodyTransforms, engineOf, NO_CONSTRAINTS, playAt } from "../solve";
 import { constraintGeometry } from "../viewer/constraintGeometry";
 import { ArtLayer } from "../viewer/ArtLayer";
-import { artPlacements } from "../hexframe/art";
+import { artPlacements, withWeaponArt } from "../hexframe/art";
 import { ART_PARTS } from "../editor/templates";
 import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
@@ -15,10 +15,7 @@ import { RigCanvas } from "../viewer/RigCanvas";
 import { skeletonFor } from "../viewer/skeleton";
 import { usePlayback } from "../viewer/usePlayback";
 import { AnimationsPanel } from "./AnimationsPanel";
-import { BoneSetup } from "./BoneSetup";
-import { ExportPanel } from "./ExportPanel";
-import { Inspector } from "./Inspector";
-import { PoseInspector } from "./PoseInspector";
+import { ModePanel } from "./ModePanel";
 import { SidePanel } from "./SidePanel";
 import { StatusBar } from "./StatusBar";
 import { Toolbar } from "./Toolbar";
@@ -65,10 +62,13 @@ export function App() {
     () => (posed ? constraintGeometry(document.rig, pose, drags.constraints) : undefined),
     [posed, document.rig, pose, drags.constraints],
   );
-  const art = useMemo(
-    () => (state.art ? artPlacements(drags.rig, rig, skeleton.placed, ART_PARTS, state.activeAnimation) : null),
-    [state.art, drags.rig, rig, skeleton.placed, state.activeAnimation],
-  );
+  const art = useMemo(() => {
+    if (!state.art) return null;
+    const placements = artPlacements(drags.rig, rig, skeleton.placed, ART_PARTS, state.activeAnimation);
+    const wielded = posed ? drags.constraints.weapon : null;
+    if (!wielded) return placements;
+    return withWeaponArt(drags.rig, rig, placements, bodyTransforms(drags.rig, pose, wielded), wielded.weapon, ART_PARTS, state.activeAnimation);
+  }, [state.art, posed, drags.rig, drags.constraints, rig, pose, skeleton.placed, state.activeAnimation]);
   const ghosts = useMemo(() => {
     if (!engine || !animation || !state.onion || playback.playing) return undefined;
     const previous = animation.keys.filter((key) => key.frame < state.frame).at(-1);
@@ -152,6 +152,7 @@ export function App() {
           grid={state.grid}
           drag={drags.drag}
           constraints={markers}
+          weaponLines={!state.art}
           ghosts={ghosts}
         >
           {art ? <ArtLayer placements={art} /> : null}
@@ -166,39 +167,16 @@ export function App() {
         collapsed={panels.right}
         onToggle={() => togglePanel("right")}
       >
-        {state.mode === "export" ? (
-          <ExportPanel
-            document={document}
-            active={animation}
-            dirty={dirty}
-            onImported={(imported, source) => dispatch({ type: "imported", document: imported, source })}
-            onStatus={(status) => dispatch({ type: "status", status })}
-          />
-        ) : state.mode === "setup" && selectedBone ? (
-          <BoneSetup rig={document.rig} bone={selectedBone} onEdit={(edit) => dispatch({ type: "rigEdit", edit })} />
-        ) : state.mode === "pose" && selectedBone && animation ? (
-          <PoseInspector
-            rig={document.rig}
-            bone={selectedBone}
-            pose={pose}
-            constraints={drags.constraints}
-            placed={skeleton.placed}
-            frame={state.frame}
-            keyed={animation.keys.some((key) => key.frame === state.frame)}
-            onPose={(next, constraints, note, warning) => dispatch({ type: "setPose", pose: next, constraints, note, warning })}
-            onError={(text) => dispatch({ type: "status", status: { tone: "error", text } })}
-          />
-        ) : (
-          <Inspector
-            rig={document.rig}
-            selection={state.selection}
-            active={animation}
-            pose={pose}
-            placed={skeleton.placed}
-            animations={document.animations}
-            onRename={(from, to) => dispatch({ type: "renameAnimation", from, to })}
-          />
-        )}
+        <ModePanel
+          state={state}
+          dispatch={dispatch}
+          document={document}
+          animation={animation}
+          dirty={dirty}
+          pose={pose}
+          constraints={drags.constraints}
+          placed={skeleton.placed}
+        />
       </SidePanel>
 
       {state.mode !== "setup" && animation ? (

@@ -113,6 +113,8 @@ button, select, input { font: inherit; color: inherit; }
 .tip-handle--selected { fill: var(--acid); stroke: var(--acid); }
 .prop { stroke: #c9a46a; stroke-width: 5; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.85; }
 .prop-handle { fill: var(--bg); stroke: #e8c58a; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: move; }
+.weapon { stroke: #a9b8c8; stroke-width: 4; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.85; }
+.weapon-handle { fill: var(--bg); stroke: #cfe0f2; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: move; }
 /* Each art set keeps its own palette; parts carry only class names. */
 .art-set--chibi .part { fill: #5aa0f0; stroke: #2a1d16; stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .art-set--chibi .part--back { fill: #3f78c0; }
