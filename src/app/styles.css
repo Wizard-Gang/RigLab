@@ -108,6 +108,7 @@ button, select, input { font: inherit; color: inherit; }
 .inspector dd { margin: 0; text-align: end; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .setup { display: grid; gap: 0.9rem; }
 .panel__note { margin: 0; color: var(--muted); line-height: 1.45; }
+.panel__title--section { margin-top: 0.4rem; }
 .bundle { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; max-height: 40vh; overflow: auto; }
 .bundle li { display: flex; justify-content: space-between; gap: 0.5rem; }
 .bundle code { overflow-wrap: anywhere; font-size: 0.82em; }
@@ -122,6 +123,11 @@ button, select, input { font: inherit; color: inherit; }
 .tip-handle--selected { fill: var(--acid); stroke: var(--acid); }
 .prop { stroke: #c9a46a; stroke-width: 5; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.85; }
 .prop-handle { fill: var(--bg); stroke: #e8c58a; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: move; }
+.art .part { fill: #a8cf46; stroke: #07090c; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.art .part--accent { fill: #efffc7; }
+.art .part--skin { fill: #c4ed64; }
+.art .part--back { fill: #61792d; }
+.art .detail { fill: none; stroke: #101622; stroke-width: 1.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .ghost line { stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.35; }
 .ghost--previous line { stroke: #ff8f6b; }
 .ghost--next line { stroke: #6bc4ff; }

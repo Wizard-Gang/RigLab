@@ -44,6 +44,8 @@ export interface EditorState {
   readonly rotationSnap: number;
   /** Show the previous and next keys as faint skeletons. */
   readonly onion: boolean;
+  /** Draw the bound part art under the skeleton. */
+  readonly art: boolean;
   readonly status: Status | null;
 }
 
@@ -79,7 +81,8 @@ export type Action =
   | { readonly type: "setGrid"; readonly spacing: number }
   | { readonly type: "setSnap"; readonly snap: boolean }
   | { readonly type: "setRotationSnap"; readonly degrees: number }
-  | { readonly type: "setOnion"; readonly onion: boolean };
+  | { readonly type: "setOnion"; readonly onion: boolean }
+  | { readonly type: "setArt"; readonly art: boolean };
 
 export const documentOf = (state: EditorState): RigLabDocument => state.history.present;
 export const isDirty = (state: EditorState): boolean => state.history.present !== state.saved;

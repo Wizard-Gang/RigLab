@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { version } from "../../package.json";
+import type { RigLabAnimation } from "../format/animation";
 import type { RigLabDocument } from "../format/document";
+import { download } from "../editor/files";
+import { toHexframeClip, toHexframeRig } from "../hexframe/adapter";
 import { buildBundle, EXPORT_ROOT, readBundle } from "../export/bundle";
 import { canUseFolders, downloadZip, readFolder, readZip, writeFolder } from "../editor/bundleFiles";
 import type { Status } from "../editor/state";
 
 interface ExportPanelProps {
   readonly document: RigLabDocument;
+  /** The active animation, which the Hexframe clip export converts. */
+  readonly active: RigLabAnimation | null;
   readonly dirty: boolean;
   readonly onImported: (document: RigLabDocument, source: string) => void;
   readonly onStatus: (status: Status) => void;
@@ -17,7 +22,7 @@ export const GENERATOR = `RigLab ${version}`;
 const size = (bytes: number): string => (bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`);
 
 /** Export mode: what the bundle will hold, where to write it, and verified import of a bundle. */
-export function ExportPanel({ document, dirty, onImported, onStatus }: ExportPanelProps) {
+export function ExportPanel({ document, active, dirty, onImported, onStatus }: ExportPanelProps) {
   const [baked, setBaked] = useState(true);
   const [files, setFiles] = useState<ReadonlyMap<string, Uint8Array> | null>(null);
   const folders = canUseFolders();
@@ -86,6 +91,26 @@ export function ExportPanel({ document, dirty, onImported, onStatus }: ExportPan
       <div className="setup__actions">
         {folders ? <button type="button" className="tool" onClick={() => importFrom(readFolder)}>Import folder…</button> : null}
         <button type="button" className="tool" onClick={() => importFrom(readZip)}>Import zip…</button>
+      </div>
+      <h3 className="panel__title panel__title--section">Hexframe</h3>
+      <p className="panel__note">
+        Hexframe's own shapes: <code>fighter.rig.json</code>, and the active animation as a 13-pose clip on Hexframe's 60 Hz clock.
+      </p>
+      <div className="setup__actions">
+        <button type="button" className="tool" onClick={() => {
+          const adapted = toHexframeRig(document.rig);
+          if (!adapted.ok) return onStatus({ tone: "error", text: adapted.error });
+          download(`${JSON.stringify(adapted.value, null, 2)}\n`, "fighter.rig.json");
+          onStatus({ tone: "info", text: ["Downloaded fighter.rig.json", ...adapted.notes].join("; ") });
+        }}>Download Hexframe rig</button>
+        <button type="button" className="tool" disabled={!active} onClick={() => {
+          if (!active) return;
+          const adapted = toHexframeClip(document.rig, active);
+          if (!adapted.ok) return onStatus({ tone: "error", text: adapted.error });
+          download(`${JSON.stringify(adapted.value.clip, null, 2)}\n`, `${active.name}.json`);
+          const text = [`Downloaded ${active.name}.json`, ...adapted.notes].join("; ");
+          onStatus({ tone: adapted.value.approximated.length ? "error" : "info", text });
+        }}>Download Hexframe clip</button>
       </div>
     </div>
   );

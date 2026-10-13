@@ -36,6 +36,7 @@ export function initialState(document: RigLabDocument = templateDocument(), file
     snap: true,
     rotationSnap: 0,
     onion: false,
+    art: false,
     status: null,
   });
 }

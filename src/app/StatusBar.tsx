@@ -15,9 +15,11 @@ interface StatusBarProps {
   readonly onSnap: (snap: boolean) => void;
   readonly rotationSnap: number;
   readonly onRotationSnap: (degrees: number) => void;
+  readonly art: boolean;
+  readonly onArt: (art: boolean) => void;
 }
 
-export function StatusBar({ status, cursor, zoom, grid, snap, onZoom, onFit, onGrid, onSnap, rotationSnap, onRotationSnap }: StatusBarProps) {
+export function StatusBar({ status, cursor, zoom, grid, snap, onZoom, onFit, onGrid, onSnap, rotationSnap, onRotationSnap, art, onArt }: StatusBarProps) {
   const shown = cursor && snap ? snapToGrid(cursor, grid) : cursor;
   return (
     <footer className="status">
@@ -40,6 +42,10 @@ export function StatusBar({ status, cursor, zoom, grid, snap, onZoom, onFit, onG
         <label className="status__field">
           <input type="checkbox" aria-label="Snap to grid" checked={snap} onChange={(event) => onSnap(event.target.checked)} />
           <span>Snap</span>
+        </label>
+        <label className="status__field">
+          <input type="checkbox" aria-label="Show part art" checked={art} onChange={(event) => onArt(event.target.checked)} />
+          <span>Art</span>
         </label>
         <label className="status__field">
           <span>Rotate</span>

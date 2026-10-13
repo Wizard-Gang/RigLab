@@ -9,6 +9,7 @@ RigLab authors skeletons and motion, not character artwork. Its rig model is Hex
 - `src/rig/` — rig contract types, `createRig` (single root, no cycles, every bone reached), `hierarchyOrder`, `forwardKinematics`, `inBone`, the 13-pose clip type and `sampleClip`, depth profiles and paint order.
 - `characters/fighter/fighter.rig.json` — the 11-bone humanoid.
 - `characters/fighter/clips/` — the 13 clips Hexframe plays.
+- `characters/fighter/parts/` — the fighter's 11 machine-generated part SVGs.
 
 The conventions that follow from that code:
 
@@ -65,6 +66,15 @@ Export mode builds a `riglab-export/` bundle (`src/export/bundle.ts`) for consum
 - Export writes the bundle into a `riglab-export` folder through the File System Access API when the browser offers it. It can also download `riglab-export.zip`, built by a dependency-free ZIP writer (`src/export/zip.ts`) whose stored entries and fixed timestamps make the same bundle produce the same bytes.
 - Import reads a folder or a zip (stored or deflated entries, every CRC checked) and verifies the whole bundle before the document changes: the manifest is closed and versioned, every listed file exists and matches its SHA-256, and every file validates against the rig and agrees with the manifest's names. Baked files must name a bundled animation and match its rate, looping, frame count and the rig's bones. Any failure is refused with its file and JSON path, such as `manifest.json $.animations[1].sha256: does not match animations/labWalk.anim.json`.
 
+## Hexframe consumer adapter and art
+
+Hexframe stays a consumer; RigLab hands it the shapes it already loads (`src/hexframe/adapter.ts`).
+
+- `toHexframeRig` returns the rig in `fighter.rig.json`'s shape, with no format header, limits or chains, and its depth profiles. For the imported humanoid it equals the vendored `fighter.rig.json`. Hexframe paints by depth profile, so a rig without depth profiles is refused, and the left-out limits and chains are reported.
+- `toHexframeClip` resamples an animation, constraints held, into Hexframe's 13 evenly spaced poses over a 60 Hz duration of `length × 60 / fps`. A non-integer duration is rounded and reported. Easing is `smoothstep` when every key is smooth, and `linear` otherwise. Hexframe's vendored `sampleClip` then plays the result. Every Hexframe frame that differs from RigLab's playback by more than 1e-6 is reported, which is how hold transitions show up. Each of the 13 Hexframe clips round-trips through import and this adapter with Hexframe's sampler unchanged to 1e-9.
+
+Art attaches at slots, not the other way round. `src/hexframe/parts.ts` parses the vendored part SVGs as data: one `<svg>` root naming its bone, holding only `<path class d/>` elements with conservative values. Anything else (scripts, other elements or attributes, `url()` data) is refused, and nothing is injected as markup. `src/hexframe/art.ts` places each bone's part, found by the bone's `slot`, at that bone's FK transform, in Hexframe's paint order for facing right when the rig's depth profiles still fit it, and in bone order otherwise. The Art toggle draws it under the skeleton in every mode. The Export panel downloads the Hexframe rig and the active animation's clip.
+
 ## Acceptance
 
 `tests/acceptance/spear-thrust.test.ts` drives the editor's own reducer through the RigLab recommendation's first acceptance path. It starts from the imported Hexframe humanoid and lengthens both forearms in Rig setup. It then authors a three-key spear thrust in Pose mode: both feet pinned, both hands on one spear, a wind-up with the elbows back, a linear transition with them centered, and an extension with the hands pushed forward. It exports the bundle with baked frames, zips and unzips it, and reloads it. The reloaded document must equal the original, and re-baking must equal the exported bake. On every frame, every joint must sit at its offset from its parent and every tip must keep its length (to 1e-5), both feet must stay on their pins, and the reloaded playback must sample exactly as the original. Breaking connectivity by 0.01 units, or letting a non-root bone translate, fails it.
@@ -73,13 +83,13 @@ Export mode builds a `riglab-export/` bundle (`src/export/bundle.ts`) for consum
 
 | Path | Responsibility |
 | --- | --- |
-| `vendor/hexframe/` | Pinned Hexframe rig core and fighter data. |
+| `vendor/hexframe/` | Pinned Hexframe rig core, fighter data and part art. |
 | `src/format/` | The `riglab.rig`, `riglab.anim` and `riglab.document` types, their closed validators and the shared sampler. |
-| `src/hexframe/` | Loads the vendored rig and clips through Hexframe's own `createRig` and imports them as the RigLab `humanoid`. |
+| `src/hexframe/` | Loads the vendored rig, clips and parts; imports them as the RigLab `humanoid`; adapts RigLab rigs and animations back to Hexframe's shapes; places part art. |
 | `src/editor/` | The editor's pure state (`types.ts`, `core.ts`, `documentEdits.ts`, `state.ts`), undo history, rig setup, pose and timeline edits, view math, shortcuts, document helpers and browser file access. |
 | `src/export/` | Bundle building and verified reading, baking, and the ZIP writer and reader. |
 | `src/solve/` | Rotation-only posing, two-bone IK, angle limits, rotation snap, grid-snapped targets, pins, the held prop and `samplePose`. |
-| `src/viewer/` | Skeleton geometry from FK placements, the zoomable SVG rig canvas and its grid, the bone hierarchy, and integer-frame playback. |
+| `src/viewer/` | Skeleton geometry from FK placements, the zoomable SVG rig canvas and its grid, pins, prop, onion-skin and art layers, the bone hierarchy, and integer-frame playback. |
 | `src/app/` | The application shell: toolbar, panels, inspector, transport, status bar, file and shortcut wiring, and the stylesheet. |
 | `tests/rig/`, `tests/format/`, `tests/editor/`, `tests/solve/`, `tests/export/` | Vitest suites for the rig model, viewer geometry, formats, sampler, Hexframe import, editor state, the solver and export bundles. |
 | `tests/acceptance/` | The end-to-end spear-thrust acceptance test. |
