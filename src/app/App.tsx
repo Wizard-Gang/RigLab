@@ -1,92 +1,145 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { createRigLabRig, sampleAnimation } from "../format";
-import { HUMANOID_ANIMATIONS, HUMANOID_RIG } from "../hexframe/humanoid";
+import type { Command } from "../editor/shortcuts";
+import { platformOf } from "../editor/shortcuts";
+import { activeAnimationOf, documentOf, editorReducer, initialState, isDirty } from "../editor/state";
+import { fitView, zoomAbout } from "../editor/view";
+import type { Point } from "../editor/view";
 import { Hierarchy } from "../viewer/Hierarchy";
 import { RigCanvas } from "../viewer/RigCanvas";
 import { skeletonFor } from "../viewer/skeleton";
 import { usePlayback } from "../viewer/usePlayback";
+import { AnimationsPanel } from "./AnimationsPanel";
+import { Inspector } from "./Inspector";
+import { StatusBar } from "./StatusBar";
+import { Toolbar } from "./Toolbar";
+import { Transport } from "./Transport";
+import { useFileCommands } from "./useFileCommands";
+import { useShortcuts } from "./useShortcuts";
 
-const GRID = 5;
-const ANIMATION_NAMES = Object.keys(HUMANOID_ANIMATIONS);
-/** Two decimals, without printing a rounded negative zero. */
-const fixed = (value: number): string => (Math.abs(value) < 0.005 ? 0 : value).toFixed(2);
+const platform = platformOf(navigator.userAgent);
 
 export function App() {
-  const source = HUMANOID_RIG;
-  const rig = useMemo(() => createRigLabRig(source), [source]);
-  const [animationName, setAnimationName] = useState("labIdle");
-  const [selected, setSelected] = useState<string | null>("pelvis");
-  const animation = HUMANOID_ANIMATIONS[animationName]!;
-  const playback = usePlayback(animation.fps, animation.length, animation.loop);
-  const pose = useMemo(() => sampleAnimation(animation, playback.frame), [animation, playback.frame]);
+  const [state, dispatch] = useReducer(editorReducer, undefined, () => initialState());
+  const [cursor, setCursor] = useState<Point | null>(null);
+  const document = documentOf(state);
+  const rig = useMemo(() => createRigLabRig(document.rig), [document.rig]);
+  const animation = activeAnimationOf(state);
+  const dirty = isDirty(state);
+  const files = useFileCommands(state, dispatch);
+  const onFrame = useCallback((frame: number) => dispatch({ type: "setFrame", frame }), []);
+  const playback = usePlayback({
+    fps: animation?.fps ?? 1,
+    length: animation?.length ?? 0,
+    loop: animation?.loop ?? false,
+    frame: state.frame,
+    onFrame,
+    enabled: state.mode === "animate" && animation !== null,
+  });
+  const pose = useMemo(
+    () => (state.mode === "setup" || !animation ? {} : sampleAnimation(animation, state.frame)),
+    [state.mode, animation, state.frame],
+  );
   const skeleton = useMemo(() => skeletonFor(rig, pose), [rig, pose]);
-  const bone = selected === null ? null : source.bones.find((candidate) => candidate.name === selected) ?? null;
-  const chain = selected === null ? null : source.chains.find((candidate) => candidate.upper === selected || candidate.lower === selected) ?? null;
-  const world = selected === null ? null : skeleton.placed.get(selected) ?? null;
-  const local = selected === null ? null : pose[selected] ?? {};
+  const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
+
+  const run = useCallback((command: Command) => {
+    if (command === "new") files.newDocument();
+    else if (command === "open") void files.open();
+    else if (command === "save") void files.save();
+    else if (command === "saveAs") void files.saveAs();
+    else if (command === "undo" || command === "redo") dispatch({ type: command });
+    else if (command === "delete") dispatch({ type: "deleteSelection" });
+    else dispatch({ type: "select", selection: null });
+  }, [files]);
+  useShortcuts(platform, run);
+
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const warn = (event: BeforeUnloadEvent): void => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   return (
     <div className="app">
-      <header className="app__bar">
-        <h1 className="app__title">RigLab</h1>
-        <p className="app__subtitle">
-          <code>{source.name}</code> rig · {source.bones.length} bones · {source.chains.length} chains · root <code>{source.root}</code>
-        </p>
-      </header>
+      <Toolbar
+        platform={platform}
+        mode={state.mode}
+        onMode={(mode) => dispatch({ type: "setMode", mode })}
+        onCommand={run}
+        canUndo={state.history.past.length > 0}
+        canRedo={state.history.future.length > 0}
+        title={state.fileName ?? "Untitled"}
+        dirty={dirty}
+      />
 
       <aside className="panel panel--left">
-        <h2 className="panel__title">Hierarchy</h2>
-        <Hierarchy rig={rig} selected={selected} onSelect={setSelected} />
+        <section className="panel__section" aria-labelledby="hierarchy-title">
+          <h2 className="panel__title" id="hierarchy-title">Hierarchy · <code>{document.rig.name}</code></h2>
+          <Hierarchy rig={rig} selected={selectedBone} onSelect={(name) => dispatch({ type: "select", selection: { kind: "bone", name } })} />
+        </section>
+        <AnimationsPanel
+          animations={document.animations}
+          active={state.activeAnimation}
+          selected={state.selection?.kind === "animation" ? state.selection.name : null}
+          onSelect={(name) => dispatch({ type: "select", selection: { kind: "animation", name } })}
+          onAdd={() => dispatch({ type: "addAnimation" })}
+          onDuplicate={(name) => dispatch({ type: "duplicateAnimation", name })}
+          onDelete={() => dispatch({ type: "deleteSelection" })}
+        />
       </aside>
 
       <main className="stage">
-        <RigCanvas rig={rig} skeleton={skeleton} selected={selected} onSelect={setSelected} grid={GRID} />
+        <RigCanvas
+          rig={rig}
+          skeleton={skeleton}
+          selected={selectedBone}
+          onSelect={(name) => dispatch({ type: "select", selection: name === null ? null : { kind: "bone", name } })}
+          view={state.view}
+          onView={(view) => dispatch({ type: "setView", view })}
+          onCursor={setCursor}
+          grid={state.grid}
+        />
       </main>
 
       <aside className="panel panel--right">
         <h2 className="panel__title">Inspector</h2>
-        {bone && world && local ? (
-          <dl className="inspector">
-            <dt>Bone</dt><dd><code>{bone.name}</code></dd>
-            <dt>Parent</dt><dd><code>{bone.parent ?? "—"}</code></dd>
-            <dt>Rest offset</dt><dd>{bone.offset.join(", ")}</dd>
-            <dt>Tip</dt><dd>{bone.tip ? bone.tip.join(", ") : "—"}</dd>
-            <dt>Slot</dt><dd><code>{bone.slot}</code></dd>
-            <dt>Limits</dt><dd>{bone.limits ? `${bone.limits.min}° to ${bone.limits.max}°` : "none"}</dd>
-            <dt>Chain</dt><dd>{chain ? `${chain.name} · bend ${chain.bend > 0 ? "+" : "−"}` : "—"}</dd>
-            <dt>Local rotation</dt><dd>{fixed(local.rotation ?? 0)}°</dd>
-            <dt>Local translation</dt><dd>{fixed(local.x ?? 0)}, {fixed(local.y ?? 0)}</dd>
-            <dt>World position</dt><dd>{fixed(world.x)}, {fixed(world.y)}</dd>
-            <dt>World rotation</dt><dd>{fixed((world.rotation * 180) / Math.PI)}°</dd>
-          </dl>
-        ) : (
-          <p className="panel__empty">Select a joint on the canvas or in the hierarchy.</p>
-        )}
+        <Inspector
+          rig={document.rig}
+          selection={state.selection}
+          pose={pose}
+          placed={skeleton.placed}
+          animations={document.animations}
+          onRename={(from, to) => dispatch({ type: "renameAnimation", from, to })}
+        />
       </aside>
 
-      <footer className="transport">
-        <label className="transport__clip">
-          <span>Animation</span>
-          <select value={animationName} onChange={(event) => setAnimationName(event.target.value)}>
-            {ANIMATION_NAMES.map((name) => <option key={name} value={name}>{name}</option>)}
-          </select>
-        </label>
-        <button type="button" className="transport__play" onClick={playback.toggle}>
-          {playback.playing ? "Pause" : "Play"}
-        </button>
-        <input
-          className="transport__scrub"
-          type="range"
-          min={0}
-          max={animation.length}
-          value={playback.frame}
-          aria-label="Frame"
-          onChange={(event) => playback.seek(Number(event.target.value))}
+      {state.mode !== "setup" && animation ? (
+        <Transport
+          animation={animation}
+          frame={state.frame}
+          playing={playback.playing}
+          canPlay={state.mode === "animate"}
+          onToggle={playback.toggle}
+          onSeek={(frame) => {
+            playback.pause();
+            dispatch({ type: "setFrame", frame });
+          }}
         />
-        <output className="transport__frame">
-          {playback.frame} / {animation.length} · {animation.fps} fps · {animation.keys.length} keys · {animation.loop ? "loop" : "once"}
-        </output>
-      </footer>
+      ) : null}
+
+      <StatusBar
+        status={state.status}
+        cursor={cursor}
+        zoom={state.view.zoom}
+        grid={state.grid}
+        snap={state.snap}
+        onZoom={(factor) => dispatch({ type: "setView", view: zoomAbout(state.view, factor) })}
+        onFit={() => dispatch({ type: "setView", view: fitView(document.rig.space) })}
+        onGrid={(spacing) => dispatch({ type: "setGrid", spacing })}
+        onSnap={(snap) => dispatch({ type: "setSnap", snap })}
+      />
     </div>
   );
 }

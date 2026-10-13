@@ -2,23 +2,9 @@
 
 ## Open tasks
 
-### RL-003 — [FEAT] Add the editor document, canvas and file commands
-
-- Dependency: None.
-- Why: Authoring needs a document with undo history and Paint-style file handling before any editing tool can land.
-- Scope:
-  - A document holding one `riglab.rig` and its `riglab.anim` set, plus editor state: mode (Rig setup, Pose, Animation, Export), selection, active animation and frame, grid spacing, snap toggle and rotation-snap increment. Edits go through a pure reducer with bounded undo and redo.
-  - New (from the imported Hexframe humanoid), Open, Save and Save As with the File System Access API when the browser offers it, and file input and download otherwise. Opening validates with `validateRig` and `validateAnimation` and reports the first failing path.
-  - Canvas zoom and pan, adjustable grid spacing and snap toggle, joint selection on the canvas and in the hierarchy, a read-only inspector and a status bar.
-  - Keyboard shortcuts: New, Open, Save, Save As, Undo, Redo, Delete and Escape, using Cmd on macOS and Ctrl elsewhere.
-- Non-goals: Changing bones or poses (RL-004 to RL-006), timeline editing (RL-007), export bundles (RL-008).
-- Acceptance: Reducer tests cover every command and undo/redo depth. A saved document reopens deep-equal. An invalid file is refused with its failing path and leaves the open document untouched. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused reducer and file tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass of every command, and exact-head CI.
-- Authorities: `docs/ARCHITECTURE.md`, `src/format/`.
-
 ### RL-004 — [FEAT] Edit anatomy in Rig Setup mode
 
-- Dependency: RL-003.
+- Dependency: None.
 - Why: Proportions belong to the rig, not to poses. Only Rig Setup may change them.
 - Scope: Drag a joint to move its rest offset (snapped to the grid when snap is on). Edit offsets, tips, slots and names numerically. Add a child joint, and delete a joint with its subtree. Set per-bone angle limits and per-chain bend direction, and define chains. Every edit is validated by `validateRig` and Hexframe's `createRig` before it is committed to the document.
 - Non-goals: Pose editing, IK, a parent-change tool.
@@ -31,7 +17,7 @@
 - Dependency: RL-004.
 - Why: Dragging a wrist or ankle must bend the elbow or knee naturally without stretching a limb. This is the constraint gap that Hexframe's pose overrides leave open.
 - Scope:
-  - A pure solver under `src/solve/`. Rotation-only FK posing for every non-root bone, and root translation. An analytic two-bone IK for each chain that keeps both segment lengths, honors the chain's bend direction, and clamps to the bones' angle limits. Rotation snapping.
+  - A pure solver under `src/solve/`. Rotation-only FK posing for every non-root bone, and root translation. An analytic two-bone IK for each chain that keeps both segment lengths, honors the chain's bend direction, and clamps to the bones' angle limits. Rotation snapping, with a rotation-snap increment control beside the grid controls.
   - Constraint priority: connectivity and fixed lengths, then angle limits and bend direction, then grid snap of the drag target where feasible. An unreachable target leaves the limb at its closest reach and is reported in the status bar, never by stretching.
   - Canvas dragging in Pose mode: rotate about the parent for FK joints, solve IK when a chain end is dragged, translate the root.
 - Non-goals: Pins and grips (RL-006), keyframes (RL-007).
@@ -63,7 +49,7 @@
 
 - Dependency: RL-007.
 - Why: Consumers need versioned files they can trust. Some will evaluate keys themselves; others only draw solved transforms.
-- Scope: A `riglab-export/` bundle holding `manifest.json` (format, version, generator, and every file with its SHA-256), `<rig>.rig.json`, `animations/<name>.anim.json`, and optional `baked/<name>.baked.json` with per-frame world transforms from the same sampler and FK. Export writes a directory through the File System Access API when available, and otherwise a store-only zip built without a new dependency. Import verifies the manifest, the hashes, the rig and animation references, and the format versions before replacing the document.
+- Scope: An Export mode beside Rig setup, Pose and Animation. A `riglab-export/` bundle holding `manifest.json` (format, version, generator, and every file with its SHA-256), `<rig>.rig.json`, `animations/<name>.anim.json`, and optional `baked/<name>.baked.json` with per-frame world transforms from the same sampler and FK. Export writes a directory through the File System Access API when available, and otherwise a store-only zip built without a new dependency. Import verifies the manifest, the hashes, the rig and animation references, and the format versions before replacing the document.
 - Non-goals: Rendered SVG or video output, a Hexframe-specific format (RL-010).
 - Acceptance: An export followed by an import is deep-equal. Baked frames equal sampler plus FK. A tampered hash, an unknown version or a missing reference is refused with its path. `npm run check` passes.
 - Validation: Pinned `npm ci`, focused export and import tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.

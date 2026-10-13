@@ -1,51 +1,101 @@
+import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import type { Rig } from "../../vendor/hexframe/src/rig";
+import { panBy, viewBoxFor, zoomAt } from "../editor/view";
+import type { Point, View } from "../editor/view";
+import { GridLines } from "./GridLines";
 import type { Skeleton } from "./skeleton";
+import { useElementSize } from "./useElementSize";
 
 interface RigCanvasProps {
   readonly rig: Rig;
   readonly skeleton: Skeleton;
   readonly selected: string | null;
   readonly onSelect: (bone: string | null) => void;
+  readonly view: View;
+  readonly onView: (view: View) => void;
+  readonly onCursor: (point: Point | null) => void;
   /** Grid spacing in rig units. */
   readonly grid: number;
+  readonly children?: ReactNode;
 }
 
-const PAD = 12;
+const JOINT_PX = 5;
+const ROOT_PX = 6.5;
+const DRAG_THRESHOLD_PX = 3;
 
-/** The rig's SVG space, drawn in its own units: x right, y down, rotation clockwise-positive. */
-export function RigCanvas({ rig, skeleton, selected, onSelect, grid }: RigCanvasProps) {
-  const [x, y, width, height] = rig.contract.space.viewBox;
-  const viewBox = `${x - PAD} ${y - PAD} ${width + PAD * 2} ${height + PAD * 2}`;
-  const major = grid * 5;
+/** The rig's SVG space in its own units (x right, y down), with wheel zoom at the cursor and drag to pan. */
+export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, children }: RigCanvasProps) {
+  const svg = useRef<SVGSVGElement>(null);
+  const size = useElementSize(svg);
+  const latest = useRef({ view, onView });
+  latest.current = { view, onView };
+  const pan = useRef<{ x: number; y: number; view: View; scale: number; moved: boolean } | null>(null);
+  const viewBox = viewBoxFor(rig.contract.space, view);
+  const scale = size.width && size.height ? Math.min(size.width / viewBox[2], size.height / viewBox[3]) : 1;
+
+  const toRig = (clientX: number, clientY: number): Point | null => {
+    const matrix = svg.current?.getScreenCTM();
+    if (!matrix) return null;
+    const point = new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
+    return { x: point.x, y: point.y };
+  };
+
+  useEffect(() => {
+    const element = svg.current;
+    if (!element) return undefined;
+    // React registers wheel listeners as passive; zooming must cancel the page scroll.
+    const wheel = (event: WheelEvent): void => {
+      event.preventDefault();
+      const matrix = element.getScreenCTM();
+      if (!matrix) return;
+      const at = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+      latest.current.onView(zoomAt(latest.current.view, at, Math.exp(-event.deltaY * 0.0015)));
+    };
+    element.addEventListener("wheel", wheel, { passive: false });
+    return () => element.removeEventListener("wheel", wheel);
+  }, []);
+
+  const visible = {
+    x: view.centerX - size.width / scale / 2,
+    y: view.centerY - size.height / scale / 2,
+    width: size.width / scale,
+    height: size.height / scale,
+  };
+
   return (
     <svg
+      ref={svg}
       className="rig-canvas"
-      viewBox={viewBox}
+      viewBox={viewBox.join(" ")}
       role="img"
       aria-label={`${rig.bones.length}-bone skeleton`}
       onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onSelect(null);
+        if (event.button !== 0 && event.button !== 1) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        pan.current = { x: event.clientX, y: event.clientY, view, scale, moved: false };
       }}
+      onPointerMove={(event) => {
+        onCursor(toRig(event.clientX, event.clientY));
+        const start = pan.current;
+        if (!start) return;
+        const dx = event.clientX - start.x;
+        const dy = event.clientY - start.y;
+        if (!start.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+        start.moved = true;
+        onView(panBy(start.view, dx / start.scale, dy / start.scale));
+      }}
+      onPointerUp={() => {
+        if (pan.current && !pan.current.moved) onSelect(null);
+        pan.current = null;
+      }}
+      onPointerCancel={() => { pan.current = null; }}
+      onPointerLeave={() => onCursor(null)}
     >
-      <defs>
-        <pattern id="grid-minor" width={grid} height={grid} patternUnits="userSpaceOnUse">
-          <path d={`M ${grid} 0 L 0 0 0 ${grid}`} className="grid-minor" />
-        </pattern>
-        <pattern id="grid-major" width={major} height={major} patternUnits="userSpaceOnUse">
-          <rect width={major} height={major} fill="url(#grid-minor)" />
-          <path d={`M ${major} 0 L 0 0 0 ${major}`} className="grid-major" />
-        </pattern>
-      </defs>
-      <rect
-        x={x - PAD}
-        y={y - PAD}
-        width={width + PAD * 2}
-        height={height + PAD * 2}
-        fill="url(#grid-major)"
-        pointerEvents="none"
-      />
-      <line className="axis" x1={x - PAD} x2={x + width + PAD} y1={0} y2={0} />
-      <line className="axis" x1={0} x2={0} y1={y - PAD} y2={y + height + PAD} />
+      <GridLines area={visible} spacing={grid} scale={scale} />
+      <line className="axis" x1={visible.x} x2={visible.x + visible.width} y1={0} y2={0} />
+      <line className="axis" x1={0} x2={0} y1={visible.y} y2={visible.y + visible.height} />
+      {children}
       <g className="skeleton">
         {skeleton.segments.map((segment) => (
           <line
@@ -60,14 +110,10 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, grid }: RigCanvas
         {skeleton.joints.map((joint) => (
           <circle
             key={joint.bone}
-            className={[
-              "joint",
-              joint.root ? "joint--root" : "",
-              joint.bone === selected ? "joint--selected" : "",
-            ].join(" ").trim()}
+            className={["joint", joint.root ? "joint--root" : "", joint.bone === selected ? "joint--selected" : ""].join(" ").trim()}
             cx={joint.x}
             cy={joint.y}
-            r={joint.root ? 2.6 : 2}
+            r={(joint.root ? ROOT_PX : JOINT_PX) / scale}
             onPointerDown={(event) => {
               event.stopPropagation();
               onSelect(joint.bone);
