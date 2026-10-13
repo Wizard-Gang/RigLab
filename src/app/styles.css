@@ -116,6 +116,10 @@ button, select, input { font: inherit; color: inherit; }
 .joint--draggable { cursor: move; }
 .tip-handle { fill: var(--bg); stroke: var(--acid-dim); stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: crosshair; }
 .tip-handle--selected { fill: var(--acid); stroke: var(--acid); }
+.prop { stroke: #c9a46a; stroke-width: 5; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.85; }
+.prop-handle { fill: var(--bg); stroke: #e8c58a; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: move; }
+.pin { fill: none; stroke: #59c7ff; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.pin-strain { stroke: var(--danger); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .field {
   width: 100%;
   padding: 0.2rem 0.4rem;

@@ -23,7 +23,7 @@ describe("pose edits", () => {
     const state = posing(10);
     const solved = reach(state);
     expect(solved.status).toBe("ok");
-    const posed = run(state, { type: "setPose", pose: solved.pose, message: null });
+    const posed = run(state, { type: "setPose", pose: solved.pose });
     const animation = activeAnimationOf(posed)!;
     expect(animation.keys).toHaveLength(13);
     expect(animation.keys[2]!.pose).toEqual(solved.pose);
@@ -32,7 +32,7 @@ describe("pose edits", () => {
 
   it("insert a key between keys that continues the interpolation in force", () => {
     const state = posing(12);
-    const posed = run(state, { type: "setPose", pose: reach(state).pose, message: null });
+    const posed = run(state, { type: "setPose", pose: reach(state).pose });
     const animation = activeAnimationOf(posed)!;
     expect(animation.keys.map((key) => key.frame).slice(0, 5)).toEqual([0, 5, 10, 12, 15]);
     expect(animation.keys[3]!.interpolation).toBe("linear");
@@ -42,7 +42,7 @@ describe("pose edits", () => {
 
   it("are one undo step and touch no other animation", () => {
     const state = posing(12);
-    const posed = run(state, { type: "setPose", pose: reach(state).pose, message: "arm-front cannot reach" });
+    const posed = run(state, { type: "setPose", pose: reach(state).pose, warning: "arm-front cannot reach" });
     expect(posed.status).toEqual({ tone: "error", text: "Keyed labStrike at frame 12; arm-front cannot reach" });
     const before = documentOf(state).animations;
     const after = documentOf(posed).animations;
@@ -50,9 +50,15 @@ describe("pose edits", () => {
     expect(documentOf(run(posed, { type: "undo" }))).toBe(documentOf(state));
   });
 
+  it("report notes as information and solver warnings as errors", () => {
+    const state = posing(10);
+    const noted = run(state, { type: "setPose", pose: reach(state).pose, note: "Pinned leg-front at 6, 1" });
+    expect(noted.status).toEqual({ tone: "info", text: "Posed labStrike at frame 10; Pinned leg-front at 6, 1" });
+  });
+
   it("happen only in Pose mode", () => {
     const animate = run(posing(12), { type: "setMode", mode: "animate" });
-    const refused = run(animate, { type: "setPose", pose: reach(animate).pose, message: null });
+    const refused = run(animate, { type: "setPose", pose: reach(animate).pose });
     expect(refused.status?.text).toBe("Switch to Pose to change poses");
     expect(refused.history.past).toHaveLength(0);
   });

@@ -5,6 +5,7 @@ import type { RigLabDocument } from "../format/document";
 import { blankAnimation, isValidName, templateDocument, uniqueName } from "./animations";
 import { record, redo, startHistory, undo } from "./history";
 import { setKeyPose } from "./poseEdits";
+import type { Constraints } from "../solve/constraints";
 import { applyRigEdit } from "./rigEdits";
 import type { RigEdit } from "./rigEdits";
 import type { History } from "./history";
@@ -58,7 +59,15 @@ export type Action =
   | { readonly type: "renameAnimation"; readonly from: string; readonly to: string }
   | { readonly type: "deleteSelection" }
   | { readonly type: "rigEdit"; readonly edit: RigEdit }
-  | { readonly type: "setPose"; readonly pose: Pose; readonly message: string | null }
+  | {
+    readonly type: "setPose";
+    readonly pose: Pose;
+    readonly constraints?: Constraints;
+    /** What the edit did, such as pinning a foot. */
+    readonly note?: string | null;
+    /** What the solver could not do, such as reach a target. */
+    readonly warning?: string | null;
+  }
   | { readonly type: "select"; readonly selection: Selection }
   | { readonly type: "activateAnimation"; readonly name: string }
   | { readonly type: "setMode"; readonly mode: Mode }
@@ -128,16 +137,16 @@ function rigEdit(state: EditorState, change: RigEdit): EditorState {
 }
 
 /** Poses change only in Pose mode, and only by writing the active animation's key at the current frame. */
-function poseEdit(state: EditorState, pose: Pose, message: string | null): EditorState {
+function poseEdit(state: EditorState, pose: Pose, note: string | null, warning: string | null, constraints?: Constraints): EditorState {
   if (state.mode !== "pose") return { ...state, status: error("Switch to Pose to change poses") };
   const document = documentOf(state);
   const animation = activeAnimationOf(state);
   if (!animation) return { ...state, status: error("Add an animation to pose") };
-  const result = setKeyPose(document.rig, animation, state.frame, pose);
+  const result = setKeyPose(document.rig, animation, state.frame, pose, constraints);
   if (!result.ok) return { ...state, status: error(result.error) };
   const animations = document.animations.map((candidate) => (candidate === animation ? result.animation : candidate));
-  const done = `${result.inserted ? "Keyed" : "Posed"} ${animation.name} at frame ${state.frame}`;
-  return edit(state, { ...document, animations }, { status: message ? error(`${done}; ${message}`) : info(done) });
+  const text = [`${result.inserted ? "Keyed" : "Posed"} ${animation.name} at frame ${state.frame}`, note, warning].filter(Boolean).join("; ");
+  return edit(state, { ...document, animations }, { status: warning ? error(text) : info(text) });
 }
 
 function animationEdit(state: EditorState, action: Action): EditorState {
@@ -227,7 +236,7 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
     case "rigEdit":
       return rigEdit(state, action.edit);
     case "setPose":
-      return poseEdit(state, action.pose, action.message);
+      return poseEdit(state, action.pose, action.note ?? null, action.warning ?? null, action.constraints);
     case "setRotationSnap":
       return ROTATION_SNAPS.includes(action.degrees) ? { ...state, rotationSnap: action.degrees } : state;
     default:

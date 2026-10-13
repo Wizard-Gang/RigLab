@@ -1,5 +1,7 @@
 // riglab.anim version 1: sparse, full-pose keys on an integer frame grid with per-transition interpolation.
 import type { Pose } from "../../vendor/hexframe/src/rig";
+import { validateKeyConstraints } from "./constraints";
+import type { Pin, Prop } from "./constraints";
 import type { RigLabRig } from "./rig";
 import { checkInteger, checkName, closedObject, isFiniteNumber, isObject, Issues } from "./validate";
 import type { Validation } from "./validate";
@@ -20,6 +22,10 @@ export interface Key {
   readonly interpolation: Interpolation;
   /** A full Hexframe pose: a rotation for every bone, and `x`/`y` on the root only. */
   readonly pose: Pose;
+  /** Chain ends held at world points while this key is in force. */
+  readonly pins?: readonly Pin[];
+  /** A rigid prop the key's chain ends hold. */
+  readonly prop?: Prop;
 }
 
 export interface RigLabAnimation {
@@ -74,7 +80,7 @@ export function validateAnimation(value: unknown, rig: RigLabRig): Validation<Ri
   let previous = -1;
   value.keys.forEach((key: unknown, index) => {
     const path = `$.keys[${index}]`;
-    if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"])) return;
+    if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"], ["pins", "prop"])) return;
     if (checkInteger(issues, `${path}.frame`, key.frame, 0, MAX_LENGTH)) {
       if (index === 0 && key.frame !== 0) issues.add(`${path}.frame`, "must be 0 for the first key");
       if (key.frame <= previous) issues.add(`${path}.frame`, "must be greater than the previous key's frame");
@@ -85,6 +91,7 @@ export function validateAnimation(value: unknown, rig: RigLabRig): Validation<Ri
       issues.add(`${path}.interpolation`, "must be 'hold', 'linear' or 'smoothstep'");
     }
     validatePose(issues, `${path}.pose`, key.pose, rig);
+    validateKeyConstraints(issues, path, key, rig);
   });
   return issues.result(value);
 }

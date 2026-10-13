@@ -6,8 +6,8 @@ import { activeAnimationOf, documentOf } from "../editor/state";
 import type { Action, EditorState } from "../editor/state";
 import { snapToGrid } from "../editor/view";
 import type { Point } from "../editor/view";
-import { dragJoint, dragTip, place, solveWithGridSnap } from "../solve";
-import type { Solved } from "../solve";
+import { dragInPose, place, solveWithGridSnap } from "../solve";
+import type { Constraints, PoseDrag } from "../solve";
 import type { Handle } from "../viewer/RigCanvas";
 
 type Offset = readonly [number, number];
@@ -17,6 +17,8 @@ export interface CanvasDrags {
   readonly rig: RigLabRig;
   /** The pose as shown: the sampled pose, or the solve previewed while dragging in Pose mode. */
   readonly pose: Pose;
+  /** The pins and prop as shown, including any moved by the drag in progress. */
+  readonly constraints: Constraints;
   /** What the solver reports about the drag in progress. */
   readonly message: string | null;
   readonly drag: { readonly tips: boolean; readonly onDrag: (handle: Handle, point: Point, done: boolean) => void } | undefined;
@@ -32,12 +34,13 @@ function withOffset(rig: RigLabRig, bone: string, offset: Offset): RigLabRig {
 
 /**
  * Rig setup drags joints in rest space and commits the drop as an offset in the parent's frame.
- * Pose mode drags joints and bone ends through the solver and commits the drop as the key at this frame.
+ * Pose mode drags joints, bone ends, pins and the prop through the solver, holds every pin and grip,
+ * and commits the drop, constraints included, as the key at this frame.
  */
-export function useCanvasDrags(state: EditorState, dispatch: Dispatch<Action>, sampled: Pose): CanvasDrags {
+export function useCanvasDrags(state: EditorState, dispatch: Dispatch<Action>, sampled: Pose, constraints: Constraints): CanvasDrags {
   const document = documentOf(state);
   const [offsetPreview, setOffsetPreview] = useState<{ readonly bone: string; readonly offset: Offset } | null>(null);
-  const [posePreview, setPosePreview] = useState<Solved | null>(null);
+  const [posePreview, setPosePreview] = useState<PoseDrag | null>(null);
   const restPlaced = useMemo(() => place(document.rig, {}), [document.rig]);
   const rig = useMemo(
     () => (offsetPreview ? withOffset(document.rig, offsetPreview.bone, offsetPreview.offset) : document.rig),
@@ -73,22 +76,21 @@ export function useCanvasDrags(state: EditorState, dispatch: Dispatch<Action>, s
       setPosePreview(null);
       return;
     }
-    const solve = (target: Point): Solved => (handle.kind === "joint"
-      ? dragJoint(document.rig, sampled, handle.bone, target, state.rotationSnap)
-      : dragTip(document.rig, sampled, handle.bone, target, state.rotationSnap));
+    const solve = (target: Point): PoseDrag => dragInPose(document.rig, sampled, constraints, handle, target, state.rotationSnap);
     const solved = solveWithGridSnap(solve, point, state.grid, state.snap);
     if (!done) {
       setPosePreview(solved);
       return;
     }
     setPosePreview(null);
-    dispatch({ type: "setPose", pose: solved.pose, message: solved.message });
+    dispatch({ type: "setPose", pose: solved.pose, warning: solved.message, constraints: solved.constraints });
   };
 
   const posing = state.mode === "pose" && activeAnimationOf(state) !== null;
   return {
     rig,
     pose: posing && posePreview ? posePreview.pose : sampled,
+    constraints: posing && posePreview ? posePreview.constraints : constraints,
     message: posing ? posePreview?.message ?? null : null,
     drag: state.mode === "setup" ? { tips: false, onDrag: onSetupDrag } : posing ? { tips: true, onDrag: onPoseDrag } : undefined,
   };

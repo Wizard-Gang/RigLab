@@ -43,11 +43,18 @@ export function keyIndexAt(keys: readonly Key[], time: number): number {
   return index;
 }
 
+/** Where a frame falls: the key in force, the key it moves toward (null while holding) and the eased progress. */
+export interface Segment {
+  readonly from: Key;
+  readonly to: Key | null;
+  readonly progress: number;
+}
+
 /**
- * Sample a valid animation at any frame. A key's interpolation shapes the transition to the next key;
- * a looping animation's last key runs to key 0 at `length`, and a non-looping one holds its last key.
+ * A key's interpolation shapes the transition to the next key. A looping animation's last key runs to
+ * key 0 at `length`, and a non-looping one holds its last key.
  */
-export function sampleAnimation(animation: RigLabAnimation, frame: number): Pose {
+export function segmentAt(animation: RigLabAnimation, frame: number): Segment {
   const { keys } = animation;
   const time = animationTime(animation, frame);
   const index = keyIndexAt(keys, time);
@@ -58,6 +65,12 @@ export function sampleAnimation(animation: RigLabAnimation, frame: number): Pose
     to = keys[0];
     end = animation.length;
   }
-  if (!to || from.interpolation === "hold") return copyPose(from.pose);
-  return blendPoses(from.pose, to.pose, ease((time - from.frame) / (end - from.frame), from.interpolation));
+  if (!to || from.interpolation === "hold") return { from, to: null, progress: 0 };
+  return { from, to, progress: ease((time - from.frame) / (end - from.frame), from.interpolation) };
+}
+
+/** Sample a valid animation's key poses at any frame. */
+export function sampleAnimation(animation: RigLabAnimation, frame: number): Pose {
+  const { from, to, progress } = segmentAt(animation, frame);
+  return to ? blendPoses(from.pose, to.pose, progress) : copyPose(from.pose);
 }

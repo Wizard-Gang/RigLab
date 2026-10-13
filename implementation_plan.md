@@ -2,23 +2,13 @@
 
 ## Open tasks
 
-### RL-006 — [FEAT] Plant feet and hold two-handed grips
-
-- Dependency: None.
-- Why: Lunges need planted feet and deliberate pelvis movement instead of collapsing. Two-handed axe swings need both hands to stay on one rigid weapon.
-- Scope: Pins that lock a chain end to a world point and re-solve that chain whenever the root or an ancestor moves. A rigid weapon attachment with two grip points that both arm chains solve to, moved and rotated as one body. Violations are reported when a pin or grip cannot be held within limits. Pins and grips are stored with the pose and the animation key.
-- Non-goals: Physics, collision, more than two hands on one prop.
-- Acceptance: Moving the pelvis with both feet pinned keeps each foot within 1e-6 while it is reachable and reports it when not. Moving the weapon keeps both grips solved or reports which arm cannot reach. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused constraint tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
-- Authorities: `src/solve/`, `src/format/`.
-
 ### RL-007 — [FEAT] Author animations on a variable keyframe timeline
 
-- Dependency: RL-006.
+- Dependency: None.
 - Why: A spear thrust may need only three poses. The author decides how long each pose holds, without a 13-pose requirement or forced interpolation.
-- Scope: A timeline panel with integer frames at the animation's fps (default 14), clip length and loop. Add a key from the current pose, duplicate the frame, delete and move keys, and set each transition to hold (default), linear or smoothstep. Playback and scrubbing through `sampleAnimation`. Optional onion skins of the previous and next keys. A key is edited with the RL-005 and RL-006 tools.
+- Scope: A timeline panel with integer frames at the animation's fps (default 14), clip length and loop. Add a key from the current pose, duplicate the frame, delete and move keys, and set each transition to hold (default), linear or smoothstep. Playback and scrubbing through `samplePose`. Optional onion skins of the previous and next keys. A key is edited with the RL-005 and RL-006 tools.
 - Non-goals: Per-bone curve editing, audio.
-- Acceptance: Timeline reducer tests for every command. A three-key animation plays over its full length exactly as `sampleAnimation` samples it. Undo covers timeline edits. `npm run check` passes.
+- Acceptance: Timeline reducer tests for every command. A three-key animation plays over its full length exactly as `samplePose` samples it. Undo covers timeline edits. `npm run check` passes.
 - Validation: Pinned `npm ci`, focused timeline tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
 - Authorities: `src/format/`, `docs/ARCHITECTURE.md`.
 
@@ -26,9 +16,9 @@
 
 - Dependency: RL-007.
 - Why: Consumers need versioned files they can trust. Some will evaluate keys themselves; others only draw solved transforms.
-- Scope: An Export mode beside Rig setup, Pose and Animation. A `riglab-export/` bundle holding `manifest.json` (format, version, generator, and every file with its SHA-256), `<rig>.rig.json`, `animations/<name>.anim.json`, and optional `baked/<name>.baked.json` with per-frame world transforms from the same sampler and FK. Export writes a directory through the File System Access API when available, and otherwise a store-only zip built without a new dependency. Import verifies the manifest, the hashes, the rig and animation references, and the format versions before replacing the document.
+- Scope: An Export mode beside Rig setup, Pose and Animation. A `riglab-export/` bundle holding `manifest.json` (format, version, generator, and every file with its SHA-256), `<rig>.rig.json`, `animations/<name>.anim.json`, and optional `baked/<name>.baked.json` with per-frame world transforms from `samplePose` and FK. Export writes a directory through the File System Access API when available, and otherwise a store-only zip built without a new dependency. Import verifies the manifest, the hashes, the rig and animation references, and the format versions before replacing the document.
 - Non-goals: Rendered SVG or video output, a Hexframe-specific format (RL-010).
-- Acceptance: An export followed by an import is deep-equal. Baked frames equal sampler plus FK. A tampered hash, an unknown version or a missing reference is refused with its path. `npm run check` passes.
+- Acceptance: An export followed by an import is deep-equal. Baked frames equal `samplePose` plus FK. A tampered hash, an unknown version or a missing reference is refused with its path. `npm run check` passes.
 - Validation: Pinned `npm ci`, focused export and import tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, a local browser pass, and exact-head CI.
 - Authorities: `src/format/`, `docs/ARCHITECTURE.md`.
 

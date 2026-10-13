@@ -1,17 +1,28 @@
 import type { Vector } from "./angles";
-import type { Solved } from "./pose";
+import type { SolveStatus } from "./pose";
 
 export { angleOf, nearest, rotate, snapAngle, wrap } from "./angles";
 export type { Vector } from "./angles";
 export { dragTip, REACH_TOLERANCE, solveChain } from "./ik";
 export { aimBone, dragJoint, moveRoot, place, runtimeRig, setRotation, withRotation } from "./pose";
 export type { SolveStatus, Solved } from "./pose";
+export { chainEnd, constraintsAt, constraintsOf, gripPoint, holdConstraints, isEmpty, NO_CONSTRAINTS, samplePose } from "./constraints";
+export type { Constraints, Held } from "./constraints";
+export { DEFAULT_PROP, moveProp, propPoint, propReach, toggleGrip, togglePin, turnProp } from "./holds";
+export type { HoldResult } from "./holds";
+export { dragInPose } from "./poseDrag";
+export type { DragHandle, PoseDrag } from "./poseDrag";
 
 /**
  * Snap the drag target to the grid where that is feasible. A snapped target the limb cannot reach
  * falls back to the exact pointer position when that one is reachable; otherwise the snapped solve stands.
  */
-export function solveWithGridSnap(solve: (target: Vector) => Solved, target: Vector, spacing: number, snap: boolean): Solved {
+export function solveWithGridSnap<T extends { readonly status: SolveStatus; readonly message: string | null }>(
+  solve: (target: Vector) => T,
+  target: Vector,
+  spacing: number,
+  snap: boolean,
+): T {
   if (!snap || spacing <= 0) return solve(target);
   const snapped = { x: Math.round(target.x / spacing) * spacing, y: Math.round(target.y / spacing) * spacing };
   const onGrid = solve(snapped);
