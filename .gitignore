@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# The dev launcher's record of the server it started.
+tmp/
 *.tsbuildinfo
 .DS_Store
 *.log
