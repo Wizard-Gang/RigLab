@@ -75,6 +75,16 @@ test('provider policy is squash-only, current-with-main and bypass-free', () => 
   assert.match(failuresWith((state) => { state.provider.repository = 'Wizard-Gang/baseline'; }), /squash-only baseline/);
 });
 
+test('RigLab stays React and TypeScript: no Rust, Cargo or Tauri files, dependencies or scripts', () => {
+  assert.deepEqual(validateTrackedFiles(['src/app/App.tsx', 'scripts/check-vendor.mjs', 'docs/rust-free.md']), []);
+  assert.equal(validateTrackedFiles([
+    'src-tauri/src/main.rs', 'Cargo.toml', 'src-tauri/Cargo.lock', 'rust-toolchain.toml', 'tauri.conf.json', 'tools/build.rs',
+  ]).length, 6);
+  assert.match(validateTrackedFiles(['Cargo.toml']).join('\n'), /React and TypeScript only; native toolchain file is tracked: Cargo\.toml/);
+  assert.match(failuresWith((state) => { state.pkg.devDependencies['@tauri-apps/cli'] = '2.9.0'; }), /must not include @tauri-apps\/cli/);
+  assert.match(failuresWith((state) => { state.pkg.scripts.desktop = 'tauri dev'; }), /package script desktop must not run a native toolchain/);
+});
+
 test('credential-bearing files are never tracked', () => {
   assert.deepEqual(validateTrackedFiles(['.env.example', 'src/app/App.tsx']), []);
   assert.equal(validateTrackedFiles(['.env', 'config/.env.local', 'keys/signing.pem', 'id_rsa']).length, 4);
