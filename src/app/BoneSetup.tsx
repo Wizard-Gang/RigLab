@@ -58,15 +58,18 @@ export function BoneSetup({ rig, bone: name, onEdit }: BoneSetupProps) {
           </>
         ) : null}
         <dt>Chain</dt>
-        <dd>
-          {chain ? (
-            <span className="setup__chain">
-              <code>{chain.name}</code>
-              <button type="button" className="tool tool--small" aria-pressed={chain.bend === 1} onClick={() => onEdit({ kind: "setBend", chain: chain.name, bend: 1 })}>bend +</button>
-              <button type="button" className="tool tool--small" aria-pressed={chain.bend === -1} onClick={() => onEdit({ kind: "setBend", chain: chain.name, bend: -1 })}>bend −</button>
-            </span>
-          ) : "—"}
-        </dd>
+        <dd>{chain ? <code title={chain.name}>{chain.name}</code> : "—"}</dd>
+        {chain ? (
+          <>
+            <dt>Bend</dt>
+            <dd>
+              <span className="setup__chain" role="group" aria-label={`${chain.name} bend side`}>
+                <button type="button" className="tool tool--small" aria-label="Bend +" title="Bend +" aria-pressed={chain.bend === 1} onClick={() => onEdit({ kind: "setBend", chain: chain.name, bend: 1 })}>+</button>
+                <button type="button" className="tool tool--small" aria-label="Bend −" title="Bend −" aria-pressed={chain.bend === -1} onClick={() => onEdit({ kind: "setBend", chain: chain.name, bend: -1 })}>−</button>
+              </span>
+            </dd>
+          </>
+        ) : null}
       </dl>
       <div className="setup__actions">
         <button type="button" className="tool" onClick={() => onEdit({ kind: "addChild", bone: name })}>Add child</button>

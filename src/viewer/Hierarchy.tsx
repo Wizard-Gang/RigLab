@@ -26,9 +26,10 @@ export function Hierarchy({ rig, selected, onSelect }: HierarchyProps) {
             className={bone.name === selected ? "hierarchy__bone hierarchy__bone--selected" : "hierarchy__bone"}
             style={{ paddingInlineStart: `${0.75 + depthOf(rig, bone.name) * 0.9}rem` }}
             aria-pressed={bone.name === selected}
+            title={bone.name}
             onClick={() => onSelect(bone.name)}
           >
-            {bone.name}
+            <span className="truncate">{bone.name}</span>
           </button>
         </li>
       ))}

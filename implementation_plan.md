@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-018 — [FIX] Fit the side panels and let them collapse
-
-- Dependency: None.
-- Why: The owner reported clipping in the left and right panels and asked for both to collapse. A headless Chrome pass on `main` at 05b9dc5 (1440×900, 1280×800 and 1024×700) shows three defects. The Animations actions (New…, Duplicate, Delete) are 126 px wider than the 230 px left panel, so Duplicate and Delete sit past its edge behind a horizontal scroll. In Rig setup the Chain row breaks `arm-front` over two lines and stacks both bend buttons. The Export bundle list breaks file names mid-name (`animations/attack-` / `2.anim.json`).
-- Scope: Both panels fit their width at every desktop size. The Animations actions wrap or stack, and hierarchy and animation rows truncate long names and show the full name as a tooltip. Inspector rows keep labels, code names and button labels unbroken, and bundle file names break only after a `/`. Each panel gets a collapse button in its header. Collapsing shrinks the panel to a thin rail that shows the panel's name and an expand button, and the canvas takes the freed width. The collapsed state is a per-viewer convenience stored in browser storage when it is available, with every read and write guarded. It is not part of the document or the undo history. The stacked layout at 860 px and below keeps working, collapsed panels included. Docs describe the panels.
-- Non-goals: New panel content, resizable panels, collapse shortcuts and the weapon UI (RL-021).
-- Acceptance: Headless Chrome at 1440×900, 1280×800 and 1024×700 covers every mode: Rig setup with a chain bone and limits on, Pose with a prop held, Animation with an animation and then a key selected, and Export with three animations. In each, no element of either panel extends past the panel's edge, neither panel scrolls sideways, and no code name, button label or file name wraps inside a word. Collapsing either panel widens the canvas, expanding restores it, and the state survives a reload. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused tests for any new pure state, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless Chrome overflow measurement with screenshots, and exact-head CI.
-- Authorities: `src/app/styles.css`, `src/app/App.tsx`, `src/app/AnimationsPanel.tsx`, `src/app/BoneSetup.tsx`, `src/app/ExportPanel.tsx`, `docs/ARCHITECTURE.md`, and owner direction on 2026-10-13.
-
 ### RL-019 — [FEAT] Hold weapon rigs with fixed grips on one or more bodies
 
 - Dependency: None.
@@ -34,7 +24,7 @@
 
 ### RL-021 — [FEAT] Pick, pose and draw weapons in the editor
 
-- Dependency: RL-018, RL-019 and RL-020.
+- Dependency: RL-019 and RL-020.
 - Why: Holding a weapon has to be an editor action, and the canvas has to show and move what is held.
 - Scope: In Pose mode the right panel offers a Weapon picker (None, Sword, Spear, Axe, Daggers) for the key at the current frame, with or without a selected bone. Picking a weapon binds the hands to its grips and places each free body so the midpoint of its grips sits at the midpoint of the hands, at the weapon's authored rotation. It also copies the weapon rig into the document's `weapons`, drops copies no key holds, re-solves, and reports in the status bar any grip out of reach. None lets go. A free body gets move and turn handles on the canvas, and dragging a hand that grips it carries it, as the prop does today. Riding bodies follow their hands. The weapon picker replaces Hold a prop and Grip prop in the pose inspector. An old document's prop still draws, moves and turns, and can be let go. The art layer draws weapon parts from the `weapons` set at each body's transform. Each body paints just under the topmost forearm that grips it, in Hexframe's paint order. With Art off, each body draws as a line along its axis. Undo restores the previous hold in one step. Docs describe it.
 - Non-goals: Export and bake (RL-022), editing weapon rigs in the app, and depth profiles beyond facing right.

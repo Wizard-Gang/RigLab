@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { version } from "../../package.json";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabDocument } from "../format/document";
@@ -20,6 +20,21 @@ interface ExportPanelProps {
 export const GENERATOR = `RigLab ${version}`;
 
 const size = (bytes: number): string => (bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`);
+
+/** A bundle path that may break only after a slash, never inside a name. */
+function BundlePath({ path }: { readonly path: string }) {
+  const segments = path.split("/");
+  return (
+    <code title={path}>
+      {segments.map((segment, index) => (
+        <Fragment key={index}>
+          <span className="bundle__segment">{index < segments.length - 1 ? `${segment}/` : segment}</span>
+          {index < segments.length - 1 ? <wbr /> : null}
+        </Fragment>
+      ))}
+    </code>
+  );
+}
 
 /** Export mode: what the bundle will hold, where to write it, and verified import of a bundle. */
 export function ExportPanel({ document, active, dirty, onImported, onStatus }: ExportPanelProps) {
@@ -73,7 +88,7 @@ export function ExportPanel({ document, active, dirty, onImported, onStatus }: E
       <ul className="bundle" aria-label="Bundle files">
         {files
           ? [...files].map(([path, bytes]) => (
-            <li key={path}><code>{path}</code><span className="list__meta">{size(bytes.length)}</span></li>
+            <li key={path}><BundlePath path={path} /><span className="list__meta">{size(bytes.length)}</span></li>
           ))
           : <li className="panel__note">Building…</li>}
       </ul>

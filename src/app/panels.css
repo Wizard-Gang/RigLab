@@ -1,0 +1,69 @@
+/* Side panels: the hierarchy and animations on the left, the mode's inspector on the right, each collapsible to a rail. */
+.panel { overflow: auto; background: var(--panel); padding: 0.75rem 0; }
+.panel--left { grid-area: left; border-right: 1px solid var(--panel-edge); }
+.panel--right { grid-area: right; border-left: 1px solid var(--panel-edge); padding-inline: 1rem; }
+.panel__section + .panel__section { margin-top: 1.25rem; }
+.panel__title {
+  margin: 0 0 0.5rem;
+  padding-inline: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.panel__title code { text-transform: none; letter-spacing: 0; }
+.panel__title--section { margin-top: 0.4rem; }
+.panel--right .panel__title { padding-inline: 0; }
+.panel__empty { color: var(--muted); margin: 0; padding-inline: 0.75rem; }
+.panel--right .panel__empty { padding-inline: 0; }
+.panel__actions { display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.5rem 0.75rem 0; }
+.panel__actions select { flex: 1 1 100%; min-width: 0; }
+/* The open panel's heading row carries its collapse toggle; a collapsed panel is one rail button. */
+.panel__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; padding-inline: 0.75rem; }
+.panel--right .panel__head { padding-inline: 0; }
+.panel__head .panel__title { margin: 0; padding-inline: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel__toggle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-block: -0.3rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.panel__toggle:hover { border-color: var(--panel-edge); color: var(--text); }
+.panel--collapsed { padding: 0; overflow: hidden; }
+.panel__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  height: 100%;
+  padding: 0.55rem 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.panel__rail:hover { background: var(--raised); color: var(--text); }
+.panel__chevron { font-size: 1.15rem; line-height: 1; }
+.panel__rail-label { writing-mode: vertical-rl; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; }
+.truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .panel--left, .panel--right { border: 0; border-top: 1px solid var(--panel-edge); }
+  .panel__rail { flex-direction: row; justify-content: flex-start; height: auto; padding: 0.55rem 0.75rem; }
+  .panel__rail-label { writing-mode: horizontal-tb; }
+  /* Stacked panels open downward, so their chevrons point up to collapse and down to expand. */
+  .panel--left .panel__toggle span, .panel--left .panel__chevron { transform: rotate(90deg); }
+  .panel--right .panel__toggle span, .panel--right .panel__chevron { transform: rotate(-90deg); }
+}

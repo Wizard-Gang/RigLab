@@ -19,18 +19,22 @@ import { BoneSetup } from "./BoneSetup";
 import { ExportPanel } from "./ExportPanel";
 import { Inspector } from "./Inspector";
 import { PoseInspector } from "./PoseInspector";
+import { SidePanel } from "./SidePanel";
 import { StatusBar } from "./StatusBar";
 import { Toolbar } from "./Toolbar";
 import { Timeline } from "./Timeline";
 import { useCanvasDrags } from "./useCanvasDrags";
 import { useFileCommands } from "./useFileCommands";
+import { usePanels } from "./usePanels";
 import { useShortcuts } from "./useShortcuts";
 
 const platform = platformOf(navigator.userAgent);
+const RIGHT_TITLES = { setup: "Rig setup", pose: "Pose", animate: "Inspector", export: "Export" } as const;
 
 export function App() {
   const [state, dispatch] = useReducer(editorReducer, undefined, () => initialState());
   const [cursor, setCursor] = useState<Point | null>(null);
+  const [panels, togglePanel] = usePanels();
   const document = documentOf(state);
   const animation = activeAnimationOf(state);
   const dirty = isDirty(state);
@@ -99,7 +103,7 @@ export function App() {
   }, [dirty]);
 
   return (
-    <div className="app">
+    <div className={["app", panels.left ? "app--left-collapsed" : "", panels.right ? "app--right-collapsed" : ""].join(" ").trim()}>
       <Toolbar
         platform={platform}
         mode={state.mode}
@@ -111,9 +115,15 @@ export function App() {
         dirty={dirty}
       />
 
-      <aside className="panel panel--left">
+      <SidePanel
+        side="left"
+        label="Hierarchy and animations"
+        title={<>Hierarchy · <code>{document.rig.name}</code></>}
+        titleId="hierarchy-title"
+        collapsed={panels.left}
+        onToggle={() => togglePanel("left")}
+      >
         <section className="panel__section" aria-labelledby="hierarchy-title">
-          <h2 className="panel__title" id="hierarchy-title">Hierarchy · <code>{document.rig.name}</code></h2>
           <Hierarchy rig={rig} selected={selectedBone} onSelect={(name) => dispatch({ type: "select", selection: { kind: "bone", name } })} />
         </section>
         <AnimationsPanel
@@ -125,7 +135,7 @@ export function App() {
           onDuplicate={(name) => dispatch({ type: "duplicateAnimation", name })}
           onDelete={() => dispatch({ type: "deleteSelection" })}
         />
-      </aside>
+      </SidePanel>
 
       <main className="stage">
         <RigCanvas
@@ -145,8 +155,14 @@ export function App() {
         </RigCanvas>
       </main>
 
-      <aside className="panel panel--right">
-        <h2 className="panel__title">{{ setup: "Rig setup", pose: "Pose", animate: "Inspector", export: "Export" }[state.mode]}</h2>
+      <SidePanel
+        side="right"
+        label={RIGHT_TITLES[state.mode]}
+        title={RIGHT_TITLES[state.mode]}
+        titleId="inspector-title"
+        collapsed={panels.right}
+        onToggle={() => togglePanel("right")}
+      >
         {state.mode === "export" ? (
           <ExportPanel
             document={document}
@@ -180,7 +196,7 @@ export function App() {
             onRename={(from, to) => dispatch({ type: "renameAnimation", from, to })}
           />
         )}
-      </aside>
+      </SidePanel>
 
       {state.mode !== "setup" && animation ? (
         <Timeline
