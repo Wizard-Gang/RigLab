@@ -4,6 +4,7 @@ import type { RigLabPalette } from "../format/palette";
 import { parsePart } from "../hexframe/parts";
 import type { Part } from "../hexframe/parts";
 import { listDirectory, readJson, slotStem } from "./files";
+import { pixelProblems } from "./pixel";
 import type { LibraryErrors, LibraryFiles } from "./files";
 
 /** An art set from the library: its parts by slot, all drawn in its own palette. */
@@ -31,7 +32,8 @@ export function readPalette(files: LibraryFiles, dir: string, errors: LibraryErr
 
 /**
  * Read a directory's parts: exactly one `<stem>.svg` per slot, each through the strict part parser, naming the bone
- * it was drawn for and using only class tokens its palette defines. `data` lists the other files it may hold.
+ * it was drawn for and using only class tokens its palette defines. A `pixel` palette's parts must also keep the pixel
+ * contract. `data` lists the other files it may hold.
  */
 export function readArtSet(
   files: LibraryFiles,
@@ -65,6 +67,7 @@ export function readArtSet(
       continue;
     }
     if (part.bone !== bone) errors.add(path, `data-bone '${part.bone}' must be '${bone}'`);
+    if (palette?.pixel) for (const problem of pixelProblems(part)) errors.add(path, problem);
     const tokens = new Set(part.paths.flatMap((item) => item.className.split(" ")));
     for (const token of tokens) {
       if (palette && !Object.hasOwn(palette.classes, token)) errors.add(path, `class '${token}' is not defined in ${dir}/${PALETTE_FILE}`);

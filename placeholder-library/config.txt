@@ -5,6 +5,7 @@ rig chibi = rigs/chibi.rig.json
 
 skin plain = skins/plain
 skin block = skins/block
+skin pixel = skins/pixel
 
 weapon sword = weapons/sword
 weapon spear = weapons/spear

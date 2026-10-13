@@ -65,6 +65,8 @@ export function validatePalette(value: unknown): Validation<RigLabPalette> {
   for (const [token, style] of Object.entries(classes)) {
     if (!CLASS_TOKEN.test(token)) issues.add(`$.classes`, `'${token}' is not a class token`);
     validateStyle(issues, `$.classes.${token}`, style);
+    const stroked = isObject(style) && ((style.stroke !== undefined && style.stroke !== "none") || style.strokeWidth !== undefined || style.linecap !== undefined);
+    if (value.pixel === true && stroked) issues.add(`$.classes.${token}`, "a pixel palette draws no strokes; outline with cells instead");
   }
   return issues.result(value);
 }
@@ -79,13 +81,14 @@ const DECLARATIONS: readonly [keyof PaletteStyle, string][] = [
 
 /**
  * The palette as CSS scoped to `.art-set--<set>`. Only validated values reach the text. A visible stroke keeps
- * a constant width at any zoom and joins round, as the art was drawn for.
+ * a constant width at any zoom and joins round, as the art was drawn for. A pixel set renders with crisp edges.
  */
 export function paletteCss(set: string, palette: RigLabPalette): string {
   if (!NAME.test(set)) throw new Error(`palette: '${set}' is not an art set name`);
-  return Object.entries(palette.classes).map(([token, style]) => {
+  const root = palette.pixel ? [`.art-set--${set} { shape-rendering: crispEdges; }`] : [];
+  return [...root, ...Object.entries(palette.classes).map(([token, style]) => {
     const rules = DECLARATIONS.flatMap(([field, property]) => (style[field] === undefined ? [] : [`${property}: ${style[field]};`]));
     if (style.stroke !== undefined && style.stroke !== "none") rules.push("stroke-linejoin: round;", "vector-effect: non-scaling-stroke;");
     return `.art-set--${set} .${token} { ${rules.join(" ")} }`;
-  }).join("\n");
+  })].join("\n");
 }

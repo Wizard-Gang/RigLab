@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-026 — [FEAT] Carry PR 15's three pixel skins into the library
-
-- Dependency: RL-025.
-- Why: The owner wants the work in draft PR 15 merged. PR 15 adds the red-and-gold armor, blue mage and Tier 6 Warlord chibi skins, each 11 parts drawn as 2×2-unit pixel cells, with CSS palettes, tests and `SVGPIXELART.md`. It is based on `cebba1f` with six commits under RL-017, an ID RL-017's plan change already took, so it cannot pass change-id or merge as it stands. Skins now live in the library folder, so its art goes there and its rules come into the repository.
-- Scope: Copy the three skins' 33 part SVGs from PR 15's head (`a9f4966`) unchanged into `~/Documents/RigLab/skins/{armor,blue-mage,tier6-warlord}/`. Convert each skin's CSS palette to a `palette.json` with `pixel` set, and add the three skins to the folder's `config.txt` after `chibi`. The loader enforces PR 15's pixel contract on every `pixel` skin: each path's data is only space-separated `M{x} {y}h2v2h-2z` cells, with even `x` and `y`. `paletteCss` gives a `pixel` set crisp edges and no strokes. Bring `SVGPIXELART.md` in as `docs/SVGPIXELART.md`, rewritten for the library layout, palette files and `check:library`. Add one small placeholder pixel skin to `placeholder-library/` so CI covers the pixel rule. Credit PR 15's author as a co-author on the commit. After the merge, close PR 15 with a comment that links this change.
-- Non-goals: Redrawing or adjusting PR 15's art, art-specific tests that need the real folder in CI, a skin picker in the editor, and the wardrobe page (RL-027).
-- Acceptance: `npm run check:library ~/Documents/RigLab` passes with the four skins. Each of the three loads 11 parts whose bones match their slots and whose paths all pass the pixel rule, and every part's SVG blob hash matches PR 15's head. The loader refuses a `pixel` skin with an odd coordinate, a merged rectangle or a curve, and accepts the placeholder pixel skin. A headless Chrome render of each skin on the rest pose shows no missing part and no console errors. PR 15 is closed and points at this change. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused loader tests, `npm run check`, `npm run check:library`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless Chrome render, and exact-head CI.
-- Authorities: PR 15 at `a9f4966` (`SVGPIXELART.md`, `characters/chibi/skins/`, `src/chibi/*.css`, `tests/chibi/*-skin.test.ts`), `src/format/palette.ts`, the RL-024 loader, `docs/ARCHITECTURE.md`, and owner direction on 2026-10-13.
-
 ### RL-027 — [FEAT] Add a /wardrobe/ page that cycles every skin and part
 
 - Dependency: RL-025 and RL-026.

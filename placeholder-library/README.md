@@ -2,7 +2,7 @@
 
 RigLab reads its rig, skins, weapons and starting animations from a library folder that lives outside this
 repository. This folder has the same layout and the same `config.txt` as a real one, so tests and CI load it through
-the same path. The rig and the weapon rigs are the real ones. The skin and weapon art are plain boxes.
+the same path. The rig and the weapon rigs are the real ones. The skin and weapon art are plain boxes, and the `pixel` skin redraws them in 2 × 2 cells under the pixel-art contract (`docs/SVGPIXELART.md`).
 
 `config.txt` has one line per thing: `<kind> <name> = <path>`, where `kind` is `rig`, `skin`, `weapon` or
 `animation`, and `path` is relative to this folder. Line order is list order.

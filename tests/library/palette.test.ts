@@ -48,6 +48,6 @@ describe("the library stylesheet", () => {
     const { LIBRARY } = await import("../../src/library/active");
     const { libraryCss } = await import("../../src/library/styles");
     const sets = libraryCss(LIBRARY).split("\n").map((rule) => /^\.art-set--([A-Za-z0-9_-]+) /.exec(rule)?.[1]);
-    expect([...new Set(sets)]).toEqual(["plain", "block", "sword", "spear", "axe", "daggers"]);
+    expect([...new Set(sets)]).toEqual(["plain", "block", "pixel", "sword", "spear", "axe", "daggers"]);
   });
 });

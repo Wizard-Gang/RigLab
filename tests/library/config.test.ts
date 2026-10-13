@@ -14,7 +14,7 @@ describe("config.txt", () => {
     if (!result.ok) return;
     const names = (kind: string) => result.value.filter((entry) => entry.kind === kind).map((entry) => entry.name);
     expect(names("rig")).toEqual(["chibi"]);
-    expect(names("skin")).toEqual(["plain", "block"]);
+    expect(names("skin")).toEqual(["plain", "block", "pixel"]);
     expect(names("weapon")).toEqual(["sword", "spear", "axe", "daggers"]);
     expect(names("animation")).toEqual(["idle", "walk", "jump", "attack", "hit"]);
   });
