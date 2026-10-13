@@ -1,0 +1,227 @@
+{
+  "space": {
+    "units": "svg",
+    "x": "right",
+    "y": "down",
+    "rotation": "clockwise-positive",
+    "height": 104,
+    "viewBox": [
+      -55,
+      -110,
+      110,
+      115
+    ]
+  },
+  "root": "pelvis",
+  "bones": [
+    {
+      "name": "pelvis",
+      "parent": null,
+      "offset": [
+        0,
+        -42
+      ],
+      "tip": null,
+      "slot": "pelvis",
+      "artHeight": 16,
+      "hand": null
+    },
+    {
+      "name": "leg-front",
+      "parent": "pelvis",
+      "offset": [
+        6,
+        0
+      ],
+      "tip": null,
+      "slot": "leg_upper_r",
+      "artHeight": 25,
+      "hand": null
+    },
+    {
+      "name": "shin-front",
+      "parent": "leg-front",
+      "offset": [
+        0,
+        22
+      ],
+      "tip": [
+        0,
+        21
+      ],
+      "slot": "leg_lower_r",
+      "artHeight": 20,
+      "hand": null
+    },
+    {
+      "name": "leg-back",
+      "parent": "pelvis",
+      "offset": [
+        -6,
+        0
+      ],
+      "tip": null,
+      "slot": "leg_upper_l",
+      "artHeight": 25,
+      "hand": null
+    },
+    {
+      "name": "shin-back",
+      "parent": "leg-back",
+      "offset": [
+        0,
+        22
+      ],
+      "tip": [
+        0,
+        21
+      ],
+      "slot": "leg_lower_l",
+      "artHeight": 20,
+      "hand": null
+    },
+    {
+      "name": "torso",
+      "parent": "pelvis",
+      "offset": [
+        0,
+        -6
+      ],
+      "tip": null,
+      "slot": "torso",
+      "artHeight": 28,
+      "hand": null
+    },
+    {
+      "name": "arm-front",
+      "parent": "torso",
+      "offset": [
+        11,
+        -22
+      ],
+      "tip": null,
+      "slot": "arm_upper_r",
+      "artHeight": 24,
+      "hand": null
+    },
+    {
+      "name": "forearm-front",
+      "parent": "arm-front",
+      "offset": [
+        0,
+        21
+      ],
+      "tip": [
+        0,
+        23
+      ],
+      "slot": "arm_lower_r",
+      "artHeight": 20,
+      "hand": "hand_r"
+    },
+    {
+      "name": "arm-back",
+      "parent": "torso",
+      "offset": [
+        -11,
+        -22
+      ],
+      "tip": null,
+      "slot": "arm_upper_l",
+      "artHeight": 24,
+      "hand": null
+    },
+    {
+      "name": "forearm-back",
+      "parent": "arm-back",
+      "offset": [
+        0,
+        21
+      ],
+      "tip": [
+        0,
+        23
+      ],
+      "slot": "arm_lower_l",
+      "artHeight": 20,
+      "hand": "hand_l"
+    },
+    {
+      "name": "head",
+      "parent": "torso",
+      "offset": [
+        0,
+        -31
+      ],
+      "tip": [
+        0,
+        -16
+      ],
+      "slot": "head",
+      "artHeight": 36,
+      "hand": null
+    }
+  ],
+  "depthProfiles": {
+    "profiles": {
+      "anatomical": {
+        "underLowerBody": null,
+        "behindTorso": "far",
+        "foreground": [
+          "near"
+        ],
+        "head": "above-arms"
+      },
+      "locomotion": {
+        "underLowerBody": "far",
+        "behindTorso": null,
+        "foreground": [
+          "near"
+        ],
+        "head": "above-arms"
+      },
+      "both-front": {
+        "underLowerBody": null,
+        "behindTorso": null,
+        "foreground": [
+          "far",
+          "near"
+        ],
+        "head": "above-arms"
+      },
+      "punch": {
+        "underLowerBody": null,
+        "behindTorso": null,
+        "foreground": [
+          "far",
+          "near"
+        ],
+        "head": "below-arms"
+      }
+    },
+    "sides": {
+      "facingRight": {
+        "arms": {
+          "far": "arm-front",
+          "near": "arm-back"
+        },
+        "legs": {
+          "far": "leg-front",
+          "near": "leg-back"
+        }
+      },
+      "facingLeft": {
+        "arms": {
+          "far": "arm-back",
+          "near": "arm-front"
+        },
+        "legs": {
+          "far": "leg-back",
+          "near": "leg-front"
+        }
+      }
+    },
+    "byClip": {},
+    "default": "anatomical"
+  }
+}

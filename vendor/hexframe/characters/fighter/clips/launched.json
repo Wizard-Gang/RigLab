@@ -1,0 +1,464 @@
+{
+  "key": "launched",
+  "loop": false,
+  "duration": 32,
+  "easing": "smoothstep",
+  "note": "Airborne hit reaction that opens on launch, tucks at the apex and falls toward knockdown.",
+  "poses": [
+    {
+      "pelvis": {
+        "y": 0
+      },
+      "torso": {
+        "rotation": 0
+      },
+      "head": {
+        "rotation": 0
+      },
+      "arm-front": {
+        "rotation": -24
+      },
+      "forearm-front": {
+        "rotation": -55
+      },
+      "arm-back": {
+        "rotation": -28
+      },
+      "forearm-back": {
+        "rotation": -45
+      },
+      "leg-front": {
+        "rotation": 0
+      },
+      "shin-front": {
+        "rotation": 0
+      },
+      "leg-back": {
+        "rotation": 0
+      },
+      "shin-back": {
+        "rotation": 0
+      }
+    },
+    {
+      "pelvis": {
+        "y": -3
+      },
+      "torso": {
+        "rotation": 14
+      },
+      "head": {
+        "rotation": 8
+      },
+      "arm-front": {
+        "rotation": 4
+      },
+      "forearm-front": {
+        "rotation": 14
+      },
+      "arm-back": {
+        "rotation": -4
+      },
+      "forearm-back": {
+        "rotation": 10
+      },
+      "leg-front": {
+        "rotation": -12
+      },
+      "shin-front": {
+        "rotation": 32
+      },
+      "leg-back": {
+        "rotation": 16
+      },
+      "shin-back": {
+        "rotation": 28
+      }
+    },
+    {
+      "pelvis": {
+        "y": -7
+      },
+      "torso": {
+        "rotation": 28
+      },
+      "head": {
+        "rotation": 14
+      },
+      "arm-front": {
+        "rotation": 24
+      },
+      "forearm-front": {
+        "rotation": 28
+      },
+      "arm-back": {
+        "rotation": 12
+      },
+      "forearm-back": {
+        "rotation": 24
+      },
+      "leg-front": {
+        "rotation": -26
+      },
+      "shin-front": {
+        "rotation": 58
+      },
+      "leg-back": {
+        "rotation": 30
+      },
+      "shin-back": {
+        "rotation": 50
+      }
+    },
+    {
+      "pelvis": {
+        "y": -10
+      },
+      "torso": {
+        "rotation": 42
+      },
+      "head": {
+        "rotation": 18
+      },
+      "arm-front": {
+        "rotation": 42
+      },
+      "forearm-front": {
+        "rotation": 36
+      },
+      "arm-back": {
+        "rotation": 28
+      },
+      "forearm-back": {
+        "rotation": 34
+      },
+      "leg-front": {
+        "rotation": -42
+      },
+      "shin-front": {
+        "rotation": 82
+      },
+      "leg-back": {
+        "rotation": 44
+      },
+      "shin-back": {
+        "rotation": 74
+      }
+    },
+    {
+      "pelvis": {
+        "y": -12
+      },
+      "torso": {
+        "rotation": 54
+      },
+      "head": {
+        "rotation": 20
+      },
+      "arm-front": {
+        "rotation": 54
+      },
+      "forearm-front": {
+        "rotation": 42
+      },
+      "arm-back": {
+        "rotation": 40
+      },
+      "forearm-back": {
+        "rotation": 40
+      },
+      "leg-front": {
+        "rotation": -56
+      },
+      "shin-front": {
+        "rotation": 104
+      },
+      "leg-back": {
+        "rotation": 58
+      },
+      "shin-back": {
+        "rotation": 96
+      }
+    },
+    {
+      "pelvis": {
+        "y": -12
+      },
+      "torso": {
+        "rotation": 60
+      },
+      "head": {
+        "rotation": 22
+      },
+      "arm-front": {
+        "rotation": 60
+      },
+      "forearm-front": {
+        "rotation": 46
+      },
+      "arm-back": {
+        "rotation": 48
+      },
+      "forearm-back": {
+        "rotation": 44
+      },
+      "leg-front": {
+        "rotation": -64
+      },
+      "shin-front": {
+        "rotation": 116
+      },
+      "leg-back": {
+        "rotation": 66
+      },
+      "shin-back": {
+        "rotation": 108
+      }
+    },
+    {
+      "pelvis": {
+        "y": -9
+      },
+      "torso": {
+        "rotation": 55
+      },
+      "head": {
+        "rotation": 20
+      },
+      "arm-front": {
+        "rotation": 52
+      },
+      "forearm-front": {
+        "rotation": 40
+      },
+      "arm-back": {
+        "rotation": 42
+      },
+      "forearm-back": {
+        "rotation": 38
+      },
+      "leg-front": {
+        "rotation": -58
+      },
+      "shin-front": {
+        "rotation": 108
+      },
+      "leg-back": {
+        "rotation": 60
+      },
+      "shin-back": {
+        "rotation": 100
+      }
+    },
+    {
+      "pelvis": {
+        "y": -5
+      },
+      "torso": {
+        "rotation": 47
+      },
+      "head": {
+        "rotation": 18
+      },
+      "arm-front": {
+        "rotation": 40
+      },
+      "forearm-front": {
+        "rotation": 34
+      },
+      "arm-back": {
+        "rotation": 32
+      },
+      "forearm-back": {
+        "rotation": 32
+      },
+      "leg-front": {
+        "rotation": -48
+      },
+      "shin-front": {
+        "rotation": 94
+      },
+      "leg-back": {
+        "rotation": 50
+      },
+      "shin-back": {
+        "rotation": 86
+      }
+    },
+    {
+      "pelvis": {
+        "y": 0
+      },
+      "torso": {
+        "rotation": 38
+      },
+      "head": {
+        "rotation": 16
+      },
+      "arm-front": {
+        "rotation": 28
+      },
+      "forearm-front": {
+        "rotation": 30
+      },
+      "arm-back": {
+        "rotation": 22
+      },
+      "forearm-back": {
+        "rotation": 28
+      },
+      "leg-front": {
+        "rotation": -38
+      },
+      "shin-front": {
+        "rotation": 80
+      },
+      "leg-back": {
+        "rotation": 40
+      },
+      "shin-back": {
+        "rotation": 74
+      }
+    },
+    {
+      "pelvis": {
+        "y": 5
+      },
+      "torso": {
+        "rotation": 31
+      },
+      "head": {
+        "rotation": 15
+      },
+      "arm-front": {
+        "rotation": 18
+      },
+      "forearm-front": {
+        "rotation": 28
+      },
+      "arm-back": {
+        "rotation": 14
+      },
+      "forearm-back": {
+        "rotation": 26
+      },
+      "leg-front": {
+        "rotation": -32
+      },
+      "shin-front": {
+        "rotation": 70
+      },
+      "leg-back": {
+        "rotation": 34
+      },
+      "shin-back": {
+        "rotation": 64
+      }
+    },
+    {
+      "pelvis": {
+        "y": 9
+      },
+      "torso": {
+        "rotation": 25
+      },
+      "head": {
+        "rotation": 14
+      },
+      "arm-front": {
+        "rotation": 12
+      },
+      "forearm-front": {
+        "rotation": 26
+      },
+      "arm-back": {
+        "rotation": 8
+      },
+      "forearm-back": {
+        "rotation": 24
+      },
+      "leg-front": {
+        "rotation": -28
+      },
+      "shin-front": {
+        "rotation": 62
+      },
+      "leg-back": {
+        "rotation": 30
+      },
+      "shin-back": {
+        "rotation": 56
+      }
+    },
+    {
+      "pelvis": {
+        "y": 12
+      },
+      "torso": {
+        "rotation": 20
+      },
+      "head": {
+        "rotation": 15
+      },
+      "arm-front": {
+        "rotation": 18
+      },
+      "forearm-front": {
+        "rotation": 28
+      },
+      "arm-back": {
+        "rotation": 8
+      },
+      "forearm-back": {
+        "rotation": 24
+      },
+      "leg-front": {
+        "rotation": -32
+      },
+      "shin-front": {
+        "rotation": 54
+      },
+      "leg-back": {
+        "rotation": 28
+      },
+      "shin-back": {
+        "rotation": 44
+      }
+    },
+    {
+      "pelvis": {
+        "y": 14
+      },
+      "torso": {
+        "rotation": 18
+      },
+      "head": {
+        "rotation": 16
+      },
+      "arm-front": {
+        "rotation": 22
+      },
+      "forearm-front": {
+        "rotation": 30
+      },
+      "arm-back": {
+        "rotation": 10
+      },
+      "forearm-back": {
+        "rotation": 26
+      },
+      "leg-front": {
+        "rotation": -34
+      },
+      "shin-front": {
+        "rotation": 56
+      },
+      "leg-back": {
+        "rotation": 30
+      },
+      "shin-back": {
+        "rotation": 46
+      }
+    }
+  ]
+}

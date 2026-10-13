@@ -1,0 +1,22 @@
+{
+  "key": "labStagger",
+  "loop": false,
+  "duration": 24,
+  "easing": "linear",
+  "note": "Original recoil and crouch for hitstun and defeat.",
+  "poses": [
+    {"torso":{"rotation":0},"head":{"rotation":0},"arm-front":{"rotation":-24},"forearm-front":{"rotation":-55},"arm-back":{"rotation":-28},"forearm-back":{"rotation":-45},"leg-front":{"rotation":0},"shin-front":{"rotation":0},"leg-back":{"rotation":0},"shin-back":{"rotation":0},"pelvis":{"y":0}},
+    {"torso":{"rotation":2.67},"head":{"rotation":2.33},"arm-front":{"rotation":-17.67},"forearm-front":{"rotation":-40.0},"arm-back":{"rotation":-25.33},"forearm-back":{"rotation":-37.33},"leg-front":{"rotation":-2.67},"shin-front":{"rotation":6.0},"leg-back":{"rotation":2.67},"shin-back":{"rotation":5.67},"pelvis":{"y":0.33}},
+    {"torso":{"rotation":5.33},"head":{"rotation":4.67},"arm-front":{"rotation":-11.33},"forearm-front":{"rotation":-25.0},"arm-back":{"rotation":-22.67},"forearm-back":{"rotation":-29.67},"leg-front":{"rotation":-5.33},"shin-front":{"rotation":12.0},"leg-back":{"rotation":5.33},"shin-back":{"rotation":11.33},"pelvis":{"y":0.67}},
+    {"torso":{"rotation":8},"head":{"rotation":7},"arm-front":{"rotation":-5},"forearm-front":{"rotation":-10},"arm-back":{"rotation":-20},"forearm-back":{"rotation":-22},"leg-front":{"rotation":-8},"shin-front":{"rotation":18},"leg-back":{"rotation":8},"shin-back":{"rotation":17},"pelvis":{"y":1}},
+    {"torso":{"rotation":10.67},"head":{"rotation":9.0},"arm-front":{"rotation":0.67},"forearm-front":{"rotation":-1.67},"arm-back":{"rotation":-15.0},"forearm-back":{"rotation":-10.67},"leg-front":{"rotation":-12.67},"shin-front":{"rotation":26.0},"leg-back":{"rotation":11.67},"shin-back":{"rotation":21.33},"pelvis":{"y":3.0}},
+    {"torso":{"rotation":13.33},"head":{"rotation":11.0},"arm-front":{"rotation":6.33},"forearm-front":{"rotation":6.67},"arm-back":{"rotation":-10.0},"forearm-back":{"rotation":0.67},"leg-front":{"rotation":-17.33},"shin-front":{"rotation":34.0},"leg-back":{"rotation":15.33},"shin-back":{"rotation":25.67},"pelvis":{"y":5.0}},
+    {"torso":{"rotation":16},"head":{"rotation":13},"arm-front":{"rotation":12},"forearm-front":{"rotation":15},"arm-back":{"rotation":-5},"forearm-back":{"rotation":12},"leg-front":{"rotation":-22},"shin-front":{"rotation":42},"leg-back":{"rotation":19},"shin-back":{"rotation":30},"pelvis":{"y":7}},
+    {"torso":{"rotation":17.67},"head":{"rotation":14.0},"arm-front":{"rotation":16.33},"forearm-front":{"rotation":19.33},"arm-back":{"rotation":0.0},"forearm-back":{"rotation":16.0},"leg-front":{"rotation":-25.67},"shin-front":{"rotation":46.33},"leg-back":{"rotation":22.0},"shin-back":{"rotation":34.33},"pelvis":{"y":8.67}},
+    {"torso":{"rotation":19.33},"head":{"rotation":15.0},"arm-front":{"rotation":20.67},"forearm-front":{"rotation":23.67},"arm-back":{"rotation":5.0},"forearm-back":{"rotation":20.0},"leg-front":{"rotation":-29.33},"shin-front":{"rotation":50.67},"leg-back":{"rotation":25.0},"shin-back":{"rotation":38.67},"pelvis":{"y":10.33}},
+    {"torso":{"rotation":21},"head":{"rotation":16},"arm-front":{"rotation":25},"forearm-front":{"rotation":28},"arm-back":{"rotation":10},"forearm-back":{"rotation":24},"leg-front":{"rotation":-33},"shin-front":{"rotation":55},"leg-back":{"rotation":28},"shin-back":{"rotation":43},"pelvis":{"y":12}},
+    {"torso":{"rotation":20.67},"head":{"rotation":16.0},"arm-front":{"rotation":25.0},"forearm-front":{"rotation":28.0},"arm-back":{"rotation":10.0},"forearm-back":{"rotation":24.0},"leg-front":{"rotation":-33.0},"shin-front":{"rotation":55.0},"leg-back":{"rotation":28.0},"shin-back":{"rotation":43.0},"pelvis":{"y":12.0}},
+    {"torso":{"rotation":20.33},"head":{"rotation":16.0},"arm-front":{"rotation":25.0},"forearm-front":{"rotation":28.0},"arm-back":{"rotation":10.0},"forearm-back":{"rotation":24.0},"leg-front":{"rotation":-33.0},"shin-front":{"rotation":55.0},"leg-back":{"rotation":28.0},"shin-back":{"rotation":43.0},"pelvis":{"y":12.0}},
+    {"torso":{"rotation":20},"head":{"rotation":16},"arm-front":{"rotation":25},"forearm-front":{"rotation":28},"arm-back":{"rotation":10},"forearm-back":{"rotation":24},"leg-front":{"rotation":-33},"shin-front":{"rotation":55},"leg-back":{"rotation":28},"shin-back":{"rotation":43},"pelvis":{"y":12}}
+  ]
+}

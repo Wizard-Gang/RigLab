@@ -1,0 +1,28 @@
+{
+  "source": "Wizard-Gang/Hexframe",
+  "commit": "5b6e4f11c162d633148e6c1b8450e49e86d757de",
+  "files": {
+    "characters/fighter/clips/crouch.json": "85cc375ce65ef574ecbb69fe6127c4944d57a0a6fcd7c5f2bbd06752102641b2",
+    "characters/fighter/clips/crouchGuard.json": "adda21839cfdb06741bebac1dc15da0f85d7b27a68642abff91d2a50ee4feaf1",
+    "characters/fighter/clips/jump.json": "140d5b86b37195e42b1b01de019cca60588f5ddfb64f4833664e85e9156e95da",
+    "characters/fighter/clips/labGuard.json": "ae5f1a6bda2f036a9fb59deacaf5ad7758d7fe905cbaeb097d728a45b08ef812",
+    "characters/fighter/clips/labIdle.json": "09b549617e422d1e3317cf77800d199d2a97c4654a9a3c4911bc56ec6b46d3fd",
+    "characters/fighter/clips/labOverhead.json": "ad493131936dff0723e474bf3ced69f87b7fb8177f241521563e4758aaf96192",
+    "characters/fighter/clips/labStagger.json": "cd6ab947e7ec2db88848d7f0eb1d22790b085037d9d9e8030fa118b9dfe4e627",
+    "characters/fighter/clips/labStrike.json": "5b22e988c5366a1dd782dbbebfa4e1de00b53995cfe5a92236fb1c6a5ca773f2",
+    "characters/fighter/clips/labWalk.json": "d5fd86730977da00309fdf13051d3912c5eb22bf2ccb517901f7dff89ef8a770",
+    "characters/fighter/clips/labWave.json": "6bf33821171e84a9fbc9cd7dfa5627f65f5f5ac2430aaeb7f0ceb768e1ec334e",
+    "characters/fighter/clips/launched.json": "dc5eb39fdd795f240dd5ecbeeabf0f0fb69f3497ede6b9bb5ea7d0a5f32e5ff6",
+    "characters/fighter/clips/sweep.json": "6ae23149ce7eeba7ec0964e5109d7894560921330fc4ec6c1bc33d92d99f9688",
+    "characters/fighter/clips/uppercut.json": "a424b935c019b9e98506ef842e009b82e512160e41ec83fbf1c2232399b8fd17",
+    "characters/fighter/fighter.rig.json": "aab50ad9cdec43d4b660c6fc59260063966be5ab2fdbf7ad7410283b944f11f8",
+    "src/rig/clip-types.ts": "27b0e3b82aced2f419d0ba36d3ec5b9f1dcbb9ad7bd7e3e362250a77024bdbbf",
+    "src/rig/depth.ts": "0d8a4b823a95af24677fbccaf0a05d74afcc35756868fa16a68d8397d822cb07",
+    "src/rig/fk.ts": "4c5d28a10e2a773373d5589ec9ca440be3a829de3f2153d4d9aaa5cc5f1008ea",
+    "src/rig/index.ts": "d4cc6c382ffe51d0f5b9b7a3819aa7acbb759f6cab65dd603625328cab1a8b37",
+    "src/rig/paint-order.ts": "2aba623d2fd72c0598af4a0294df5b89d1908d35565517b49dec1eee90934e1d",
+    "src/rig/rig.ts": "5dade1f1405b56404726704486df21a6ed9057961c955a9d7cef6b88064aaf03",
+    "src/rig/sample.ts": "78c55a913081b8a42a48b686108c851a44af47aa76dca138d057813c8e016453",
+    "src/rig/types.ts": "5930c6178521f00d55e54e46170d1b358b88ab62c7e49a18693ac8cc33a5bd64"
+  }
+}

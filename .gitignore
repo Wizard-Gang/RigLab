@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+*.log
+
+# Credential-shaped local files stay ignored; RigLab needs no credentials to develop.
+.env
+.env.*
+!.env.example
+
+# Local agent tooling.
+.claude/
