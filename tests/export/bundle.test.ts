@@ -6,13 +6,13 @@ import { bakeAnimation, frameCount } from "../../src/export/bake";
 import { buildBundle, EXPORT_ROOT, readBundle } from "../../src/export/bundle";
 import { crc32, unzip, zip } from "../../src/export/zip";
 import type { RigLabDocument } from "../../src/format";
-import { HUMANOID_RIG } from "../../src/hexframe/humanoid";
-import { dragInPose, NO_CONSTRAINTS, place, samplePose, toggleGrip, togglePin } from "../../src/solve";
+import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { dragInPose, engineOf, NO_CONSTRAINTS, place, playAt, toggleGrip, togglePin } from "../../src/solve";
 
-const rig = HUMANOID_RIG;
+const rig = CHIBI_RIG;
 const GENERATOR = "RigLab test";
 
-/** The template plus a looping animation whose keys carry pins and a two-handed prop. */
+/** A blank idle and walk, plus a looping idle whose first two keys carry pins and a two-handed axe. */
 function authored(): RigLabDocument {
   const rest = restPose(rig);
   let constraints = NO_CONSTRAINTS;
@@ -26,13 +26,15 @@ function authored(): RigLabDocument {
     if (!result.ok) throw new Error(result.error);
     constraints = result.constraints;
   }
-  const first = { frame: 0, interpolation: "linear" as const, pose: rest, pins: constraints.pins, prop: constraints.prop! };
-  const start = { ...blankAnimation(rig, "axe-overhead"), loop: true, length: 12, keys: [first] };
-  const lunge = dragInPose(rig, rest, constraints, { kind: "joint", bone: "pelvis" }, { x: 4, y: -36 });
-  const raised = dragInPose(rig, lunge.pose, lunge.constraints, { kind: "prop-move" }, { x: 14, y: -62 });
-  const keyed = setKeyPose(rig, start, 6, raised.pose, raised.constraints);
+  const axe = { ...constraints, prop: { ...constraints.prop!, name: "axe" } };
+  const ready = setKeyPose(rig, blankAnimation(rig, "axe-ready", "idle"), 0, rest, axe);
+  if (!ready.ok) throw new Error(ready.error);
+  const lunge = dragInPose(rig, rest, axe, { kind: "joint", bone: "pelvis" }, { x: 3, y: -22 });
+  const raised = dragInPose(rig, lunge.pose, lunge.constraints, { kind: "prop-move" }, { x: 13, y: -40 });
+  if (raised.status !== "ok") throw new Error(raised.message ?? raised.status);
+  const keyed = setKeyPose(rig, ready.animation, 15, raised.pose, raised.constraints);
   if (!keyed.ok) throw new Error(keyed.error);
-  return { ...templateDocument(), animations: [...templateDocument().animations.slice(0, 2), keyed.animation] };
+  return { ...templateDocument(), animations: [blankAnimation(rig, "idle", "idle"), blankAnimation(rig, "walk", "walk"), keyed.animation] };
 }
 
 const text = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
@@ -50,14 +52,15 @@ describe("riglab-export bundles", () => {
   it("lay out a manifest, the rig, every animation and optional baked frames", async () => {
     const files = await buildBundle(authored(), { baked: true, generator: GENERATOR });
     expect([...files.keys()]).toEqual([
-      "manifest.json", "humanoid.rig.json",
-      "animations/labIdle.anim.json", "animations/labWalk.anim.json", "animations/axe-overhead.anim.json",
-      "baked/labIdle.baked.json", "baked/labWalk.baked.json", "baked/axe-overhead.baked.json",
+      "manifest.json", "chibi.rig.json",
+      "animations/idle.anim.json", "animations/walk.anim.json", "animations/axe-ready.anim.json",
+      "baked/idle.baked.json", "baked/walk.baked.json", "baked/axe-ready.baked.json",
     ]);
     const manifest = JSON.parse(text(files.get("manifest.json")!));
-    expect(manifest).toMatchObject({ format: "riglab.export", version: 1, generator: GENERATOR, rig: { name: "humanoid", file: "humanoid.rig.json" } });
+    expect(manifest).toMatchObject({ format: "riglab.export", version: 1, generator: GENERATOR, rig: { name: "chibi", file: "chibi.rig.json" } });
     expect(manifest.animations.map((entry: { sha256: string }) => entry.sha256)).toHaveLength(3);
-    expect((await buildBundle(authored(), { baked: false, generator: GENERATOR })).has("baked/labIdle.baked.json")).toBe(false);
+    expect(JSON.parse(text(files.get("animations/axe-ready.anim.json")!))).toMatchObject({ version: 2, kind: "idle", fps: 60, length: 60, loop: true });
+    expect((await buildBundle(authored(), { baked: false, generator: GENERATOR })).has("baked/idle.baked.json")).toBe(false);
   });
 
   it("re-import deep-equal, from the folder layout or from a zip", async () => {
@@ -69,38 +72,40 @@ describe("riglab-export bundles", () => {
     expect(await readBundle(await unzip(archive))).toEqual({ ok: true, value: document });
   });
 
-  it("bake samplePose through Hexframe's FK on every output frame", () => {
+  it("bake every Hexframe tick as the engine plays it, through Hexframe's FK", () => {
     const animation = authored().animations[2]!;
     const baked = bakeAnimation(rig, animation);
-    expect(baked.frames).toHaveLength(frameCount(animation));
-    expect(frameCount({ ...animation, loop: false })).toBe(13);
+    expect([baked.fps, baked.loop, baked.frames.length]).toEqual([60, true, 60]);
+    expect(frameCount({ ...animation, loop: false })).toBe(61);
+    const engine = engineOf(rig, animation);
     for (let frame = 0; frame < baked.frames.length; frame += 1) {
-      const placed = place(rig, samplePose(rig, animation, frame).pose);
+      const placed = place(rig, playAt(engine, frame).pose);
       baked.bones.forEach((bone, index) => {
         const [x, y, rotation] = baked.frames[frame]![index]!;
         const at = placed.get(bone)!;
         expect(Math.abs(x - at.x) + Math.abs(y - at.y) + Math.abs(rotation - (at.rotation * 180) / Math.PI)).toBeLessThan(3e-6);
       });
     }
-    expect(baked.props?.[0]).toMatchObject({ name: "prop" });
+    expect(baked.props?.[0]).toMatchObject({ name: "axe" });
+    expect(baked.props?.[7]).toEqual({ ...baked.props?.[7], x: expect.closeTo((baked.props![6]!.x + baked.props![8]!.x) / 2, 5) });
     expect(bakeAnimation(rig, authored().animations[0]!).props).toBeUndefined();
   });
 
   it("refuse a tampered file, an unknown version and a missing or dangling reference", async () => {
     expect(await refusal((files) => {
-      const bytes = files.get("animations/labWalk.anim.json")!;
+      const bytes = files.get("animations/walk.anim.json")!;
       bytes[40] = bytes[40]! ^ 1;
-    })).toBe("manifest.json $.animations[1].sha256: does not match animations/labWalk.anim.json");
+    })).toBe("manifest.json $.animations[1].sha256: does not match animations/walk.anim.json");
     expect(await refusal((files) => {
       files.set("manifest.json", bytesOf({ ...JSON.parse(text(files.get("manifest.json")!)), version: 2 }));
     })).toBe("manifest.json $.version: must be 1");
-    expect(await refusal((files) => { files.delete("baked/labIdle.baked.json"); }))
-      .toBe("manifest.json $.baked[0].file: names missing file baked/labIdle.baked.json");
+    expect(await refusal((files) => { files.delete("baked/idle.baked.json"); }))
+      .toBe("manifest.json $.baked[0].file: names missing file baked/idle.baked.json");
     expect(await refusal((files) => {
       const manifest = JSON.parse(text(files.get("manifest.json")!));
       manifest.baked[0].animation = "ghost";
       manifest.baked[0].file = "baked/ghost.baked.json";
-      files.set("baked/ghost.baked.json", files.get("baked/labIdle.baked.json")!);
+      files.set("baked/ghost.baked.json", files.get("baked/idle.baked.json")!);
       files.set("manifest.json", bytesOf(manifest));
     })).toBe("manifest.json $.baked[0].animation: names no animation in the bundle");
     expect(await refusal((files) => { files.delete("manifest.json"); })).toBe("bundle: names missing file manifest.json");
@@ -109,14 +114,14 @@ describe("riglab-export bundles", () => {
   it("refuse content that disagrees with the manifest, even with matching hashes", async () => {
     const message = await refusal(async (files) => {
       const manifest = JSON.parse(text(files.get("manifest.json")!));
-      const walk = JSON.parse(text(files.get("animations/labWalk.anim.json")!));
-      const renamed = bytesOf({ ...walk, name: "labRun" });
-      files.set("animations/labWalk.anim.json", renamed);
+      const walk = JSON.parse(text(files.get("animations/walk.anim.json")!));
+      const renamed = bytesOf({ ...walk, name: "run" });
+      files.set("animations/walk.anim.json", renamed);
       const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", renamed as BufferSource));
       manifest.animations[1].sha256 = [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
       files.set("manifest.json", bytesOf(manifest));
     });
-    expect(message).toContain("animations/labWalk.anim.json $.name: must be 'labWalk' as the manifest says");
+    expect(message).toContain("animations/walk.anim.json $.name: must be 'walk' as the manifest says");
   });
 });
 

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { POSE_INTERVALS } from "../../vendor/hexframe/src/rig";
 import type { Placed, Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabRig } from "../format/rig";
+import { KINDS } from "../format/timing";
 import type { Selection } from "../editor/state";
 
 interface InspectorProps {
@@ -48,10 +50,12 @@ export function Inspector({ rig, selection, active, pose, placed, animations, on
       <dl className="inspector">
         <dt>Animation</dt><dd><AnimationName name={animation.name} onRename={onRename} /></dd>
         <dt>Rig</dt><dd><code>{animation.rig}</code></dd>
-        <dt>Frame rate</dt><dd>{animation.fps} fps</dd>
+        <dt>Kind</dt><dd>{KINDS[animation.kind].label}</dd>
+        <dt>Frame rate</dt><dd>{animation.fps} fps, Hexframe's clock</dd>
         <dt>Length</dt><dd>{animation.length} frames · {fixed(animation.length / animation.fps)} s</dd>
         <dt>Playback</dt><dd>{animation.loop ? "Loop" : "Once"}</dd>
         <dt>Keys</dt><dd>{animation.keys.map((key) => key.frame).join(", ")}</dd>
+        <dt>Hexframe poses</dt><dd>13, every {animation.length / POSE_INTERVALS} frames</dd>
       </dl>
     );
   }

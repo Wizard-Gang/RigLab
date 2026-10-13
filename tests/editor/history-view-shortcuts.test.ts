@@ -3,7 +3,7 @@ import { record, redo, startHistory, undo } from "../../src/editor/history";
 import { commandFor, platformOf, shortcutLabel } from "../../src/editor/shortcuts";
 import type { KeyInput } from "../../src/editor/shortcuts";
 import { fitView, MAX_ZOOM, MIN_ZOOM, panBy, snapToGrid, VIEW_MARGIN, viewBoxFor, zoomAbout, zoomAt } from "../../src/editor/view";
-import { HUMANOID_RIG } from "../../src/hexframe/humanoid";
+import { CHIBI_RIG } from "../../src/chibi/chibi";
 
 describe("undo history", () => {
   it("records, undoes and redoes whole snapshots", () => {
@@ -29,17 +29,17 @@ describe("undo history", () => {
 });
 
 describe("canvas view", () => {
-  const space = HUMANOID_RIG.space;
+  const space = CHIBI_RIG.space;
 
   it("fits the rig's viewBox plus a margin at zoom 1", () => {
     const view = fitView(space);
-    expect(view).toEqual({ zoom: 1, centerX: 0, centerY: -52.5 });
-    expect(viewBoxFor(space, view)).toEqual([-55 - VIEW_MARGIN, -110 - VIEW_MARGIN, 110 + VIEW_MARGIN * 2, 115 + VIEW_MARGIN * 2]);
+    expect(view).toEqual({ zoom: 1, centerX: 0, centerY: -47.5 });
+    expect(viewBoxFor(space, view)).toEqual([-50 - VIEW_MARGIN, -100 - VIEW_MARGIN, 100 + VIEW_MARGIN * 2, 105 + VIEW_MARGIN * 2]);
   });
 
   it("zooms about a point that stays at the same place in the viewBox", () => {
     const view = fitView(space);
-    const at = { x: 20, y: -80 };
+    const at = { x: 20, y: -70 };
     const zoomed = zoomAt(view, at, 2);
     const before = viewBoxFor(space, view);
     const after = viewBoxFor(space, zoomed);

@@ -1,19 +1,20 @@
-// riglab.anim version 1: sparse, full-pose keys on an integer frame grid with per-transition interpolation.
+// riglab.anim version 2: one kind's keys on Hexframe's engine grid, each a full pose with the interpolation to the next.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { validateKeyConstraints } from "./constraints";
 import type { Pin, Prop } from "./constraints";
 import type { RigLabRig } from "./rig";
-import { checkInteger, checkName, closedObject, isFiniteNumber, isObject, Issues } from "./validate";
+import { ANIMATION_KINDS, ENGINE_FPS, frameList, isKind, keyFrames, KINDS } from "./timing";
+import type { AnimationKind } from "./timing";
+import { checkName, closedObject, isFiniteNumber, isObject, Issues } from "./validate";
 import type { Validation } from "./validate";
 
 export const ANIMATION_FORMAT = "riglab.anim";
-export const ANIMATION_VERSION = 1;
-export const DEFAULT_FPS = 14;
-/** 60 Hz × 12 intervals: the finest grid the lossless Hexframe clip importer needs. */
-export const MAX_FPS = 720;
-export const MAX_LENGTH = 100_000;
+export const ANIMATION_VERSION = 2;
 
-/** How a key moves to the next key: `hold` keeps its pose until the next key starts. */
+/**
+ * How a key's pose moves to the next key's across the Hexframe poses between them: `hold` keeps it until the
+ * last of them, and Hexframe then moves to the next key over one pose interval.
+ */
 export type Interpolation = "hold" | "linear" | "smoothstep";
 export const INTERPOLATIONS: readonly Interpolation[] = ["hold", "linear", "smoothstep"];
 
@@ -33,6 +34,9 @@ export interface RigLabAnimation {
   readonly version: typeof ANIMATION_VERSION;
   readonly name: string;
   readonly rig: string;
+  /** Fixes the length, looping and key frames; see `KINDS`. */
+  readonly kind: AnimationKind;
+  /** Always `ENGINE_FPS`, Hexframe's clock. */
   readonly fps: number;
   readonly length: number;
   readonly loop: boolean;
@@ -64,29 +68,31 @@ function validatePose(issues: Issues, path: string, value: unknown, rig: RigLabR
 
 export function validateAnimation(value: unknown, rig: RigLabRig): Validation<RigLabAnimation> {
   const issues = new Issues();
-  const fields = ["format", "version", "name", "rig", "fps", "length", "loop", "keys"];
+  const fields = ["format", "version", "name", "rig", "kind", "fps", "length", "loop", "keys"];
   if (!closedObject(issues, "$", value, fields)) return issues.result(value);
   if (value.format !== ANIMATION_FORMAT) issues.add("$.format", `must be '${ANIMATION_FORMAT}'`);
   if (value.version !== ANIMATION_VERSION) issues.add("$.version", `must be ${ANIMATION_VERSION}`);
   checkName(issues, "$.name", value.name);
   if (value.rig !== rig.name) issues.add("$.rig", `must name rig '${rig.name}'`);
-  checkInteger(issues, "$.fps", value.fps, 1, MAX_FPS);
-  const lengthOk = checkInteger(issues, "$.length", value.length, 1, MAX_LENGTH);
-  if (typeof value.loop !== "boolean") issues.add("$.loop", "must be true or false");
+  if (value.fps !== ENGINE_FPS) issues.add("$.fps", `must be ${ENGINE_FPS}, Hexframe's clock`);
+  const kind = isKind(value.kind) ? value.kind : null;
+  if (!kind) issues.add("$.kind", `must be ${ANIMATION_KINDS.map((name) => `'${name}'`).join(", ")}`);
+  const frames = kind ? keyFrames(kind) : null;
+  if (kind) {
+    const timing = KINDS[kind];
+    if (value.length !== timing.length) issues.add("$.length", `must be ${timing.length}: ${kind} animations last ${timing.length} frames`);
+    if (value.loop !== timing.loop) issues.add("$.loop", `must be ${timing.loop}: ${kind} animations ${timing.loop ? "loop" : "play once"}`);
+  }
   if (!Array.isArray(value.keys) || value.keys.length === 0) {
     issues.add("$.keys", "must be a non-empty array");
     return issues.result(value);
   }
-  let previous = -1;
+  const anchored = frames !== null && value.keys.length === frames.length;
+  if (frames && !anchored) issues.add("$.keys", `must hold ${frames.length} keys: ${kind} keys sit at frames ${frameList(frames)}`);
   value.keys.forEach((key: unknown, index) => {
     const path = `$.keys[${index}]`;
     if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"], ["pins", "prop"])) return;
-    if (checkInteger(issues, `${path}.frame`, key.frame, 0, MAX_LENGTH)) {
-      if (index === 0 && key.frame !== 0) issues.add(`${path}.frame`, "must be 0 for the first key");
-      if (key.frame <= previous) issues.add(`${path}.frame`, "must be greater than the previous key's frame");
-      if (lengthOk && key.frame > (value.length as number)) issues.add(`${path}.frame`, "must not exceed the animation length");
-      previous = key.frame;
-    }
+    if (anchored && key.frame !== frames[index]) issues.add(`${path}.frame`, `must be ${frames[index]}: ${kind} keys sit at frames ${frameList(frames)}`);
     if (!INTERPOLATIONS.includes(key.interpolation as Interpolation)) {
       issues.add(`${path}.interpolation`, "must be 'hold', 'linear' or 'smoothstep'");
     }

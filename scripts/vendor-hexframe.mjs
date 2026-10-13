@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Re-vendor the Hexframe rig core and fighter data from one exact commit of a local Hexframe checkout:
+// Re-vendor Hexframe's rig engine from one exact commit of a local Hexframe checkout:
 //   npm run vendor:hexframe -- <hexframe-checkout> <full-commit-sha>
 // Files come from the commit's Git objects, never the checkout's working tree.
 import { execFileSync } from 'node:child_process';

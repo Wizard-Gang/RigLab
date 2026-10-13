@@ -1,7 +1,9 @@
 // The RigLab recommendation's first acceptance test, run through the editor's own reducer and export path:
-// import Hexframe's humanoid, lengthen its forearms, author a three-key spear thrust with planted feet and
-// both hands on the spear, export the bundle, reload it, and prove connectivity, lengths and playback.
+// start the chibi, lengthen its forearms, author a spear-thrust attack (keys at 0, 8, 16 and 24) with planted feet
+// and both hands on the spear, export the bundle, reload it, and prove connectivity, lengths and playback, and that
+// Hexframe plays the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
+import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
 import { activeAnimationOf, documentOf, editorReducer, initialState } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import { bakeAnimation } from "../../src/export/bake";
@@ -9,7 +11,8 @@ import type { RigLabBaked } from "../../src/export/bake";
 import { buildBundle, EXPORT_ROOT, readBundle } from "../../src/export/bundle";
 import { unzip, zip } from "../../src/export/zip";
 import type { RigLabDocument, RigLabRig } from "../../src/format";
-import { constraintsAt, dragInPose, rotate, samplePose, toggleGrip, togglePin } from "../../src/solve";
+import { toHexframeClip } from "../../src/hexframe/adapter";
+import { constraintsAt, dragInPose, engineOf, place, playAt, rotate, samplePose, toggleGrip, togglePin } from "../../src/solve";
 import type { HoldResult } from "../../src/solve";
 
 const run = (state: EditorState, ...actions: Action[]): EditorState => {
@@ -39,20 +42,23 @@ function thrust(state: EditorState, frame: number, target: { x: number; y: numbe
 
 function author(): RigLabDocument {
   let state = run(initialState(), { type: "setMode", mode: "setup" });
-  // Rig setup: lengthen both forearms from 23 to 27 units.
+  // Rig setup: lengthen both forearms from 11 to 14 units.
   state = run(state,
-    { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-front", tip: [0, 27] } },
-    { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-back", tip: [0, 27] } });
-  state = run(state, { type: "addAnimation" }, { type: "renameAnimation", from: "animation", to: "spear-thrust" });
-  state = run(state, { type: "setMode", mode: "pose" }, { type: "timeline", edit: { kind: "setTiming", length: 8 } });
-  // Frame 0: plant both feet, then put both hands on one spear.
-  for (const chain of ["leg-front", "leg-back"]) state = hold(state, (rig, pose, constraints) => togglePin(rig, pose, constraints, chain));
-  for (const chain of ["arm-front", "arm-back"]) state = hold(state, (rig, pose, constraints) => toggleGrip(rig, pose, constraints, chain));
-  // Wind-up with the elbows back, a transition with them centered, an extension with the hands pushed forward.
-  state = thrust(state, 0, { x: 6, y: -50 });
-  state = thrust(state, 3, { x: 34, y: -54 });
-  state = thrust(state, 6, { x: 52, y: -62 });
-  state = run(state, { type: "timeline", edit: { kind: "setInterpolation", frame: 3, interpolation: "linear" } });
+    { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-front", tip: [0, 14] } },
+    { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-back", tip: [0, 14] } });
+  // An attack has four keys, at 0, 8, 16 and 24 on Hexframe's clock.
+  state = run(state, { type: "addAnimation", kind: "attack" }, { type: "renameAnimation", from: "attack", to: "spear-thrust" });
+  state = run(state, { type: "setMode", mode: "pose" });
+  // At each key: plant both feet, put both hands on one spear, then drag the spear. The keys are a wind-up with
+  // the elbows back, a transition with them centered, an extension with the hands pushed forward, and the recovery.
+  const windUp = { x: 6.5, y: -35 };
+  for (const [frame, target] of [[0, windUp], [8, { x: 20.5, y: -37 }], [16, { x: 29.5, y: -41 }], [24, windUp]] as const) {
+    state = run(state, { type: "setFrame", frame });
+    for (const chain of ["leg-front", "leg-back"]) state = hold(state, (rig, pose, constraints) => togglePin(rig, pose, constraints, chain));
+    for (const chain of ["arm-front", "arm-back"]) state = hold(state, (rig, pose, constraints) => toggleGrip(rig, pose, constraints, chain));
+    state = thrust(state, frame, target);
+  }
+  state = run(state, { type: "timeline", edit: { kind: "setInterpolation", frame: 8, interpolation: "linear" } });
   return documentOf(state);
 }
 
@@ -66,10 +72,11 @@ function pointOf(baked: RigLabBaked, frame: number, bone: string, local: readonl
 }
 
 describe("spear-thrust acceptance", () => {
-  it("authors, exports and reloads a constrained three-key thrust with every joint connected and every length kept", async () => {
+  it("authors, exports and reloads a constrained thrust with every joint connected and every length kept", async () => {
     const document = author();
     const animation = document.animations.find((candidate) => candidate.name === "spear-thrust")!;
-    expect(animation.keys.map((key) => [key.frame, key.interpolation])).toEqual([[0, "hold"], [3, "linear"], [6, "hold"]]);
+    expect([animation.kind, animation.fps, animation.length, animation.loop]).toEqual(["attack", 60, 24, false]);
+    expect(animation.keys.map((key) => [key.frame, key.interpolation])).toEqual([[0, "smoothstep"], [8, "linear"], [16, "smoothstep"], [24, "smoothstep"]]);
     expect(animation.keys.every((key) => key.pins?.length === 2 && key.prop?.grips.length === 2)).toBe(true);
 
     const files = await buildBundle(document, { baked: true, generator: "RigLab acceptance" });
@@ -82,10 +89,21 @@ describe("spear-thrust acceptance", () => {
     const again = reloaded.value.animations.find((candidate) => candidate.name === "spear-thrust")!;
     const baked: RigLabBaked = JSON.parse(new TextDecoder().decode(files.get("baked/spear-thrust.baked.json")!));
     expect(bakeAnimation(rig, again)).toEqual(baked);
-    expect(rig.bones.find((bone) => bone.name === "forearm-front")!.tip).toEqual([0, 27]);
+    expect(rig.bones.find((bone) => bone.name === "forearm-front")!.tip).toEqual([0, 14]);
+    expect(baked.frames).toHaveLength(25);
+    const clip = toHexframeClip(rig, again);
+    expect([clip.duration, clip.poses.length]).toEqual([24, 13]);
+    const [engine, original] = [engineOf(rig, again), engineOf(document.rig, animation)];
 
     for (let frame = 0; frame < baked.frames.length; frame += 1) {
-      expect(samplePose(rig, again, frame)).toEqual(samplePose(document.rig, animation, frame));
+      expect(playAt(engine, frame)).toEqual(playAt(original, frame));
+      // Hexframe's own sampler on the exported clip lands every bone where RigLab baked it.
+      const hexframe = place(rig, sampleClip(clip, frame));
+      baked.bones.forEach((bone, index) => {
+        const [x, y, rotation] = baked.frames[frame]![index]!;
+        const at = hexframe.get(bone)!;
+        expect(Math.abs(x - at.x) + Math.abs(y - at.y) + Math.abs(rotation - (at.rotation * 180) / Math.PI), `${bone} at frame ${frame}`).toBeLessThan(BONE_LENGTH_TOLERANCE);
+      });
       for (const bone of rig.bones) {
         if (bone.parent !== null) {
           // Connected: each joint sits exactly at its offset from the parent's joint, so the limb keeps its length.
@@ -108,10 +126,11 @@ describe("spear-thrust acceptance", () => {
 
     const shoulder = (frame: number) => pointOf(baked, frame, "arm-front", [0, 0]);
     const elbow = (frame: number) => pointOf(baked, frame, "forearm-front", [0, 0]);
-    const hand = (frame: number) => pointOf(baked, frame, "forearm-front", [0, 27]);
+    const hand = (frame: number) => pointOf(baked, frame, "forearm-front", [0, 14]);
     expect(elbow(0).x).toBeLessThan(shoulder(0).x - 5);
-    expect(Math.abs(elbow(3).x - shoulder(3).x)).toBeLessThan(6);
-    expect(hand(6).x).toBeGreaterThan(shoulder(6).x + 35);
-    expect(elbow(6).x).toBeGreaterThan(shoulder(6).x);
+    expect(Math.abs(elbow(8).x - shoulder(8).x)).toBeLessThan(4);
+    expect(hand(16).x).toBeGreaterThan(shoulder(16).x + 17);
+    expect(elbow(16).x).toBeGreaterThan(shoulder(16).x);
+    expect(elbow(24).x).toBeLessThan(shoulder(24).x - 5);
   });
 });

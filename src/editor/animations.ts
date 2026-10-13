@@ -1,7 +1,9 @@
 // Pure document helpers: rest poses, unique names and blank animations.
 import type { Pose } from "../../vendor/hexframe/src/rig";
-import { DEFAULT_FPS } from "../format/animation";
+import { ANIMATION_FORMAT, ANIMATION_VERSION } from "../format/animation";
 import type { RigLabAnimation } from "../format/animation";
+import { ENGINE_FPS, keyFrames, KINDS } from "../format/timing";
+import type { AnimationKind } from "../format/timing";
 import type { RigLabRig } from "../format/rig";
 import { NAME } from "../format/validate";
 
@@ -27,16 +29,18 @@ export function isValidName(name: string): boolean {
   return NAME.test(name);
 }
 
-/** One second at the default rate, holding the rest pose. */
-export function blankAnimation(rig: RigLabRig, name: string): RigLabAnimation {
+/** A kind's keys, all at the rest pose and easing in and out, on Hexframe's clock. */
+export function blankAnimation(rig: RigLabRig, name: string, kind: AnimationKind): RigLabAnimation {
+  const { length, loop } = KINDS[kind];
   return {
-    format: "riglab.anim",
-    version: 1,
+    format: ANIMATION_FORMAT,
+    version: ANIMATION_VERSION,
     name,
     rig: rig.name,
-    fps: DEFAULT_FPS,
-    length: DEFAULT_FPS,
-    loop: false,
-    keys: [{ frame: 0, interpolation: "hold", pose: restPose(rig) }],
+    kind,
+    fps: ENGINE_FPS,
+    length,
+    loop,
+    keys: keyFrames(kind).map((frame) => ({ frame, interpolation: "smoothstep" as const, pose: restPose(rig) })),
   };
 }

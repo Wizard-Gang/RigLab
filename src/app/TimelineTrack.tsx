@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import type { RigLabAnimation } from "../format/animation";
+import { poseFrames } from "../format/timing";
 
 interface TimelineTrackProps {
   readonly animation: RigLabAnimation;
@@ -8,30 +9,22 @@ interface TimelineTrackProps {
   readonly selectedKey: number | null;
   readonly onSeek: (frame: number) => void;
   readonly onSelectKey: (frame: number) => void;
-  readonly onMoveKey: (from: number, to: number) => void;
 }
 
-const TICK_TARGET = 24;
-
-/** Frames 0..length across the track: click or drag to scrub; drag a key to move it. */
-export function TimelineTrack({ animation, frame, selectedKey, onSeek, onSelectKey, onMoveKey }: TimelineTrackProps) {
+/** Frames 0..length across the track, ticked at Hexframe's 13 poses: click or drag to scrub, click a key to select it. */
+export function TimelineTrack({ animation, frame, selectedKey, onSeek, onSelectKey }: TimelineTrackProps) {
   const track = useRef<HTMLDivElement>(null);
-  const dragging = useRef<{ kind: "scrub" } | { kind: "key"; from: number; to: number } | null>(null);
+  const scrubbing = useRef(false);
   const { length } = animation;
   const at = (value: number): string => `${(value / length) * 100}%`;
   const frameFrom = (clientX: number): number => {
     const box = track.current!.getBoundingClientRect();
     return Math.max(0, Math.min(length, Math.round(((clientX - box.left) / box.width) * length)));
   };
-  const step = Math.max(1, Math.ceil(length / TICK_TARGET));
-  const ticks = Array.from({ length: Math.floor(length / step) + 1 }, (_, index) => index * step);
 
   const grabKey = (key: number) => (event: ReactPointerEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
     onSelectKey(key);
-    if (key === 0) return;
-    track.current?.setPointerCapture(event.pointerId);
-    dragging.current = { kind: "key", from: key, to: key };
   };
 
   return (
@@ -40,24 +33,17 @@ export function TimelineTrack({ animation, frame, selectedKey, onSeek, onSelectK
       className="track"
       onPointerDown={(event) => {
         track.current?.setPointerCapture(event.pointerId);
-        dragging.current = { kind: "scrub" };
+        scrubbing.current = true;
         onSeek(frameFrom(event.clientX));
       }}
       onPointerMove={(event) => {
-        const drag = dragging.current;
-        if (!drag) return;
-        if (drag.kind === "scrub") onSeek(frameFrom(event.clientX));
-        else drag.to = Math.max(1, frameFrom(event.clientX));
-        if (drag.kind === "key") track.current?.style.setProperty("--ghost", at(drag.to));
+        if (scrubbing.current) onSeek(frameFrom(event.clientX));
       }}
       onPointerUp={() => {
-        const drag = dragging.current;
-        dragging.current = null;
-        track.current?.style.removeProperty("--ghost");
-        if (drag?.kind === "key" && drag.to !== drag.from) onMoveKey(drag.from, drag.to);
+        scrubbing.current = false;
       }}
     >
-      {ticks.map((tick) => (
+      {poseFrames(length).map((tick) => (
         <span key={tick} className="track__tick" style={{ left: at(tick) }}>{tick}</span>
       ))}
       {animation.keys.map((key) => (
@@ -76,7 +62,6 @@ export function TimelineTrack({ animation, frame, selectedKey, onSeek, onSelectK
           onPointerDown={grabKey(key.frame)}
         />
       ))}
-      <span className="track__ghost" aria-hidden="true" />
       <span className="track__playhead" style={{ left: at(frame) }} aria-hidden="true" />
     </div>
   );

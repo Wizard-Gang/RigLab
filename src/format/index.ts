@@ -1,6 +1,4 @@
-export {
-  ANIMATION_FORMAT, ANIMATION_VERSION, DEFAULT_FPS, INTERPOLATIONS, MAX_FPS, MAX_LENGTH, validateAnimation,
-} from "./animation";
+export { ANIMATION_FORMAT, ANIMATION_VERSION, INTERPOLATIONS, validateAnimation } from "./animation";
 export type { Interpolation, Key, RigLabAnimation } from "./animation";
 export { DOCUMENT_EXTENSION, DOCUMENT_FORMAT, DOCUMENT_VERSION, parseDocument, serializeDocument, validateDocument } from "./document";
 export type { RigLabDocument } from "./document";
@@ -10,4 +8,6 @@ export { MAX_GRIPS } from "./constraints";
 export type { Grip, Pin, Prop } from "./constraints";
 export { animationTime, blendPoses, keyIndexAt, sampleAnimation, segmentAt } from "./sample";
 export type { Segment } from "./sample";
+export { ANIMATION_KINDS, ENGINE_FPS, frameList, isKind, keyFrames, KINDS, poseFrames } from "./timing";
+export type { AnimationKind, KindTiming } from "./timing";
 export type { Validation } from "./validate";

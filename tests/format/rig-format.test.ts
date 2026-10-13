@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { validateRig } from "../../src/format";
-import { HUMANOID_RIG } from "../../src/hexframe/humanoid";
+import { CHIBI_RIG } from "../../src/chibi/chibi";
 
 type Mutable = Record<string, any>;
 
-/** A deep, freely mutable copy of the imported humanoid for building invalid variants. */
-const humanoid = (): Mutable => structuredClone(HUMANOID_RIG) as Mutable;
+/** A deep, freely mutable copy of the chibi rig for building invalid variants. */
+const chibi = (): Mutable => structuredClone(CHIBI_RIG) as Mutable;
 
 function errorsOf(change: (rig: Mutable) => void): string {
-  const rig = humanoid();
+  const rig = chibi();
   change(rig);
   const result = validateRig(rig);
   expect(result.ok).toBe(false);
@@ -18,9 +18,9 @@ function errorsOf(change: (rig: Mutable) => void): string {
 const bone = (rig: Mutable, name: string): Mutable => rig.bones.find((candidate: Mutable) => candidate.name === name);
 
 describe("riglab.rig validation", () => {
-  it("accepts the imported humanoid with and without depth profiles", () => {
-    expect(validateRig(humanoid()).ok).toBe(true);
-    const plain = humanoid();
+  it("accepts the chibi rig with and without depth profiles", () => {
+    expect(validateRig(chibi()).ok).toBe(true);
+    const plain = chibi();
     delete plain.depthProfiles;
     expect(validateRig(plain).ok).toBe(true);
   });
@@ -74,6 +74,6 @@ describe("riglab.rig validation", () => {
     expect(errorsOf((rig) => { rig.depthProfiles.default = "missing"; })).toMatch(/\$\.depthProfiles\.default: must name a profile/);
     expect(errorsOf((rig) => { rig.depthProfiles.sides.facingLeft.arms.far = "wing"; })).toMatch(/facingLeft\.arms\.far: must name a bone/);
     expect(errorsOf((rig) => { rig.depthProfiles.profiles.punch.head = "beside-arms"; })).toMatch(/profiles\.punch\.head/);
-    expect(errorsOf((rig) => { rig.depthProfiles.byClip.labStrike = "nope"; })).toMatch(/byClip\.labStrike: must name a profile/);
+    expect(errorsOf((rig) => { rig.depthProfiles.byClip.attack = "nope"; })).toMatch(/byClip\.attack: must name a profile/);
   });
 });

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { createRigLabRig } from "../format";
-import { constraintsAt, NO_CONSTRAINTS, samplePose } from "../solve";
+import { engineOf, NO_CONSTRAINTS, playAt } from "../solve";
 import { constraintGeometry } from "../viewer/constraintGeometry";
 import { ArtLayer } from "../viewer/ArtLayer";
 import { artPlacements } from "../hexframe/art";
@@ -45,12 +45,12 @@ export function App() {
     enabled: (state.mode === "animate" || state.mode === "export") && animation !== null,
   });
   const posed = state.mode !== "setup" && animation !== null;
-  const held = useMemo(
-    () => (posed ? samplePose(document.rig, animation, state.frame) : { pose: {}, violations: [] }),
-    [posed, document.rig, animation, state.frame],
+  const engine = useMemo(() => (posed ? engineOf(document.rig, animation) : null), [posed, document.rig, animation]);
+  const played = useMemo(
+    () => (engine ? playAt(engine, state.frame) : { pose: {}, constraints: NO_CONSTRAINTS, violations: [] }),
+    [engine, state.frame],
   );
-  const frameConstraints = useMemo(() => (posed ? constraintsAt(animation, state.frame) : NO_CONSTRAINTS), [posed, animation, state.frame]);
-  const drags = useCanvasDrags(state, dispatch, held.pose, frameConstraints);
+  const drags = useCanvasDrags(state, dispatch, played.pose, played.constraints);
   const rig = useMemo(() => createRigLabRig(drags.rig), [drags.rig]);
   const pose = drags.pose;
   const skeleton = useMemo(() => skeletonFor(rig, pose), [rig, pose]);
@@ -63,14 +63,14 @@ export function App() {
     [state.art, drags.rig, rig, skeleton.placed, state.activeAnimation],
   );
   const ghosts = useMemo(() => {
-    if (!posed || !state.onion || playback.playing) return undefined;
+    if (!engine || !animation || !state.onion || playback.playing) return undefined;
     const previous = animation.keys.filter((key) => key.frame < state.frame).at(-1);
     const next = animation.keys.find((key) => key.frame > state.frame);
     return [
-      ...(previous ? [{ tone: "previous" as const, skeleton: skeletonFor(rig, samplePose(document.rig, animation, previous.frame).pose) }] : []),
-      ...(next ? [{ tone: "next" as const, skeleton: skeletonFor(rig, samplePose(document.rig, animation, next.frame).pose) }] : []),
+      ...(previous ? [{ tone: "previous" as const, skeleton: skeletonFor(rig, playAt(engine, previous.frame).pose) }] : []),
+      ...(next ? [{ tone: "next" as const, skeleton: skeletonFor(rig, playAt(engine, next.frame).pose) }] : []),
     ];
-  }, [posed, state.onion, playback.playing, animation, state.frame, rig, document.rig]);
+  }, [engine, animation, state.onion, playback.playing, state.frame, rig]);
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
 
   const run = useCallback((command: Command) => {
@@ -105,7 +105,6 @@ export function App() {
         mode={state.mode}
         onMode={(mode) => dispatch({ type: "setMode", mode })}
         onCommand={run}
-        onNew={(template) => files.newDocument(template)}
         canUndo={state.history.past.length > 0}
         canRedo={state.history.future.length > 0}
         title={state.fileName ?? "Untitled"}
@@ -122,7 +121,7 @@ export function App() {
           active={state.activeAnimation}
           selected={state.selection?.kind === "animation" ? state.selection.name : null}
           onSelect={(name) => dispatch({ type: "select", selection: { kind: "animation", name } })}
-          onAdd={() => dispatch({ type: "addAnimation" })}
+          onAdd={(kind) => dispatch({ type: "addAnimation", kind })}
           onDuplicate={(name) => dispatch({ type: "duplicateAnimation", name })}
           onDelete={() => dispatch({ type: "deleteSelection" })}
         />
@@ -213,7 +212,7 @@ export function App() {
       ) : null}
 
       <StatusBar
-        status={drags.message ? { tone: "error", text: drags.message } : held.violations.length ? { tone: "error", text: held.violations.join("; ") } : state.status}
+        status={drags.message ? { tone: "error", text: drags.message } : played.violations.length ? { tone: "error", text: played.violations.join("; ") } : state.status}
         cursor={cursor}
         zoom={state.view.zoom}
         grid={state.grid}

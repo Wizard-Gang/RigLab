@@ -29,7 +29,7 @@ export function initialState(document: RigLabDocument = templateDocument(), file
     fileName,
     mode: "animate",
     selection: null,
-    activeAnimation: document.animations.find((animation) => animation.name === "labIdle")?.name ?? null,
+    activeAnimation: null,
     frame: 0,
     view: fitView(document.rig.space),
     grid: 5,

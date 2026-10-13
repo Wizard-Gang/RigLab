@@ -1,13 +1,29 @@
 import { describe, expect, it } from "vitest";
+import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { ANIMATION_KINDS } from "../../src/format";
 import { validateDocument } from "../../src/format/document";
 import type { RigLabDocument } from "../../src/format/document";
+import { blankAnimation } from "../../src/editor/animations";
 import { templateDocument } from "../../src/editor/templates";
 import { applyRigEdit, subtreeOf } from "../../src/editor/rigEdits";
 import type { RigEdit } from "../../src/editor/rigEdits";
 import { documentOf, editorReducer, initialState } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 
-const base = templateDocument();
+/** The chibi with one animation of each kind, its keys swinging the front arm and lifting the root. */
+const base: RigLabDocument = {
+  ...templateDocument(),
+  animations: ANIMATION_KINDS.map((kind) => {
+    const blank = blankAnimation(CHIBI_RIG, kind, kind);
+    return {
+      ...blank,
+      keys: blank.keys.map((key, index) => ({
+        ...key,
+        pose: { ...key.pose, pelvis: { x: 0, y: -index, rotation: 0 }, "arm-front": { rotation: 10 * index } },
+      })),
+    };
+  }),
+};
 
 function applied(edit: RigEdit, document: RigLabDocument = base): RigLabDocument {
   const result = applyRigEdit(document, edit);
@@ -44,12 +60,13 @@ describe("rig setup edits", () => {
     expect(bone(renamed, "forearm-front")?.parent).toBe("upper-arm-front");
     expect(renamed.rig.chains.find((chain) => chain.name === "arm-front")?.upper).toBe("upper-arm-front");
     expect(renamed.rig.depthProfiles?.sides.facingRight.arms.far).toBe("upper-arm-front");
-    const key = (document: RigLabDocument) => document.animations[3]!.keys[4]!.pose;
+    const key = (document: RigLabDocument) => document.animations[3]!.keys[2]!.pose;
+    expect(key(renamed)["upper-arm-front"]).toEqual({ rotation: 20 });
     expect(key(renamed)["upper-arm-front"]).toEqual(key(base)["arm-front"]);
     expect(key(renamed)["arm-front"]).toBeUndefined();
     const root = applied({ kind: "renameBone", bone: "pelvis", name: "hips" });
     expect(root.rig.root).toBe("hips");
-    expect(key(root).hips).toEqual(key(base).pelvis);
+    expect(key(root).hips).toEqual({ x: 0, y: -2, rotation: 0 });
   });
 
   it("refuses invalid, duplicate and unknown names", () => {

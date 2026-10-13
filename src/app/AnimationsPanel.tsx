@@ -1,16 +1,20 @@
 import type { RigLabAnimation } from "../format/animation";
+import { ANIMATION_KINDS, ENGINE_FPS, KINDS } from "../format/timing";
+import type { AnimationKind } from "../format/timing";
 
 interface AnimationsPanelProps {
   readonly animations: readonly RigLabAnimation[];
   readonly active: string | null;
   readonly selected: string | null;
   readonly onSelect: (name: string) => void;
-  readonly onAdd: () => void;
+  readonly onAdd: (kind: AnimationKind) => void;
   readonly onDuplicate: (name: string) => void;
   readonly onDelete: () => void;
 }
 
-/** The document's animations: select one to play and inspect it; add, duplicate or delete them. */
+const seconds = (length: number): string => `${(length / ENGINE_FPS).toFixed(2)} s`;
+
+/** The document's animations: select one to play and inspect it; add one of a kind, duplicate or delete them. */
 export function AnimationsPanel({ animations, active, selected, onSelect, onAdd, onDuplicate, onDelete }: AnimationsPanelProps) {
   return (
     <section className="panel__section" aria-labelledby="animations-title">
@@ -26,18 +30,23 @@ export function AnimationsPanel({ animations, active, selected, onSelect, onAdd,
                 animation.name === selected ? "list__item--selected" : "",
               ].join(" ").trim()}
               aria-pressed={animation.name === selected}
-              aria-label={`${animation.name}, ${animation.keys.length} ${animation.keys.length === 1 ? "key" : "keys"} at ${animation.fps} fps`}
+              aria-label={`${animation.name}, ${animation.kind}, ${animation.keys.length} keys over ${animation.length} frames`}
               onClick={() => onSelect(animation.name)}
             >
               <span>{animation.name}</span>
-              <span className="list__meta">{animation.keys.length} {animation.keys.length === 1 ? "key" : "keys"} · {animation.fps} fps</span>
+              <span className="list__meta">{KINDS[animation.kind].label} · {animation.keys.length} keys · {seconds(animation.length)}</span>
             </button>
           </li>
         ))}
       </ul>
-      {animations.length === 0 ? <p className="panel__empty">No animations yet.</p> : null}
+      {animations.length === 0 ? <p className="panel__empty">No animations yet. Start one with New.</p> : null}
       <div className="panel__actions">
-        <button type="button" className="tool" onClick={onAdd}>New</button>
+        <select className="tool tool--menu" aria-label="New animation of a kind" value="" onChange={(event) => onAdd(event.target.value as AnimationKind)}>
+          <option value="" disabled>New…</option>
+          {ANIMATION_KINDS.map((kind) => (
+            <option key={kind} value={kind}>{KINDS[kind].label}: {KINDS[kind].keys} keys, {seconds(KINDS[kind].length)}{KINDS[kind].loop ? ", loop" : ""}</option>
+          ))}
+        </select>
         <button type="button" className="tool" disabled={active === null} onClick={() => active && onDuplicate(active)}>Duplicate</button>
         <button type="button" className="tool" disabled={selected === null} onClick={onDelete}>Delete</button>
       </div>

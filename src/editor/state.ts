@@ -22,7 +22,7 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
   const keep = { mode: state.mode, grid: state.grid, snap: state.snap, rotationSnap: state.rotationSnap, onion: state.onion, art: state.art };
   switch (action.type) {
     case "new":
-      return { ...initialState(templateDocument(action.template)), ...keep, status: info(`New ${action.template ?? "humanoid"} document`) };
+      return { ...initialState(templateDocument()), ...keep, status: info("New chibi document") };
     case "open":
       return { ...initialState(action.document, action.fileName), ...keep, status: info(`Opened ${action.fileName}`) };
     case "imported":

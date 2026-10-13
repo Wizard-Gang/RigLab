@@ -1,4 +1,4 @@
-// The chibi: Hexframe's 11-bone rig at about two heads tall, with its own original art and Hexframe's 13 clips.
+// The chibi: Hexframe's 11-bone rig at about two heads tall, with its own original art.
 import chibiRig from "../../characters/chibi/chibi.rig.json";
 import armLowerL from "../../characters/chibi/parts/arm_lower_l.svg?raw";
 import armLowerR from "../../characters/chibi/parts/arm_lower_r.svg?raw";
@@ -11,11 +11,8 @@ import legUpperL from "../../characters/chibi/parts/leg_upper_l.svg?raw";
 import legUpperR from "../../characters/chibi/parts/leg_upper_r.svg?raw";
 import pelvis from "../../characters/chibi/parts/pelvis.svg?raw";
 import torso from "../../characters/chibi/parts/torso.svg?raw";
-import type { RigLabAnimation } from "../format/animation";
 import { validateRig } from "../format/rig";
 import type { RigLabRig } from "../format/rig";
-import { retargetAnimation } from "../editor/retarget";
-import { HUMANOID_ANIMATIONS, HUMANOID_RIG } from "../hexframe/humanoid";
 import { parsePart } from "../hexframe/parts";
 import type { Part } from "../hexframe/parts";
 
@@ -41,8 +38,3 @@ export const CHIBI_PARTS: Readonly<Record<string, Part>> = Object.freeze(Object.
   chibi_pelvis: pelvis,
   chibi_torso: torso,
 }).map(([slot, markup]) => [slot, parsePart(markup, "chibi")])));
-
-/** Hexframe's 13 reference clips on the chibi: same rotations, root motion scaled to its shorter legs. */
-export const CHIBI_ANIMATIONS: Readonly<Record<string, RigLabAnimation>> = Object.freeze(Object.fromEntries(
-  Object.entries(HUMANOID_ANIMATIONS).map(([name, animation]) => [name, retargetAnimation(animation, HUMANOID_RIG, CHIBI_RIG)]),
-));

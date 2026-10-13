@@ -1,4 +1,4 @@
-// Document edits by mode: anatomy in Rig setup, poses in Pose, keys and timing on the timeline, and the animation list.
+// Document edits by mode: anatomy in Rig setup, poses in Pose, interpolation on the timeline, and the animation list.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabDocument } from "../format/document";
@@ -10,6 +10,7 @@ import { applyRigEdit } from "./rigEdits";
 import type { RigEdit } from "./rigEdits";
 import { applyTimelineEdit } from "./timeline";
 import type { TimelineEdit } from "./timeline";
+import { KINDS } from "../format/timing";
 import { activeAnimationOf, documentOf, error, info } from "./types";
 import type { Action, EditorState } from "./types";
 
@@ -34,11 +35,11 @@ export function poseEdit(state: EditorState, pose: Pose, note: string | null, wa
   if (!animation) return { ...state, status: error("Add an animation to pose") };
   const result = setKeyPose(document.rig, animation, state.frame, pose, constraints);
   if (!result.ok) return { ...state, status: error(result.error) };
-  const text = [`${result.inserted ? "Keyed" : "Posed"} ${animation.name} at frame ${state.frame}`, note, warning].filter(Boolean).join("; ");
+  const text = [`Posed ${animation.name} at frame ${state.frame}`, note, warning].filter(Boolean).join("; ");
   return edit(state, replacing(document, animation, result.animation), { status: warning ? error(text) : info(text) });
 }
 
-/** Keys and timing change on the timeline, in Pose and Animation modes. */
+/** Key interpolation changes on the timeline, in Pose and Animation modes. */
 export function timelineEdit(state: EditorState, change: TimelineEdit): EditorState {
   if (state.mode === "setup") return { ...state, status: error("Switch to Pose or Animation to edit keys") };
   const document = documentOf(state);
@@ -46,9 +47,7 @@ export function timelineEdit(state: EditorState, change: TimelineEdit): EditorSt
   if (!animation) return { ...state, status: error("Add an animation first") };
   const result = applyTimelineEdit(document.rig, animation, change);
   if (!result.ok) return { ...state, status: error(result.error) };
-  const frame = result.frame ?? state.frame;
-  const selection = result.frame !== undefined ? { kind: "key" as const, frame } : change.kind === "deleteKey" ? null : state.selection;
-  return edit(state, replacing(document, animation, result.animation), { frame, selection, status: info(result.message) });
+  return edit(state, replacing(document, animation, result.animation), { status: info(result.message) });
 }
 
 export function animationEdit(state: EditorState, action: Action): EditorState {
@@ -57,9 +56,13 @@ export function animationEdit(state: EditorState, action: Action): EditorState {
   const names = animations.map((animation) => animation.name);
   switch (action.type) {
     case "addAnimation": {
-      const added = blankAnimation(document.rig, uniqueName("animation", names));
+      const added = blankAnimation(document.rig, uniqueName(action.kind, names), action.kind);
+      const { length, keys } = KINDS[action.kind];
       return edit(state, { ...document, animations: [...animations, added] }, {
-        activeAnimation: added.name, selection: { kind: "animation", name: added.name }, frame: 0, status: info(`Added ${added.name}`),
+        activeAnimation: added.name,
+        selection: { kind: "animation", name: added.name },
+        frame: 0,
+        status: info(`Added ${added.name}: ${keys} keys over ${length} frames`),
       });
     }
     case "duplicateAnimation": {
@@ -84,7 +87,10 @@ export function animationEdit(state: EditorState, action: Action): EditorState {
     case "deleteSelection": {
       const selection = state.selection;
       if (selection?.kind === "bone") return state.mode === "setup" ? rigEdit(state, { kind: "deleteBone", bone: selection.name }) : state;
-      if (selection?.kind === "key") return timelineEdit(state, { kind: "deleteKey", frame: selection.frame });
+      if (selection?.kind === "key") {
+        const kind = activeAnimationOf(state)?.kind;
+        return { ...state, status: error(kind ? `Keys stay: every ${kind} animation keeps all ${KINDS[kind].keys} of its keys` : "Keys stay where they are") };
+      }
       if (selection?.kind !== "animation") return state;
       const index = names.indexOf(selection.name);
       if (index < 0) return state;
