@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { CHIBI_RIG, CHIBI_PARTS } from "../../src/chibi/chibi";
 import { CHIBI_ARMOR_PARTS } from "../../src/chibi/armor";
 import { BLUE_MAGE_PARTS } from "../../src/chibi/blue-mage";
-import palette from "../../src/chibi/blue-mage.css?raw";
+import { readFileSync } from "node:fs";
+
+const palette = readFileSync(new URL("../../src/chibi/blue-mage.css", import.meta.url), "utf8");
 
 const CELL = /M(-?\d+) (-?\d+)h2v2h-2z/g;
 const TOKEN = /^[a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*$/;
