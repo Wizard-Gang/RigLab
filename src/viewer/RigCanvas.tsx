@@ -17,6 +17,8 @@ interface RigCanvasProps {
   readonly onCursor: (point: Point | null) => void;
   /** Grid spacing in rig units. */
   readonly grid: number;
+  /** When set, joints can be dragged; `done` marks the drop. */
+  readonly onJointDrag?: (bone: string, point: Point, done: boolean) => void;
   readonly children?: ReactNode;
 }
 
@@ -25,12 +27,13 @@ const ROOT_PX = 6.5;
 const DRAG_THRESHOLD_PX = 3;
 
 /** The rig's SVG space in its own units (x right, y down), with wheel zoom at the cursor and drag to pan. */
-export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, children }: RigCanvasProps) {
+export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, onJointDrag, children }: RigCanvasProps) {
   const svg = useRef<SVGSVGElement>(null);
   const size = useElementSize(svg);
   const latest = useRef({ view, onView });
   latest.current = { view, onView };
   const pan = useRef<{ x: number; y: number; view: View; scale: number; moved: boolean } | null>(null);
+  const jointDrag = useRef<{ bone: string; x: number; y: number; moved: boolean } | null>(null);
   const viewBox = viewBoxFor(rig.contract.space, view);
   const scale = size.width && size.height ? Math.min(size.width / viewBox[2], size.height / viewBox[3]) : 1;
 
@@ -76,7 +79,15 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
         pan.current = { x: event.clientX, y: event.clientY, view, scale, moved: false };
       }}
       onPointerMove={(event) => {
-        onCursor(toRig(event.clientX, event.clientY));
+        const point = toRig(event.clientX, event.clientY);
+        onCursor(point);
+        const drag = jointDrag.current;
+        if (drag) {
+          if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < DRAG_THRESHOLD_PX) return;
+          drag.moved = true;
+          if (point) onJointDrag?.(drag.bone, point, false);
+          return;
+        }
         const start = pan.current;
         if (!start) return;
         const dx = event.clientX - start.x;
@@ -85,11 +96,23 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
         start.moved = true;
         onView(panBy(start.view, dx / start.scale, dy / start.scale));
       }}
-      onPointerUp={() => {
+      onPointerUp={(event) => {
+        const drag = jointDrag.current;
+        jointDrag.current = null;
+        if (drag) {
+          const point = toRig(event.clientX, event.clientY);
+          if (drag.moved && point) onJointDrag?.(drag.bone, point, true);
+          return;
+        }
         if (pan.current && !pan.current.moved) onSelect(null);
         pan.current = null;
       }}
-      onPointerCancel={() => { pan.current = null; }}
+      onPointerCancel={() => {
+        const drag = jointDrag.current;
+        jointDrag.current = null;
+        pan.current = null;
+        if (drag?.moved) onJointDrag?.(drag.bone, { x: Number.NaN, y: Number.NaN }, true);
+      }}
       onPointerLeave={() => onCursor(null)}
     >
       <GridLines area={visible} spacing={grid} scale={scale} />
@@ -110,13 +133,16 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
         {skeleton.joints.map((joint) => (
           <circle
             key={joint.bone}
-            className={["joint", joint.root ? "joint--root" : "", joint.bone === selected ? "joint--selected" : ""].join(" ").trim()}
+            className={["joint", joint.root ? "joint--root" : "", joint.bone === selected ? "joint--selected" : "", onJointDrag ? "joint--draggable" : ""].join(" ").trim()}
             cx={joint.x}
             cy={joint.y}
             r={(joint.root ? ROOT_PX : JOINT_PX) / scale}
             onPointerDown={(event) => {
               event.stopPropagation();
               onSelect(joint.bone);
+              if (!onJointDrag || event.button !== 0) return;
+              svg.current?.setPointerCapture(event.pointerId);
+              jointDrag.current = { bone: joint.bone, x: event.clientX, y: event.clientY, moved: false };
             }}
           >
             <title>{joint.bone}</title>

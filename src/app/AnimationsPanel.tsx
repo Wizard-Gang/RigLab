@@ -26,6 +26,7 @@ export function AnimationsPanel({ animations, active, selected, onSelect, onAdd,
                 animation.name === selected ? "list__item--selected" : "",
               ].join(" ").trim()}
               aria-pressed={animation.name === selected}
+              aria-label={`${animation.name}, ${animation.keys.length} ${animation.keys.length === 1 ? "key" : "keys"} at ${animation.fps} fps`}
               onClick={() => onSelect(animation.name)}
             >
               <span>{animation.name}</span>
