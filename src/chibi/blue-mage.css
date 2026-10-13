@@ -1,0 +1,30 @@
+/* Optional blue mage pixel skin, independent 2x2 bone-local SVG cells. */
+.art-set--blue-mage { shape-rendering: crispEdges; }
+.art-set--blue-mage .part--outline { fill: #192339; stroke: none; }
+.art-set--blue-mage .part--navy-shadow { fill: #172B51; stroke: none; }
+.art-set--blue-mage .part--navy { fill: #243F77; stroke: none; }
+.art-set--blue-mage .part--navy-light { fill: #375D96; stroke: none; }
+.art-set--blue-mage .part--cobalt { fill: #4779AD; stroke: none; }
+.art-set--blue-mage .part--blue-glint { fill: #76A8CD; stroke: none; }
+.art-set--blue-mage .part--gold-shadow { fill: #82623F; stroke: none; }
+.art-set--blue-mage .part--gold { fill: #D8AF66; stroke: none; }
+.art-set--blue-mage .part--gold-light { fill: #F2DCA1; stroke: none; }
+.art-set--blue-mage .part--steel-shadow { fill: #6D7B92; stroke: none; }
+.art-set--blue-mage .part--steel { fill: #ACB8C9; stroke: none; }
+.art-set--blue-mage .part--steel-light { fill: #DFE4EA; stroke: none; }
+.art-set--blue-mage .part--ivory { fill: #F7F2E9; stroke: none; }
+.art-set--blue-mage .part--skin-shadow { fill: #C98F91; stroke: none; }
+.art-set--blue-mage .part--skin { fill: #F0C3B7; stroke: none; }
+.art-set--blue-mage .part--skin-light { fill: #F9D9CC; stroke: none; }
+.art-set--blue-mage .part--hair-shadow { fill: #8996AF; stroke: none; }
+.art-set--blue-mage .part--hair-mid { fill: #CBD1DC; stroke: none; }
+.art-set--blue-mage .part--hair { fill: #EAE8E7; stroke: none; }
+.art-set--blue-mage .part--hair-light { fill: #FCF9EF; stroke: none; }
+.art-set--blue-mage .part--eye-shadow { fill: #263E65; stroke: none; }
+.art-set--blue-mage .part--eye { fill: #78AED7; stroke: none; }
+.art-set--blue-mage .part--eye-light { fill: #DAF2FF; stroke: none; }
+.art-set--blue-mage .part--glove { fill: #252A42; stroke: none; }
+.art-set--blue-mage .part--glove-light { fill: #4A5267; stroke: none; }
+.art-set--blue-mage .part--cloth-shadow { fill: #929EB4; stroke: none; }
+.art-set--blue-mage .part--cloth { fill: #CBD2DD; stroke: none; }
+.art-set--blue-mage .part--cloth-light { fill: #F0EFF0; stroke: none; }
