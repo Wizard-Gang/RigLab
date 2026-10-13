@@ -1,6 +1,6 @@
 {
   "name": "riglab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "MIT",
   "description": "Art-agnostic SVG skeleton and keyframe animation authoring tool built on Hexframe's rig model.",
