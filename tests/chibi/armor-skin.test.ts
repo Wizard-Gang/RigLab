@@ -29,8 +29,8 @@ describe("optional pixel-art chibi armor", () => {
         // No arbitrary segments, unequal-size blocks, off-grid coords, or hidden fragments.
         expect(cells.map(([whole]) => whole).join(" ")).toBe(path.d);
         for (const [, x, y] of cells) {
-          expect(Number(x) % 2).toBe(0);
-          expect(Number(y) % 2).toBe(0);
+          expect(Number.isInteger(Number(x) / 2)).toBe(true);
+          expect(Number.isInteger(Number(y) / 2)).toBe(true);
         }
         totalCells += cells.length;
       }
