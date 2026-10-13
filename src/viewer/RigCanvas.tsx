@@ -3,15 +3,14 @@ import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import type { Rig } from "../../vendor/hexframe/src/rig";
 import { panBy, viewBoxFor, zoomAt } from "../editor/view";
 import type { Point, View } from "../editor/view";
+import type { DragHandle } from "../solve";
+import type { ConstraintGeometry } from "./constraintGeometry";
 import { GridLines } from "./GridLines";
 import type { Skeleton } from "./skeleton";
 import { useElementSize } from "./useElementSize";
 
-/** A draggable point on the skeleton: a bone's joint, or the end of a tipped bone. */
-export interface Handle {
-  readonly bone: string;
-  readonly kind: "joint" | "tip";
-}
+/** A draggable point: a bone's joint, the end of a tipped bone, or the prop's move and turn handles. */
+export type Handle = DragHandle;
 
 interface RigCanvasProps {
   readonly rig: Rig;
@@ -25,6 +24,8 @@ interface RigCanvasProps {
   readonly grid: number;
   /** Which handles can be dragged; `done` marks the drop, and a non-finite point a cancelled drag. */
   readonly drag?: { readonly tips: boolean; readonly onDrag: (handle: Handle, point: Point, done: boolean) => void };
+  /** Pins and the prop for this frame. */
+  readonly constraints?: ConstraintGeometry;
   readonly children?: ReactNode;
 }
 
@@ -34,7 +35,7 @@ const TIP_PX = 4;
 const DRAG_THRESHOLD_PX = 3;
 
 /** The rig's SVG space in its own units (x right, y down), with wheel zoom at the cursor and drag to pan. */
-export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, children }: RigCanvasProps) {
+export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, constraints, children }: RigCanvasProps) {
   const svg = useRef<SVGSVGElement>(null);
   const size = useElementSize(svg);
   const latest = useRef({ view, onView });
@@ -68,7 +69,7 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
 
   const grab = (handle: Handle) => (event: ReactPointerEvent<SVGElement>): void => {
     event.stopPropagation();
-    onSelect(handle.bone);
+    if (handle.kind === "joint" || handle.kind === "tip") onSelect(handle.bone);
     if (!drag || event.button !== 0) return;
     svg.current?.setPointerCapture(event.pointerId);
     handleDrag.current = { handle, x: event.clientX, y: event.clientY, moved: false };
@@ -134,6 +135,23 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
       <line className="axis" x1={visible.x} x2={visible.x + visible.width} y1={0} y2={0} />
       <line className="axis" x1={0} x2={0} y1={visible.y} y2={visible.y + visible.height} />
       {children}
+      {constraints ? (
+        <g className="constraints">
+          {constraints.prop ? (
+            <line className="prop" x1={constraints.prop.start.x} y1={constraints.prop.start.y} x2={constraints.prop.end.x} y2={constraints.prop.end.y} />
+          ) : null}
+          {constraints.pins.map((pin) => (
+            <g key={pin.chain}>
+              {Math.hypot(pin.end.x - pin.at.x, pin.end.y - pin.at.y) > 1e-3 ? (
+                <line className="pin-strain" x1={pin.end.x} y1={pin.end.y} x2={pin.at.x} y2={pin.at.y} />
+              ) : null}
+              <rect className="pin" x={pin.at.x - 5 / scale} y={pin.at.y - 5 / scale} width={10 / scale} height={10 / scale}>
+                <title>{`${pin.chain} pinned`}</title>
+              </rect>
+            </g>
+          ))}
+        </g>
+      ) : null}
       <g className="skeleton">
         {skeleton.segments.map((segment) => (
           <line
@@ -174,6 +192,24 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
           </circle>
         ))}
       </g>
+      {constraints?.prop && drag ? (
+        <g className="prop-handles">
+          <circle className="prop-handle" cx={constraints.prop.origin.x} cy={constraints.prop.origin.y} r={4.5 / scale} onPointerDown={grab({ kind: "prop-move" })}>
+            <title>{`Move ${constraints.prop.name}`}</title>
+          </circle>
+          <rect
+            className="prop-handle"
+            x={constraints.prop.end.x - 4 / scale}
+            y={constraints.prop.end.y - 4 / scale}
+            width={8 / scale}
+            height={8 / scale}
+            transform={`rotate(45 ${constraints.prop.end.x} ${constraints.prop.end.y})`}
+            onPointerDown={grab({ kind: "prop-turn" })}
+          >
+            <title>{`Turn ${constraints.prop.name}`}</title>
+          </rect>
+        </g>
+      ) : null}
     </svg>
   );
 }

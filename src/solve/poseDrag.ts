@@ -1,0 +1,60 @@
+// One Pose-mode drag: the handle decides what moves, then every pin and grip is held again.
+import type { Pose } from "../../vendor/hexframe/src/rig";
+import type { RigLabRig } from "../format/rig";
+import type { Vector } from "./angles";
+import type { Constraints } from "./constraints";
+import { hold, moveProp, turnProp } from "./holds";
+import { dragTip } from "./ik";
+import { dragJoint } from "./pose";
+import type { SolveStatus } from "./pose";
+
+export type DragHandle =
+  | { readonly kind: "joint" | "tip"; readonly bone: string }
+  | { readonly kind: "prop-move" }
+  | { readonly kind: "prop-turn" };
+
+export interface PoseDrag {
+  readonly pose: Pose;
+  readonly constraints: Constraints;
+  readonly status: SolveStatus;
+  readonly message: string | null;
+}
+
+function held(rig: RigLabRig, pose: Pose, constraints: Constraints, status: SolveStatus, message: string | null): PoseDrag {
+  const result = hold(rig, pose, constraints, message);
+  const violated = result.message !== null && result.message !== message;
+  return { ...result, status: status !== "ok" ? status : violated ? "limited" : "ok" };
+}
+
+/**
+ * Pose-mode drag in priority order. A pinned chain end moves its pin, a gripped one carries the prop, and
+ * the prop's handles move or turn it; any other handle poses the body. Pins and grips are then re-held,
+ * so lengths stay fixed and a hold that cannot be kept is reported.
+ */
+export function dragInPose(
+  rig: RigLabRig,
+  pose: Pose,
+  constraints: Constraints,
+  handle: DragHandle,
+  target: Vector,
+  rotationSnap = 0,
+): PoseDrag {
+  const prop = constraints.prop;
+  if (handle.kind === "prop-move" || handle.kind === "prop-turn") {
+    if (!prop) return { pose, constraints, status: "ok", message: null };
+    const moved = handle.kind === "prop-move" ? moveProp(prop, null, target) : turnProp(prop, target, rotationSnap);
+    return held(rig, pose, { ...constraints, prop: moved }, "ok", null);
+  }
+  const chain = handle.kind === "tip" ? rig.chains.find((candidate) => candidate.lower === handle.bone) : undefined;
+  if (chain && constraints.pins.some((pin) => pin.chain === chain.name)) {
+    const pins = constraints.pins.map((pin) => (pin.chain === chain.name ? { chain: pin.chain, x: target.x, y: target.y } : pin));
+    return held(rig, pose, { ...constraints, pins }, "ok", null);
+  }
+  if (chain && prop?.grips.some((grip) => grip.chain === chain.name)) {
+    return held(rig, pose, { ...constraints, prop: moveProp(prop, chain.name, target) }, "ok", null);
+  }
+  const solved = handle.kind === "joint"
+    ? dragJoint(rig, pose, handle.bone, target, rotationSnap)
+    : dragTip(rig, pose, handle.bone, target, rotationSnap);
+  return held(rig, solved.pose, constraints, solved.status, solved.message);
+}

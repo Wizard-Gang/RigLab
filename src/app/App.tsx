@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
-import { createRigLabRig, sampleAnimation } from "../format";
+import { createRigLabRig } from "../format";
+import { constraintsAt, NO_CONSTRAINTS, samplePose } from "../solve";
+import { constraintGeometry } from "../viewer/constraintGeometry";
 import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
 import { activeAnimationOf, documentOf, editorReducer, initialState, isDirty } from "../editor/state";
@@ -38,14 +40,20 @@ export function App() {
     onFrame,
     enabled: state.mode === "animate" && animation !== null,
   });
-  const sampled = useMemo(
-    () => (state.mode === "setup" || !animation ? {} : sampleAnimation(animation, state.frame)),
-    [state.mode, animation, state.frame],
+  const posed = state.mode !== "setup" && animation !== null;
+  const held = useMemo(
+    () => (posed ? samplePose(document.rig, animation, state.frame) : { pose: {}, violations: [] }),
+    [posed, document.rig, animation, state.frame],
   );
-  const drags = useCanvasDrags(state, dispatch, sampled);
+  const frameConstraints = useMemo(() => (posed ? constraintsAt(animation, state.frame) : NO_CONSTRAINTS), [posed, animation, state.frame]);
+  const drags = useCanvasDrags(state, dispatch, held.pose, frameConstraints);
   const rig = useMemo(() => createRigLabRig(drags.rig), [drags.rig]);
   const pose = drags.pose;
   const skeleton = useMemo(() => skeletonFor(rig, pose), [rig, pose]);
+  const markers = useMemo(
+    () => (posed ? constraintGeometry(document.rig, pose, drags.constraints) : undefined),
+    [posed, document.rig, pose, drags.constraints],
+  );
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
 
   const run = useCallback((command: Command) => {
@@ -106,6 +114,7 @@ export function App() {
           onCursor={setCursor}
           grid={state.grid}
           drag={drags.drag}
+          constraints={markers}
         />
       </main>
 
@@ -118,10 +127,12 @@ export function App() {
             rig={document.rig}
             bone={selectedBone}
             pose={pose}
+            constraints={drags.constraints}
             placed={skeleton.placed}
             frame={state.frame}
             keyed={animation.keys.some((key) => key.frame === state.frame)}
-            onPose={(solved) => dispatch({ type: "setPose", pose: solved.pose, message: solved.message })}
+            onPose={(next, constraints, note, warning) => dispatch({ type: "setPose", pose: next, constraints, note, warning })}
+            onError={(text) => dispatch({ type: "status", status: { tone: "error", text } })}
           />
         ) : (
           <Inspector
@@ -150,7 +161,7 @@ export function App() {
       ) : null}
 
       <StatusBar
-        status={drags.message ? { tone: "error", text: drags.message } : state.status}
+        status={drags.message ? { tone: "error", text: drags.message } : held.violations.length ? { tone: "error", text: held.violations.join("; ") } : state.status}
         cursor={cursor}
         zoom={state.view.zoom}
         grid={state.grid}

@@ -4,5 +4,8 @@ export {
 export type { Interpolation, Key, RigLabAnimation } from "./animation";
 export { RIG_FORMAT, RIG_VERSION, boneOf, createRigLabRig, validateRig } from "./rig";
 export type { AngleLimits, Chain, RigLabBone, RigLabRig } from "./rig";
-export { animationTime, blendPoses, keyIndexAt, sampleAnimation } from "./sample";
+export { MAX_GRIPS } from "./constraints";
+export type { Grip, Pin, Prop } from "./constraints";
+export { animationTime, blendPoses, keyIndexAt, sampleAnimation, segmentAt } from "./sample";
+export type { Segment } from "./sample";
 export type { Validation } from "./validate";
