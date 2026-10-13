@@ -38,8 +38,8 @@ describe("Tier 6 Warlord optional pixel armor skin", () => {
         expect(cells.length).toBeGreaterThan(0);
         expect(cells.map(([whole]) => whole).join(" ")).toBe(path.d);
         for (const [, x, y] of cells) {
-          expect(Number(x) % 2).toBe(0);
-          expect(Number(y) % 2).toBe(0);
+          expect(Number.isInteger(Number(x) / 2)).toBe(true);
+          expect(Number.isInteger(Number(y) / 2)).toBe(true);
         }
         total += cells.length;
       }
