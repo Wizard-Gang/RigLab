@@ -1,9 +1,10 @@
 // riglab.baked version 1: every frame's solved world transforms, for consumers that only draw.
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabRig } from "../format/rig";
-import { checkInteger, checkName, closedObject, isFiniteNumber, Issues } from "../format/validate";
+import { checkInteger, checkName, closedObject, isFiniteNumber, isObject, Issues } from "../format/validate";
 import type { Validation } from "../format/validate";
-import { engineOf, place, playAt } from "../solve";
+import type { RigLabWeapon } from "../format/weapon";
+import { bodyTransforms, engineOf, place, playAt } from "../solve";
 
 export const BAKED_FORMAT = "riglab.baked";
 export const BAKED_VERSION = 1;
@@ -16,6 +17,12 @@ export interface BakedProp {
   readonly x: number;
   readonly y: number;
   readonly rotation: number;
+}
+
+/** The held weapon on a frame: each of its bodies' world transforms by body name, riding bodies included. */
+export interface BakedWeapon {
+  readonly name: string;
+  readonly bodies: Readonly<Record<string, Transform>>;
 }
 
 export interface RigLabBaked {
@@ -31,6 +38,8 @@ export interface RigLabBaked {
   readonly frames: readonly (readonly Transform[])[];
   /** The held prop on each frame, or null; omitted when no frame has one. */
   readonly props?: readonly (BakedProp | null)[];
+  /** The held weapon on each frame, or null; omitted when no frame holds one. */
+  readonly weapons?: readonly (BakedWeapon | null)[];
 }
 
 const round = (value: number): number => Math.round(value * 1e6) / 1e6 || 0;
@@ -40,11 +49,12 @@ export function frameCount(animation: RigLabAnimation): number {
 }
 
 /** Bake every Hexframe tick as Hexframe plays it, through the same engine playback the editor previews. */
-export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation): RigLabBaked {
+export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation, weapons: readonly RigLabWeapon[] = []): RigLabBaked {
   const bones = rig.bones.map((bone) => bone.name);
-  const engine = engineOf(rig, animation);
+  const engine = engineOf(rig, animation, weapons);
   const frames: Transform[][] = [];
   const props: (BakedProp | null)[] = [];
+  const held: (BakedWeapon | null)[] = [];
   for (let frame = 0; frame < frameCount(animation); frame += 1) {
     const played = playAt(engine, frame);
     const placed = place(rig, played.pose);
@@ -54,6 +64,11 @@ export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation): RigLa
     }));
     const prop = played.constraints.prop;
     props.push(prop ? { name: prop.name, x: round(prop.x), y: round(prop.y), rotation: round(prop.rotation) } : null);
+    const wielded = played.constraints.weapon;
+    held.push(wielded ? {
+      name: wielded.weapon.name,
+      bodies: Object.fromEntries(bodyTransforms(rig, played.pose, wielded).map((body) => [body.body, [round(body.x), round(body.y), round(body.rotation)] as const])),
+    } : null);
   }
   return {
     format: BAKED_FORMAT,
@@ -65,15 +80,34 @@ export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation): RigLa
     bones,
     frames,
     ...(props.some((prop) => prop !== null) ? { props } : {}),
+    ...(held.some((weapon) => weapon !== null) ? { weapons: held } : {}),
   };
 }
 
 const isTransform = (value: unknown): boolean => Array.isArray(value) && value.length === 3 && value.every(isFiniteNumber);
 
-/** Closed structural validation against the rig and the animation it claims to bake. */
-export function validateBaked(value: unknown, rig: RigLabRig, animation: RigLabAnimation): Validation<RigLabBaked> {
+function validateBakedWeapons(issues: Issues, value: unknown, count: number, weapons: readonly RigLabWeapon[]): void {
+  if (!Array.isArray(value) || value.length !== count) {
+    issues.add("$.weapons", "must hold one entry per frame");
+    return;
+  }
+  value.forEach((entry: unknown, index) => {
+    if (entry === null) return;
+    const at = `$.weapons[${index}]`;
+    if (!closedObject(issues, at, entry, ["name", "bodies"]) || !checkName(issues, `${at}.name`, entry.name)) return;
+    const weapon = weapons.find((candidate) => candidate.name === entry.name);
+    if (!weapon) issues.add(`${at}.name`, "must name one of the bundle's weapons");
+    else if (!isObject(entry.bodies) || Object.keys(entry.bodies).join("\n") !== weapon.bodies.map((body) => body.name).join("\n")) {
+      issues.add(`${at}.bodies`, `must give each body of '${weapon.name}' in order`);
+    } else if (!Object.values(entry.bodies).every(isTransform)) issues.add(`${at}.bodies`, "must hold one [x, y, rotation] per body");
+  });
+}
+
+/** Closed structural validation against the rig, the weapons and the animation it claims to bake. */
+export function validateBaked(value: unknown, rig: RigLabRig, animation: RigLabAnimation, weapons: readonly RigLabWeapon[] = []): Validation<RigLabBaked> {
   const issues = new Issues();
-  if (!closedObject(issues, "$", value, ["format", "version", "rig", "animation", "fps", "loop", "bones", "frames"], ["props"])) return issues.result(value);
+  const fields = ["format", "version", "rig", "animation", "fps", "loop", "bones", "frames"];
+  if (!closedObject(issues, "$", value, fields, ["props", "weapons"])) return issues.result(value);
   if (value.format !== BAKED_FORMAT) issues.add("$.format", `must be '${BAKED_FORMAT}'`);
   if (value.version !== BAKED_VERSION) issues.add("$.version", `must be ${BAKED_VERSION}`);
   if (value.rig !== rig.name) issues.add("$.rig", `must name rig '${rig.name}'`);
@@ -102,5 +136,6 @@ export function validateBaked(value: unknown, rig: RigLabRig, animation: RigLabA
       });
     }
   }
+  if (value.weapons !== undefined) validateBakedWeapons(issues, value.weapons, frameCount(animation), weapons);
   return issues.result(value);
 }

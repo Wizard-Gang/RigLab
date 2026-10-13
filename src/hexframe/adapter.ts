@@ -3,6 +3,7 @@ import { createRig } from "../../vendor/hexframe/src/rig";
 import type { Clip, RigContract } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabRig } from "../format/rig";
+import type { RigLabWeapon } from "../format/weapon";
 import { engineOf } from "../solve/engine";
 
 export type Adapted<T> =
@@ -38,10 +39,11 @@ export function toHexframeRig(rig: RigLabRig): Adapted<RigContract> {
 
 /**
  * The animation as the clip RigLab's engine playback already plays: its 13 poses over its length in Hexframe ticks,
- * linear between poses. Hexframe plays it frame for frame as RigLab previews and bakes it.
+ * linear between poses, with any held weapon's grips held. Hexframe plays it frame for frame as RigLab previews and
+ * bakes it.
  */
-export function toHexframeClip(rig: RigLabRig, animation: RigLabAnimation): HexframeClipFile {
-  const { clip } = engineOf(rig, animation);
+export function toHexframeClip(rig: RigLabRig, animation: RigLabAnimation, weapons: readonly RigLabWeapon[] = []): HexframeClipFile {
+  const { clip } = engineOf(rig, animation, weapons);
   return {
     key: animation.name,
     loop: clip.loop,
@@ -50,4 +52,10 @@ export function toHexframeClip(rig: RigLabRig, animation: RigLabAnimation): Hexf
     note: `Exported by RigLab from the ${animation.kind} animation ${animation.name}.`,
     poses: clip.poses,
   };
+}
+
+/** What a Hexframe clip of the animation leaves out: its weapons' transforms, which Hexframe's clip has no channel for. */
+export function clipNotes(animation: RigLabAnimation): string[] {
+  const held = [...new Set(animation.keys.flatMap((key) => (key.weapon ? [key.weapon.name] : [])))];
+  return held.length ? [`Hexframe's clip has no weapon channel, so the ${held.join(" and ")} transforms are left out; the baked frames carry them`] : [];
 }
