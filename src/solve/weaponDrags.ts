@@ -1,11 +1,12 @@
 // Drags that move or turn a free weapon body, or carry it by a hand that grips it. Bodies that ride a hand move with it.
+// Rig setup also drags a body's grips and axis ends in its own frame, and turns a riding body on its hand.
 import type { BodyPlacement } from "../format/constraints";
 import { isFree } from "../format/weapon";
-import type { WeaponBody } from "../format/weapon";
+import type { WeaponBody, WeaponPoint } from "../format/weapon";
 import { angleOf, lengthOf, nearest, rotate, snapAngle, tidy } from "./angles";
 import type { Vector } from "./angles";
 import { bodyPoint } from "./weapons";
-import type { Wielded } from "./weapons";
+import type { BodyTransform, Wielded } from "./weapons";
 
 /** The midpoint of a body's grips in its own frame: where its move handle sits and what it turns about. */
 export function gripCenter(body: WeaponBody): readonly [number, number] {
@@ -31,6 +32,26 @@ export function moveBody(wielded: Wielded, name: string, chain: string | null, t
     const from = bodyPoint(placement, grip ? grip.at : gripCenter(body));
     return { ...placement, x: tidy(placement.x + target.x - from.x), y: tidy(placement.y + target.y - from.y) };
   });
+}
+
+/** A world point in a body's own frame: where a grip or an axis end dragged to `target` lands on the body. */
+export function pointInBody(transform: Omit<BodyTransform, "body">, target: Vector): WeaponPoint {
+  const local = rotate({ x: target.x - transform.x, y: target.y - transform.y }, -transform.rotation);
+  return [tidy(local.x), tidy(local.y)];
+}
+
+/**
+ * A riding body's grip angle that turns its tip toward `target` about the hand, snapped to `snap` degrees: the body's
+ * rotation less the gripping forearm's, `lowerRotation` in degrees.
+ */
+export function ridingAngle(body: WeaponBody, transform: Omit<BodyTransform, "body">, lowerRotation: number, target: Vector, snap = 0): number {
+  const grip = body.grips[0]!;
+  const hand = bodyPoint(transform, grip.at);
+  const toward = { x: target.x - hand.x, y: target.y - hand.y };
+  const angle = body.grips[0]!.angle ?? 0;
+  if (lengthOf(toward) < 1e-9) return angle;
+  const tip = { x: body.axis[1][0] - grip.at[0], y: body.axis[1][1] - grip.at[1] };
+  return tidy(nearest(snapAngle(angleOf(toward) - angleOf(tip) - lowerRotation, snap), angle));
 }
 
 /** Turn a free body about its grips' midpoint so that its tip faces `target`, snapped to `snap` degrees. */

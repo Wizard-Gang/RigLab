@@ -29,6 +29,10 @@ interface RigCanvasProps {
   readonly constraints?: ConstraintGeometry;
   /** Draw held weapon bodies as lines, for when no art draws them. */
   readonly weaponLines?: boolean;
+  /** Rig setup's weapon handles: each grip and axis end, and a riding body's turn. */
+  readonly weaponSetup?: boolean;
+  /** Called when any handle is pressed, so the editor can select what it belongs to. */
+  readonly onHandle?: (handle: Handle) => void;
   /** Faint skeletons of neighbouring keys. */
   readonly ghosts?: readonly { readonly skeleton: Skeleton; readonly tone: "previous" | "next" }[];
   readonly children?: ReactNode;
@@ -40,7 +44,7 @@ const TIP_PX = 4;
 const DRAG_THRESHOLD_PX = 3;
 
 /** The rig's SVG space in its own units (x right, y down), with wheel zoom at the cursor and drag to pan. */
-export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, constraints, weaponLines = true, ghosts, children }: RigCanvasProps) {
+export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, constraints, weaponLines = true, weaponSetup = false, onHandle, ghosts, children }: RigCanvasProps) {
   const svg = useRef<SVGSVGElement>(null);
   const size = useElementSize(svg);
   const latest = useRef({ view, onView });
@@ -75,6 +79,7 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
   const grab = (handle: Handle) => (event: ReactPointerEvent<SVGElement>): void => {
     event.stopPropagation();
     if (handle.kind === "joint" || handle.kind === "tip") onSelect(handle.bone);
+    onHandle?.(handle);
     if (!drag || event.button !== 0) return;
     svg.current?.setPointerCapture(event.pointerId);
     handleDrag.current = { handle, x: event.clientX, y: event.clientY, moved: false };
@@ -202,7 +207,7 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
           </circle>
         ))}
       </g>
-      {constraints && drag ? <WeaponHandles markers={constraints.weapons} scale={scale} grab={grab} /> : null}
+      {constraints && drag ? <WeaponHandles markers={constraints.weapons} scale={scale} grab={grab} setup={weaponSetup} /> : null}
     </svg>
   );
 }

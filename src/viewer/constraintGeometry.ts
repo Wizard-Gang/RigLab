@@ -20,7 +20,8 @@ export interface WeaponMarker {
   readonly butt: Vector;
   readonly tip: Vector;
   readonly center: Vector;
-  readonly grips: readonly Vector[];
+  /** Each grip's world point, by name, in the body's grip order. */
+  readonly grips: readonly (Vector & { readonly grip: string })[];
 }
 
 export interface ConstraintGeometry {
@@ -47,7 +48,7 @@ export function constraintGeometry(rig: RigLabRig, pose: Pose, constraints: Cons
       butt: bodyPoint(transform, butt),
       tip: bodyPoint(transform, tip),
       center: bodyPoint(transform, gripCenter(body)),
-      grips: body.grips.map((grip) => bodyPoint(transform, grip.at)),
+      grips: body.grips.map((grip) => ({ grip: grip.name, ...bodyPoint(transform, grip.at) })),
     }];
   });
   return { weapons, pins };

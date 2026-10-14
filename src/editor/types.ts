@@ -6,6 +6,7 @@ import type { History } from "./history";
 import type { LibraryModel } from "./model";
 import type { RigEdit } from "./rigEdits";
 import type { TimelineEdit } from "./timeline";
+import type { WeaponEdit } from "./weaponEdits";
 import type { View } from "./view";
 
 export type Mode = "setup" | "pose" | "animate" | "export";
@@ -20,6 +21,9 @@ export type Selection =
   | { readonly kind: "bone"; readonly name: string }
   | { readonly kind: "animation"; readonly name: string }
   | { readonly kind: "key"; readonly frame: number }
+  /** A body of the active class's weapon, or one of its grips. */
+  | { readonly kind: "body"; readonly weapon: string; readonly body: string }
+  | { readonly kind: "grip"; readonly weapon: string; readonly body: string; readonly grip: string }
   | null;
 
 export interface Status {
@@ -55,6 +59,7 @@ export type Action =
   | { readonly type: "redo" }
   | { readonly type: "deleteSelection" }
   | { readonly type: "rigEdit"; readonly edit: RigEdit }
+  | { readonly type: "weaponEdit"; readonly edit: WeaponEdit }
   | { readonly type: "timeline"; readonly edit: TimelineEdit }
   | {
     readonly type: "setPose";

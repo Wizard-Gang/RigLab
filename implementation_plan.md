@@ -2,24 +2,9 @@
 
 ## Open tasks
 
-### RL-043 — [FEAT] Edit the active class's weapon rig and hold in Rig setup
-
-- Dependency: None.
-- Why: The owner said on 2026-10-13: "we need to be able to make the animations and adjust the props as well". They chose Spine-style modes, with Rig setup editing the chibi and the active class's weapon rig and hold at rest. Today a weapon's grips, axis and hold change only by hand-editing the library's JSON.
-- Scope: With an armed class active, Rig setup draws the chibi at rest holding the class weapon at its hold. It shows the weapon's art, axis, grip points and handles, with the hands solved to the grips. The hierarchy lists the weapon's bodies and their grips after the bones. Selecting one opens an inspector with numeric fields for:
-  - the hold (`x`, `y`, `rotation`)
-  - each grip's `at`, and its `angle` for a one-grip body
-  - the axis butt and tip
-
-  The canvas edits the same values. A free body's move and turn handles set the hold. Dragging a grip point moves it in the body's frame, dragging the butt or tip moves the axis, and a one-grip body's turn handle sets its grip angle. Each weapon edit is one undo step and must leave the weapon and hold valid. A grip the hands cannot reach at rest is reported, never stretched. Keys place bodies and hands solve to grips, so a changed grip moves the hands on every key of that class, and the inspector says so. Save writes `weapon.json` and `hold.json` through the library save. Update README and ARCHITECTURE.
-- Non-goals: Adding or removing bodies or grips, binding a grip to another chain, adding, renaming or deleting weapons or classes, editing art or palettes, and moving existing keys' bodies when the hold changes.
-- Acceptance: Reducer tests cover each weapon edit and its undo. They refuse two grips on one point, and any weapon edit outside Rig setup. Geometry tests move a dragged grip's `at` by the drag in the body's frame. Headless Chrome on a worktree dev server over a temporary library copy, in the sword class, drags the hold and a grip and saves. `weapon.json` and `hold.json` change on disk, with their previous versions in `backups/`. `sword-idle` plays with the hands on the new grips, and the wardrobe shows the new hold. There are no console errors. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused editor, solve and viewer tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/editor/rigEdits.ts`, `src/editor/model.ts`, `src/app/BoneSetup.tsx`, `src/app/ModePanel.tsx`, `src/app/useCanvasDrags.ts`, `src/viewer/RigCanvas.tsx`, `src/viewer/Hierarchy.tsx`, `src/viewer/WeaponMarkers.tsx`, `src/solve/weaponDrags.ts`, `src/format/weapon.ts`, `src/format/hold.ts`, the library save path (`src/library/save.ts`), `README.md`, `docs/ARCHITECTURE.md`, and the owner's direction and answers on 2026-10-13.
-
 ### RL-044 — [FEAT] Merge Pose and Animation into one Animate mode
 
-- Dependency: RL-043, because both change the mode panel.
+- Dependency: None.
 - Why: The owner chose Spine-style modes on 2026-10-13: Rig setup and Animate, plus Export. Today Pose can edit but not play, and Animation can play but not edit. Authoring a key means switching modes between every change and every look at it.
 - Scope: Modes become Rig setup, Animate and Export. Animate plays, scrubs and steps as Animation does. When paused, it poses the active animation's key at the current frame as Pose does. A drop between keys is still refused, with the key frames named. While playing, the canvas hides its drag handles and the pose inspector's fields are read-only. Space plays and pauses. The right panel shows the pose inspector for a selected bone, and otherwise the animation or key. Export keeps playing beside its panel. The reducer's `pose` and `animate` modes become one, and the editor opens in Animate. Update the shortcut help, README and ARCHITECTURE.
 - Non-goals: Rig setup changes, timeline edits beyond interpolation, auto-key, and adding or moving keys.
