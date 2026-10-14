@@ -4,12 +4,12 @@ import { blankAnimation, restPose } from "../../src/editor/animations";
 import { setKeyPose } from "../../src/editor/poseEdits";
 import { sampleAnimation, validateAnimation } from "../../src/format";
 import type { RigLabAnimation } from "../../src/format";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { chainEnd, constraintsAt, dragInPose, NO_CONSTRAINTS, runtimeRig, samplePose, togglePin } from "../../src/solve";
 import type { Constraints } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
 
-const rig = CHIBI_RIG;
+const rig = LIBRARY.rig;
 const rest = restPose(rig);
 const chain = (name: string) => rig.chains.find((candidate) => candidate.name === name)!;
 const lengths = (pose: Pose) => skeletonFor(runtimeRig(rig), pose).segments.map(segmentLength);

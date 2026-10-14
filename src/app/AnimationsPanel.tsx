@@ -14,7 +14,7 @@ interface AnimationsPanelProps {
 
 const seconds = (length: number): string => `${(length / ENGINE_FPS).toFixed(2)} s`;
 
-/** The document's animations: select one to play and inspect it; add one of a kind, duplicate or delete them. */
+/** The library's animations: select one to play and inspect it; add one of a kind, duplicate or delete them. */
 export function AnimationsPanel({ animations, active, selected, onSelect, onAdd, onDuplicate, onDelete }: AnimationsPanelProps) {
   return (
     <section className="panel__section" aria-labelledby="animations-title">

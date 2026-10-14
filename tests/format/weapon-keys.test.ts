@@ -1,27 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
 import { blankAnimation } from "../../src/editor/animations";
-import { libraryDocument } from "../../src/editor/templates";
-import { parseDocument, serializeDocument, validateDocument } from "../../src/format/document";
-import type { RigLabDocument } from "../../src/format/document";
-import { STAFF, TWIN } from "./weapon-fixtures";
+import { libraryModel, validateModel } from "../../src/editor/model";
+import type { LibraryModel } from "../../src/editor/model";
+import { LIBRARY } from "../../src/library/active";
+import { HOLDS, STAFF, TWIN } from "./weapon-fixtures";
 
 type Mutable = Record<string, any>;
 
 /** The chibi holding the staff on its idle's first key and the twin blades on its second. */
-function armed(): RigLabDocument {
-  const idle = blankAnimation(CHIBI_RIG, "idle", "idle");
+function armed(): LibraryModel {
+  const idle = blankAnimation(LIBRARY.rig, "idle", "idle");
   const keys = idle.keys.map((key, index) => (
     index === 0 ? { ...key, weapon: { name: "staff", bodies: [{ body: "staff", x: -6, y: -30, rotation: 0 }] } }
       : index === 1 ? { ...key, weapon: { name: "twin", bodies: [] } } : key
   ));
-  return { ...libraryDocument(), animations: [{ ...idle, keys }], weapons: [STAFF, TWIN] };
+  return { ...libraryModel(LIBRARY), animations: [{ ...idle, keys }], weapons: [{ weapon: STAFF, hold: HOLDS.staff! }, { weapon: TWIN, hold: HOLDS.twin! }] };
 }
 
 function errorsOf(change: (value: Mutable) => void): string {
   const value = structuredClone(armed()) as Mutable;
   change(value);
-  const result = validateDocument(value);
+  const result = validateModel(value as LibraryModel);
   expect(result.ok).toBe(false);
   return result.ok ? "" : result.errors.join("\n");
 }
@@ -29,23 +28,20 @@ function errorsOf(change: (value: Mutable) => void): string {
 const KEY = "$.animations[0].keys[0]";
 
 describe("keys that hold weapons", () => {
-  it("validate with the document's weapons and reopen deep-equal", () => {
-    const document = armed();
-    const result = validateDocument(document);
+  it("validate with the library's weapons", () => {
+    const result = validateModel(armed());
     expect(result.ok ? [] : result.errors).toEqual([]);
-    expect(parseDocument(serializeDocument(document))).toEqual({ ok: true, value: document });
   });
 
-  it("leave documents without weapons as they were", () => {
-    const plain = libraryDocument();
-    expect("weapons" in plain).toBe(false);
-    expect(validateDocument({ ...plain, weapons: [] }).ok).toBe(true);
+  it("need no weapon when no key holds one", () => {
+    const plain = libraryModel(LIBRARY);
+    expect(validateModel({ ...plain, weapons: [] }).ok).toBe(true);
   });
 
-  it("must name one of the document's weapons", () => {
+  it("must name one of the library's weapons", () => {
     expect(errorsOf((value) => {
-      value.weapons = [TWIN];
-    })).toBe(`${KEY}.weapon.name: must name one of the document's weapons`);
+      value.weapons = [value.weapons[1]];
+    })).toBe(`${KEY}.weapon.name: must name one of the library's weapons`);
   });
 
   it("place exactly the weapon's free bodies", () => {
@@ -77,15 +73,12 @@ describe("keys that hold weapons", () => {
     })).toBe(`${KEY}.weapon: has unknown field 'grip'`);
   });
 
-  it("refuse an invalid or duplicated document weapon at its own path", () => {
+  it("refuse an invalid or duplicated library weapon at its own path", () => {
     expect(errorsOf((value) => {
-      value.weapons[0].bodies[0].grips[0].chain = "tail";
-    })).toBe("$.weapons[0].bodies[0].grips[0].chain: must name a chain of rig 'chibi'");
+      value.weapons[0].weapon.bodies[0].grips[0].chain = "tail";
+    })).toBe("$.weapons[0].weapon.bodies[0].grips[0].chain: must name a chain of rig 'chibi'");
     expect(errorsOf((value) => {
-      value.weapons = [STAFF, STAFF, TWIN];
-    })).toBe("$.weapons[1].name: duplicates weapon 'staff'");
-    expect(errorsOf((value) => {
-      value.weapons = {};
-    })).toBe("$.weapons: must be an array");
+      value.weapons = [value.weapons[0], value.weapons[0], value.weapons[1]];
+    })).toBe("$.weapons[1].weapon.name: duplicates weapon 'staff'");
   });
 });

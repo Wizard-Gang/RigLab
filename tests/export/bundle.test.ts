@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { blankAnimation, restPose } from "../../src/editor/animations";
-import { libraryDocument } from "../../src/editor/templates";
+import { libraryModel } from "../../src/editor/model";
+import type { LibraryModel } from "../../src/editor/model";
 import { setKeyPose } from "../../src/editor/poseEdits";
 import { bakeAnimation, frameCount } from "../../src/export/bake";
 import { buildBundle, EXPORT_ROOT } from "../../src/export/bundle";
 import { crc32, zip } from "../../src/export/zip";
 import { poseFrames } from "../../src/format";
-import type { RigLabDocument } from "../../src/format";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { chainEnd, dragInPose, engineOf, NO_CONSTRAINTS, place, playAt, togglePin } from "../../src/solve";
 import { written } from "./written";
 
-const rig = CHIBI_RIG;
+const rig = LIBRARY.rig;
 const GENERATOR = "RigLab test";
 
 /** A blank idle and walk, plus a looping crouch whose first two keys pin both feet while the pelvis drops. */
-function authored(): RigLabDocument {
+function authored(): LibraryModel {
   const rest = restPose(rig);
   let feet = NO_CONSTRAINTS;
   for (const chain of ["leg-front", "leg-back"]) {
@@ -29,7 +29,7 @@ function authored(): RigLabDocument {
   if (low.status !== "ok") throw new Error(low.message ?? low.status);
   const keyed = setKeyPose(rig, planted.animation, 15, low.pose, low.constraints);
   if (!keyed.ok) throw new Error(keyed.error);
-  return { ...libraryDocument(), animations: [blankAnimation(rig, "idle", "idle"), blankAnimation(rig, "walk", "walk"), keyed.animation] };
+  return { ...libraryModel(LIBRARY), animations: [blankAnimation(rig, "idle", "idle"), blankAnimation(rig, "walk", "walk"), keyed.animation] };
 }
 
 const text = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
@@ -63,10 +63,10 @@ describe("riglab-export bundles", () => {
     expect((await buildBundle(authored(), { baked: false, generator: GENERATOR })).has("baked/idle.baked.json")).toBe(false);
   });
 
-  it("pin every file by SHA-256, write the document's own rig and animations, and bake each one fresh", async () => {
-    const document = authored();
+  it("pin every file by SHA-256, write the model's own rig and animations, and bake each one fresh", async () => {
+    const model = authored();
     for (const baked of [true, false]) {
-      const bundle = await written(await buildBundle(document, { baked, generator: GENERATOR }), document);
+      const bundle = await written(await buildBundle(model, { baked, generator: GENERATOR }), model);
       expect([bundle.animations.length, bundle.weapons.length, bundle.baked.size]).toEqual([3, 0, baked ? 3 : 0]);
     }
   });

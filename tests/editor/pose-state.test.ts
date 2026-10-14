@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { sampleAnimation } from "../../src/format";
 import { setKeyPose } from "../../src/editor/poseEdits";
-import { activeAnimationOf, documentOf, editorReducer, initialState } from "../../src/editor/state";
+import { activeAnimationOf, modelOf, editorReducer, initialState } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import { dragTip } from "../../src/solve";
 
@@ -21,7 +21,7 @@ function posing(frame: number): EditorState {
 
 function reach(state: EditorState) {
   const animation = activeAnimationOf(state)!;
-  return dragTip(CHIBI_RIG, sampleAnimation(animation, state.frame), "forearm-front", { x: 20, y: -35 });
+  return dragTip(LIBRARY.rig, sampleAnimation(animation, state.frame), "forearm-front", { x: 20, y: -35 });
 }
 
 describe("pose edits", () => {
@@ -40,17 +40,17 @@ describe("pose edits", () => {
     const state = posing(12);
     const refused = run(state, { type: "setPose", pose: reach(state).pose });
     expect(refused.status).toEqual({ tone: "error", text: "Frame 12 is between keys: attack poses at frames 0, 8, 16 and 24" });
-    expect(documentOf(refused)).toBe(documentOf(state));
+    expect(modelOf(refused)).toBe(modelOf(state));
   });
 
   it("are one undo step and touch no other animation", () => {
     const state = posing(16);
     const posed = run(state, { type: "setPose", pose: reach(state).pose, warning: "arm-front cannot reach" });
     expect(posed.status).toEqual({ tone: "error", text: "Posed attack at frame 16; arm-front cannot reach" });
-    const before = documentOf(state).animations;
-    const after = documentOf(posed).animations;
+    const before = modelOf(state).animations;
+    const after = modelOf(posed).animations;
     expect(after.filter((animation, index) => animation !== before[index]).map((animation) => animation.name)).toEqual(["attack"]);
-    expect(documentOf(run(posed, { type: "undo" }))).toBe(documentOf(state));
+    expect(modelOf(run(posed, { type: "undo" }))).toBe(modelOf(state));
   });
 
   it("report notes as information and solver warnings as errors", () => {
@@ -63,15 +63,15 @@ describe("pose edits", () => {
     const animate = run(posing(8), { type: "setMode", mode: "animate" });
     const refused = run(animate, { type: "setPose", pose: reach(animate).pose });
     expect(refused.status?.text).toBe("Switch to Pose to change poses");
-    expect(documentOf(refused)).toBe(documentOf(animate));
+    expect(modelOf(refused)).toBe(modelOf(animate));
   });
 
   it("refuse a pose that would translate a non-root bone", () => {
     const animation = activeAnimationOf(posing(0))!;
     const stretched = { ...animation.keys[0]!.pose, head: { rotation: 0, x: 4 } };
-    const result = setKeyPose(CHIBI_RIG, animation, 0, stretched);
+    const result = setKeyPose(LIBRARY.rig, animation, 0, stretched);
     expect(result.ok ? "" : result.error).toMatch(/pose\.head: has unknown field 'x'/);
-    expect(setKeyPose(CHIBI_RIG, animation, 25, animation.keys[0]!.pose).ok).toBe(false);
+    expect(setKeyPose(LIBRARY.rig, animation, 25, animation.keys[0]!.pose).ok).toBe(false);
   });
 
   it("accept only the offered rotation-snap increments", () => {

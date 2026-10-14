@@ -1,14 +1,15 @@
 import { Fragment, useEffect, useState } from "react";
 import { version } from "../../package.json";
 import type { RigLabAnimation } from "../format/animation";
-import type { RigLabDocument } from "../format/document";
 import { clipNotes, toHexframeClip, toHexframeRig } from "../hexframe/adapter";
 import { buildBundle, EXPORT_ROOT } from "../export/bundle";
 import { canUseFolders, downloadJson, downloadZip, writeFolder } from "../editor/bundleFiles";
+import { weaponRigs } from "../editor/model";
+import type { LibraryModel } from "../editor/model";
 import type { Status } from "../editor/state";
 
 interface ExportPanelProps {
-  readonly document: RigLabDocument;
+  readonly model: LibraryModel;
   /** The active animation, which the Hexframe clip export converts. */
   readonly active: RigLabAnimation | null;
   readonly onStatus: (status: Status) => void;
@@ -34,7 +35,7 @@ function BundlePath({ path }: { readonly path: string }) {
 }
 
 /** Export mode: what the bundle will hold and where to write it. Export only writes; motion comes in through the library folder. */
-export function ExportPanel({ document, active, onStatus }: ExportPanelProps) {
+export function ExportPanel({ model, active, onStatus }: ExportPanelProps) {
   const [baked, setBaked] = useState(true);
   const [files, setFiles] = useState<ReadonlyMap<string, Uint8Array> | null>(null);
   const folders = canUseFolders();
@@ -42,13 +43,13 @@ export function ExportPanel({ document, active, onStatus }: ExportPanelProps) {
   useEffect(() => {
     let current = true;
     setFiles(null);
-    void buildBundle(document, { baked, generator: GENERATOR }).then((built) => {
+    void buildBundle(model, { baked, generator: GENERATOR }).then((built) => {
       if (current) setFiles(built);
     });
     return () => {
       current = false;
     };
-  }, [document, baked]);
+  }, [model, baked]);
 
   const run = async (what: string, task: () => Promise<string | null>): Promise<void> => {
     try {
@@ -93,15 +94,15 @@ export function ExportPanel({ document, active, onStatus }: ExportPanelProps) {
       </p>
       <div className="setup__actions">
         <button type="button" className="tool" onClick={() => {
-          const adapted = toHexframeRig(document.rig);
+          const adapted = toHexframeRig(model.rig);
           if (!adapted.ok) return onStatus({ tone: "error", text: adapted.error });
-          const name = `${document.rig.name}.rig.json`;
+          const name = `${model.rig.name}.rig.json`;
           downloadJson(`${JSON.stringify(adapted.value, null, 2)}\n`, name);
           onStatus({ tone: "info", text: [`Downloaded ${name}`, ...adapted.notes].join("; ") });
         }}>Download Hexframe rig</button>
         <button type="button" className="tool" disabled={!active} onClick={() => {
           if (!active) return;
-          const clip = toHexframeClip(document.rig, active, document.weapons);
+          const clip = toHexframeClip(model.rig, active, weaponRigs(model));
           downloadJson(`${JSON.stringify(clip, null, 2)}\n`, `${active.name}.json`);
           const done = `Downloaded ${active.name}.json: ${clip.duration} frames at 60 Hz, 13 poses, as RigLab plays it`;
           onStatus({ tone: "info", text: [done, ...clipNotes(active)].join("; ") });

@@ -1,8 +1,6 @@
-// Pose-mode weapon picks: a key takes a weapon at its ready hold or lets go, and the document keeps only the weapons
-// its keys hold.
+// Pose-mode weapon picks: a key takes one of the library's weapons at its hold, or lets go.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { HeldWeapon } from "../format/constraints";
-import type { RigLabDocument } from "../format/document";
 import type { RigLabRig } from "../format/rig";
 import { frameList } from "../format/timing";
 import { weaponChains } from "../format/weapon";
@@ -10,21 +8,13 @@ import type { RigLabWeapon } from "../format/weapon";
 import { rotate, tidy } from "../solve/angles";
 import { constraintsOf, holdConstraints } from "../solve/constraints";
 import { place } from "../solve/pose";
-import { readyHold, weaponNamed } from "../weapons/weapons";
 import { edit } from "./core";
+import { weaponRigs } from "./model";
 import { setKeyPose } from "./poseEdits";
-import { activeAnimationOf, documentOf, error, info } from "./types";
+import { activeAnimationOf, error, info, modelOf } from "./types";
 import type { EditorState } from "./types";
 
-/** Keep only the weapon copies some key holds, and no `weapons` field at all when none is held. */
-export function pruneWeapons(document: RigLabDocument): RigLabDocument {
-  const held = new Set(document.animations.flatMap((animation) => animation.keys.flatMap((key) => (key.weapon ? [key.weapon.name] : []))));
-  const { weapons, ...rest } = document;
-  const kept = (weapons ?? []).filter((weapon) => held.has(weapon.name));
-  return kept.length ? { ...rest, weapons: kept } : rest;
-}
-
-/** A ready hold for the chibi at rest, carried to where the body stands: the frame the gripping arms hang from. */
+/** A weapon's hold for the chibi at rest, carried to where the body stands: the frame the gripping arms hang from. */
 export function carryReady(rig: RigLabRig, pose: Pose, held: HeldWeapon, weapon: RigLabWeapon): HeldWeapon {
   const chain = rig.chains.find((candidate) => candidate.name === weaponChains(weapon)[0]);
   const anchor = rig.bones.find((bone) => bone.name === chain?.upper)?.parent;
@@ -44,7 +34,7 @@ export function carryReady(rig: RigLabRig, pose: Pose, held: HeldWeapon, weapon:
 /** Pick a weapon for the key at the current frame, or let go of it with `null`, as one undo step. */
 export function weaponEdit(state: EditorState, name: string | null): EditorState {
   if (state.mode !== "pose") return { ...state, status: error("Switch to Pose to hold a weapon") };
-  const document = documentOf(state);
+  const model = modelOf(state);
   const animation = activeAnimationOf(state);
   if (!animation) return { ...state, status: error("Add an animation to hold a weapon") };
   const key = animation.keys.find((candidate) => candidate.frame === state.frame);
@@ -52,30 +42,29 @@ export function weaponEdit(state: EditorState, name: string | null): EditorState
     const frames = frameList(animation.keys.map((candidate) => candidate.frame));
     return { ...state, status: error(`Frame ${state.frame} is between keys: ${animation.name} poses at frames ${frames}`) };
   }
-  const weapons = document.weapons ?? [];
+  const weapons = weaponRigs(model);
   const current = constraintsOf(key, weapons);
-  const rig = document.rig;
+  const rig = model.rig;
   if (name === null && !current.weapon) return { ...state, status: error(`The key at frame ${state.frame} holds no weapon`) };
   if (name !== null && current.weapon?.weapon.name === name) return { ...state, status: error(`The key at frame ${state.frame} already holds the ${name}`) };
-  const weapon = name === null ? null : weapons.find((candidate) => candidate.name === name) ?? weaponNamed(name);
-  if (name !== null && !weapon) return { ...state, status: error(`There is no weapon named '${name}'`) };
+  const picked = name === null ? null : model.weapons.find((candidate) => candidate.weapon.name === name);
+  if (picked === undefined) return { ...state, status: error(`There is no weapon named '${name}'`) };
+  const weapon = picked?.weapon ?? null;
   const chains = weapon ? weaponChains(weapon) : [];
-  const ready = weapon ? carryReady(rig, key.pose, readyHold(weapon), weapon) : null;
+  const ready = picked ? carryReady(rig, key.pose, picked.hold, picked.weapon) : null;
   const constraints = {
     pins: current.pins.filter((pin) => !chains.includes(pin.chain)),
     weapon: weapon && ready ? { weapon, bodies: ready.bodies } : null,
   };
   const solved = holdConstraints(rig, key.pose, constraints);
-  const available = weapon && !weapons.some((candidate) => candidate.name === weapon.name) ? [...weapons, weapon] : weapons;
-  const result = setKeyPose(rig, animation, state.frame, solved.pose, constraints, available);
+  const result = setKeyPose(rig, animation, state.frame, solved.pose, constraints, weapons);
   if (!result.ok) return { ...state, status: error(result.error) };
-  const animations = document.animations.map((candidate) => (candidate === animation ? result.animation : candidate));
-  const next = pruneWeapons({ ...document, animations, weapons: available });
+  const animations = model.animations.map((candidate) => (candidate === animation ? result.animation : candidate));
   const released = current.pins.filter((pin) => chains.includes(pin.chain)).map((pin) => `unpinned ${pin.chain}`);
   const notes = [
     weapon ? `${animation.name} holds the ${weapon.name} at frame ${state.frame}` : `${animation.name} let go of the ${current.weapon!.weapon.name} at frame ${state.frame}`,
     ...released,
     ...solved.violations,
   ];
-  return edit(state, next, { status: solved.violations.length ? error(notes.join("; ")) : info(notes.join("; ")) });
+  return edit(state, { ...model, animations }, { status: solved.violations.length ? error(notes.join("; ")) : info(notes.join("; ")) });
 }

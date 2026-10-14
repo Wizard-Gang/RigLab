@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { blankAnimation } from "../../src/editor/animations";
-import { libraryDocument } from "../../src/editor/templates";
+import { libraryModel } from "../../src/editor/model";
+import type { LibraryModel } from "../../src/editor/model";
 import { HISTORY_LIMIT } from "../../src/editor/history";
-import { activeAnimationOf, documentOf, editorReducer, initialState, isDirty } from "../../src/editor/state";
+import { activeAnimationOf, editorReducer, initialState, isDirty, modelOf } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import { ANIMATION_KINDS } from "../../src/format";
-import type { RigLabDocument } from "../../src/format";
 
 const run = (state: EditorState, ...actions: Action[]): EditorState => actions.reduce(editorReducer, state);
-const names = (state: EditorState): string[] => documentOf(state).animations.map((animation) => animation.name);
+const names = (state: EditorState): string[] => modelOf(state).animations.map((animation) => animation.name);
 
 /** The chibi with one blank animation of each kind: idle, walk, jump, attack and hit. */
-const moves = (): RigLabDocument => ({ ...libraryDocument(), animations: ANIMATION_KINDS.map((kind) => blankAnimation(CHIBI_RIG, kind, kind)) });
+const moves = (): LibraryModel => ({ ...libraryModel(LIBRARY), animations: ANIMATION_KINDS.map((kind) => blankAnimation(LIBRARY.rig, kind, kind)) });
 
 describe("editor state", () => {
   it("opens on the chibi with the library's seed animations, clean and with no history", () => {
     const state = initialState();
-    expect([documentOf(state).rig.name, names(state), state.activeAnimation]).toEqual(["chibi", ["idle", "walk", "jump", "attack", "hit"], "idle"]);
+    expect([modelOf(state).rig.name, names(state), state.activeAnimation]).toEqual(["chibi", ["idle", "walk", "jump", "attack", "hit"], "idle"]);
     expect(state.mode).toBe("animate");
     expect(isDirty(state)).toBe(false);
     expect(state.history.past).toHaveLength(0);
@@ -25,7 +25,7 @@ describe("editor state", () => {
   });
 
   it("adds animations by kind, and duplicates, renames and deletes them as undoable edits", () => {
-    let state = run(initialState({ ...libraryDocument(), animations: [] }), { type: "addAnimation", kind: "idle" });
+    let state = run(initialState({ ...libraryModel(LIBRARY), animations: [] }), { type: "addAnimation", kind: "idle" });
     expect(names(state)).toEqual(["idle"]);
     expect(state.selection).toEqual({ kind: "animation", name: "idle" });
     expect(state.status?.text).toBe("Added idle: 4 keys over 60 frames");
@@ -51,11 +51,11 @@ describe("editor state", () => {
     expect(names(state)).toEqual(["idle", "idle-copy", "attack", "idle-2"]);
   });
 
-  it("refuses invalid and duplicate names without touching the document", () => {
+  it("refuses invalid and duplicate names without touching the model", () => {
     const state = initialState(moves());
     const invalid = run(state, { type: "renameAnimation", from: "idle", to: "has space" });
     expect(invalid.status?.tone).toBe("error");
-    expect(documentOf(invalid)).toBe(documentOf(state));
+    expect(modelOf(invalid)).toBe(modelOf(state));
     const duplicate = run(state, { type: "renameAnimation", from: "idle", to: "walk" });
     expect(duplicate.status?.text).toMatch(/already exists/);
     expect(duplicate.history.past).toHaveLength(0);
@@ -87,7 +87,7 @@ describe("editor state", () => {
 
   it("records a save to the library folder, keeping history, mode and frame", () => {
     const edited = run(initialState(), { type: "addAnimation", kind: "idle" }, { type: "setMode", mode: "pose" }, { type: "setFrame", frame: 15 });
-    const saved = run(edited, { type: "saved", document: documentOf(edited), note: "Saved 2 files to ~/Documents/RigLab" });
+    const saved = run(edited, { type: "saved", model: modelOf(edited), note: "Saved 2 files to ~/Documents/RigLab" });
     expect([isDirty(edited), isDirty(saved), saved.status?.text]).toEqual([true, false, "Saved 2 files to ~/Documents/RigLab"]);
     expect([saved.history, saved.mode, saved.frame, saved.activeAnimation]).toEqual([edited.history, "pose", 15, edited.activeAnimation]);
     expect(isDirty(run(saved, { type: "addAnimation", kind: "walk" }))).toBe(true);

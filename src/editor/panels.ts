@@ -1,4 +1,4 @@
-// Which side panels are collapsed: a per-viewer convenience kept in browser storage, never in the document or history.
+// Which side panels are collapsed: a per-viewer convenience kept in browser storage, never in the model or history.
 
 export type PanelSide = "left" | "right";
 

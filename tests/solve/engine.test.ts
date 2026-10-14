@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { blankAnimation, restPose } from "../../src/editor/animations";
 import { setKeyPose } from "../../src/editor/poseEdits";
 import { ANIMATION_KINDS, poseFrames } from "../../src/format";
@@ -9,7 +9,7 @@ import type { AnimationKind, Interpolation, RigLabAnimation } from "../../src/fo
 import { toHexframeClip } from "../../src/hexframe/adapter";
 import { chainEnd, constraintsAt, dragInPose, engineOf, NO_CONSTRAINTS, playAt, samplePose, togglePin } from "../../src/solve";
 
-const rig = CHIBI_RIG;
+const rig = LIBRARY.rig;
 const INTERPOLATIONS: readonly Interpolation[] = ["smoothstep", "linear", "hold"];
 
 function difference(a: Pose, b: Pose): number {

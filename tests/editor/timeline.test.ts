@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { blankAnimation, restPose } from "../../src/editor/animations";
-import { activeAnimationOf, documentOf, editorReducer, initialState } from "../../src/editor/state";
+import { activeAnimationOf, modelOf, editorReducer, initialState } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import { applyTimelineEdit } from "../../src/editor/timeline";
 import type { TimelineEdit } from "../../src/editor/timeline";
 import type { Interpolation, RigLabAnimation } from "../../src/format";
 import { engineOf, playAt, setRotation } from "../../src/solve";
 
-const rig = CHIBI_RIG;
+const rig = LIBRARY.rig;
 const rotated = (degrees: number) => setRotation(rig, restPose(rig), "arm-front", degrees).pose;
 
 /** A kind's keys with the front arm at `rotations`, moving to the next key as `interpolations` say. */
@@ -55,7 +55,7 @@ describe("timeline edits", () => {
 describe("timeline in the editor", () => {
   const run = (state: EditorState, ...actions: Action[]): EditorState => actions.reduce(editorReducer, state);
   const start = (): EditorState => run(
-    initialState({ ...documentOf(initialState()), animations: [animation] }),
+    initialState({ ...modelOf(initialState()), animations: [animation] }),
     { type: "setMode", mode: "animate" },
   );
 
@@ -69,7 +69,7 @@ describe("timeline in the editor", () => {
   it("keeps every key on Delete, and refuses timeline edits in Rig setup", () => {
     const state = run(start(), { type: "select", selection: { kind: "key", frame: 12 } });
     const kept = run(state, { type: "deleteSelection" });
-    expect(documentOf(kept)).toBe(documentOf(state));
+    expect(modelOf(kept)).toBe(modelOf(state));
     expect(kept.status).toEqual({ tone: "error", text: "Keys stay: every hit animation keeps all 3 of its keys" });
     const setup = run(start(), { type: "setMode", mode: "setup" }, { type: "timeline", edit: { kind: "setInterpolation", frame: 0, interpolation: "linear" } });
     expect(setup.status?.text).toBe("Switch to Pose or Animation to edit keys");

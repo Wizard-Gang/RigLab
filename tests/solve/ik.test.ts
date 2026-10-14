@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { Chain, RigLabRig } from "../../src/format/rig";
 import { restPose } from "../../src/editor/animations";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { angleOf, dragTip, place, REACH_TOLERANCE, solveChain, solveWithGridSnap, wrap } from "../../src/solve";
 import { runtimeRig } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
@@ -37,15 +37,15 @@ function bendOf(rig: RigLabRig, pose: Pose, chain: Chain): number {
 
 /** Every bone but the root turned up to 60° either way. */
 function randomPose(next: () => number): Pose {
-  return Object.fromEntries(Object.entries(restPose(CHIBI_RIG)).map(([bone, value]) => [
+  return Object.fromEntries(Object.entries(restPose(LIBRARY.rig)).map(([bone, value]) => [
     bone,
-    bone === CHIBI_RIG.root ? value : { rotation: (next() * 2 - 1) * 60 },
+    bone === LIBRARY.rig.root ? value : { rotation: (next() * 2 - 1) * 60 },
   ]));
 }
 
 const limited: RigLabRig = {
-  ...CHIBI_RIG,
-  bones: CHIBI_RIG.bones.map((bone) => {
+  ...LIBRARY.rig,
+  bones: LIBRARY.rig.bones.map((bone) => {
     if (bone.name.startsWith("forearm")) return { ...bone, limits: { min: -145, max: -5 } };
     if (bone.name.startsWith("shin")) return { ...bone, limits: { min: 5, max: 150 } };
     if (bone.name.startsWith("arm")) return { ...bone, limits: { min: -170, max: 60 } };
@@ -58,22 +58,22 @@ describe("two-bone IK", () => {
   it("reaches every reachable target without changing a length, on the chain's bend side", () => {
     const next = random(1205);
     const poses = random(13);
-    const rest = lengths(CHIBI_RIG, restPose(CHIBI_RIG));
+    const rest = lengths(LIBRARY.rig, restPose(LIBRARY.rig));
     let reached = 0;
     for (let run = 0; run < 400; run += 1) {
-      const chain = CHIBI_RIG.chains[run % 4]!;
+      const chain = LIBRARY.rig.chains[run % 4]!;
       const start = randomPose(poses);
-      const origin = place(CHIBI_RIG, start).get(chain.upper)!;
+      const origin = place(LIBRARY.rig, start).get(chain.upper)!;
       const angle = next() * Math.PI * 2;
       const distance = 2 + next() * 22;
       const target = { x: origin.x + Math.cos(angle) * distance, y: origin.y + Math.sin(angle) * distance };
-      const solved = solveChain(CHIBI_RIG, start, chain, target);
-      for (const [segment, length] of lengths(CHIBI_RIG, solved.pose)) expect(Math.abs(length - rest.get(segment)!), segment).toBeLessThan(1e-9);
+      const solved = solveChain(LIBRARY.rig, start, chain, target);
+      for (const [segment, length] of lengths(LIBRARY.rig, solved.pose)) expect(Math.abs(length - rest.get(segment)!), segment).toBeLessThan(1e-9);
       if (solved.status === "ok") {
         reached += 1;
-        const end = endOf(CHIBI_RIG, solved.pose, chain);
+        const end = endOf(LIBRARY.rig, solved.pose, chain);
         expect(Math.hypot(end.x - target.x, end.y - target.y)).toBeLessThanOrEqual(REACH_TOLERANCE);
-        expect(bendOf(CHIBI_RIG, solved.pose, chain), `${chain.name} bend`).toBe(chain.bend);
+        expect(bendOf(LIBRARY.rig, solved.pose, chain), `${chain.name} bend`).toBe(chain.bend);
       } else {
         expect(solved.status).toBe("unreachable");
         expect(solved.message).toMatch(/cannot reach/);
@@ -104,30 +104,30 @@ describe("two-bone IK", () => {
   });
 
   it("names the shortfall for targets beyond full extension or inside the folded reach", () => {
-    const arm = CHIBI_RIG.chains.find((chain) => chain.name === "arm-front")!;
-    const shoulder = place(CHIBI_RIG, restPose(CHIBI_RIG)).get("arm-front")!;
-    const far = solveChain(CHIBI_RIG, restPose(CHIBI_RIG), arm, { x: shoulder.x + 30, y: shoulder.y });
+    const arm = LIBRARY.rig.chains.find((chain) => chain.name === "arm-front")!;
+    const shoulder = place(LIBRARY.rig, restPose(LIBRARY.rig)).get("arm-front")!;
+    const far = solveChain(LIBRARY.rig, restPose(LIBRARY.rig), arm, { x: shoulder.x + 30, y: shoulder.y });
     expect(far).toMatchObject({ status: "unreachable", message: "arm-front cannot reach: the target is 9.00 beyond full extension" });
-    const end = endOf(CHIBI_RIG, far.pose, arm);
+    const end = endOf(LIBRARY.rig, far.pose, arm);
     expect(end.x - shoulder.x).toBeCloseTo(21, 9);
-    const near = solveChain(CHIBI_RIG, restPose(CHIBI_RIG), arm, { x: shoulder.x + 0.25, y: shoulder.y });
+    const near = solveChain(LIBRARY.rig, restPose(LIBRARY.rig), arm, { x: shoulder.x + 0.25, y: shoulder.y });
     expect(near.message).toMatch(/0\.75 inside its folded reach/);
   });
 
   it("drags a non-chain tip by aiming its own bone", () => {
-    const pose = restPose(CHIBI_RIG);
-    const head = place(CHIBI_RIG, pose).get("head")!;
-    const solved = dragTip(CHIBI_RIG, pose, "head", { x: head.x + 16, y: head.y }, 0);
+    const pose = restPose(LIBRARY.rig);
+    const head = place(LIBRARY.rig, pose).get("head")!;
+    const solved = dragTip(LIBRARY.rig, pose, "head", { x: head.x + 16, y: head.y }, 0);
     expect(solved.pose.head!.rotation).toBeCloseTo(90, 9);
     expect(solved.pose["forearm-front"]).toEqual(pose["forearm-front"]);
   });
 
   it("snaps the target to the grid when the limb can reach the grid point, and falls back otherwise", () => {
-    const arm = CHIBI_RIG.chains.find((chain) => chain.name === "arm-front")!;
-    const pose = restPose(CHIBI_RIG);
-    const solve = (target: { x: number; y: number }) => solveChain(CHIBI_RIG, pose, arm, target);
+    const arm = LIBRARY.rig.chains.find((chain) => chain.name === "arm-front")!;
+    const pose = restPose(LIBRARY.rig);
+    const solve = (target: { x: number; y: number }) => solveChain(LIBRARY.rig, pose, arm, target);
     const snapped = solveWithGridSnap(solve, { x: 20.2, y: -39.1 }, 5, true);
-    const end = endOf(CHIBI_RIG, snapped.pose, arm);
+    const end = endOf(LIBRARY.rig, snapped.pose, arm);
     expect([end.x, end.y].map((value) => Math.round(value * 1e6) / 1e6)).toEqual([20, -40]);
     // The shoulder is at (9, -45) and the arm reaches 21. (29, -49) is 20.40 away, but its grid point (30, -50) is 21.59 away.
     const exact = solveWithGridSnap(solve, { x: 29, y: -49 }, 5, true);

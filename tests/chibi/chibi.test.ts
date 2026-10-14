@@ -1,19 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { createRig } from "../../vendor/hexframe/src/rig";
 import type { RigContract } from "../../vendor/hexframe/src/rig";
-import { CHIBI_PARTS, CHIBI_RIG, CHIBI_SKIN } from "../../src/chibi/chibi";
 import { blankAnimation } from "../../src/editor/animations";
 import { ANIMATION_KINDS } from "../../src/format/timing";
-import { documentOf, initialState, isDirty } from "../../src/editor/state";
-import { ART_PARTS, libraryDocument } from "../../src/editor/templates";
-import { validateDocument } from "../../src/format";
+import { libraryModel, validateModel } from "../../src/editor/model";
+import { initialState, isDirty, modelOf } from "../../src/editor/state";
 import type { RigLabRig } from "../../src/format";
 import { toHexframeRig } from "../../src/hexframe/adapter";
 import { artPlacements } from "../../src/hexframe/art";
+import { LIBRARY } from "../../src/library/active";
+import { partsBySlot } from "../../src/library/parts";
 import { place, runtimeRig, setRotation } from "../../src/solve";
-import { WEAPON_PARTS } from "../../src/weapons/weapons";
 
-const chibi = CHIBI_RIG;
+const chibi = LIBRARY.rig;
+/** The skin the editor draws with: the first `skin` line in the library's `config.txt`. */
+const skin = LIBRARY.skins[0]!;
+const PARTS = partsBySlot(LIBRARY);
 const tipOf = (rig: RigLabRig, name: string) => {
   const bone = rig.bones.find((candidate) => candidate.name === name)!;
   const at = place(rig, {}).get(name)!;
@@ -71,28 +73,30 @@ describe("chibi rig", () => {
 
 describe("chibi art", () => {
   it("parses all 11 parts of the editor's skin, each bound by slot to its own bone", () => {
-    expect(Object.keys(CHIBI_PARTS)).toHaveLength(11);
+    expect(Object.keys(skin.parts)).toHaveLength(11);
     for (const bone of chibi.bones) {
-      expect(CHIBI_PARTS[bone.slot], bone.slot).toMatchObject({ bone: bone.name, set: CHIBI_SKIN.name });
-      expect(ART_PARTS[bone.slot]).toBe(CHIBI_PARTS[bone.slot]);
+      expect(skin.parts[bone.slot], bone.slot).toMatchObject({ bone: bone.name, set: skin.name });
+      expect(PARTS[bone.slot]).toBe(skin.parts[bone.slot]);
     }
-    // The art library also carries the weapons' parts, on their own weapon_* slots.
-    expect(Object.keys(ART_PARTS).sort()).toEqual([...Object.keys(CHIBI_PARTS), ...Object.keys(WEAPON_PARTS)].sort());
+    // The editor's parts also carry the weapons' parts, on their own weapon_* slots.
+    const weaponSlots = LIBRARY.weapons.flatMap((item) => Object.keys(item.parts));
+    expect(Object.keys(PARTS).sort()).toEqual([...Object.keys(skin.parts), ...weaponSlots].sort());
+    expect(partsBySlot(LIBRARY, LIBRARY.skins[1])[chibi.bones[0]!.slot]?.set).toBe(LIBRARY.skins[1]!.name);
   });
 
   it("uses only its own palette's classes", () => {
-    const used = Object.values(CHIBI_PARTS).flatMap((part) => part.paths.flatMap((path) => path.className.split(" ")));
-    expect(used.filter((name) => !Object.hasOwn(CHIBI_SKIN.palette.classes, name))).toEqual([]);
+    const used = Object.values(skin.parts).flatMap((part) => part.paths.flatMap((path) => path.className.split(" ")));
+    expect(used.filter((name) => !Object.hasOwn(skin.palette.classes, name))).toEqual([]);
   });
 
   it("draws in Hexframe's paint order at each bone's FK transform", () => {
-    expect(artPlacements(chibi, runtimeRig(chibi), place(chibi, {}), ART_PARTS, "idle").find((item) => item.bone === "head")).toMatchObject({ x: 0, y: -47, rotation: 0 });
+    expect(artPlacements(chibi, runtimeRig(chibi), place(chibi, {}), PARTS, "idle").find((item) => item.bone === "head")).toMatchObject({ x: 0, y: -47, rotation: 0 });
     const turned = setRotation(chibi, setRotation(chibi, {}, "torso", 20).pose, "forearm-front", -70).pose;
     const placed = place(chibi, turned);
-    const placements = artPlacements(chibi, runtimeRig(chibi), placed, ART_PARTS, "idle");
+    const placements = artPlacements(chibi, runtimeRig(chibi), placed, PARTS, "idle");
     expect(placements.map((item) => [item.bone, item.part.set])).toEqual(
       ["leg-front", "shin-front", "leg-back", "shin-back", "pelvis", "arm-front", "forearm-front", "torso", "arm-back", "forearm-back", "head"]
-        .map((bone) => [bone, CHIBI_SKIN.name]),
+        .map((bone) => [bone, skin.name]),
     );
     for (const item of placements) {
       const at = placed.get(item.bone)!;
@@ -101,13 +105,14 @@ describe("chibi art", () => {
   });
 });
 
-describe("the library document", () => {
-  it("starts the editor on the library's chibi and its rest-pose animation per kind, saved", () => {
-    const document = libraryDocument();
-    expect(validateDocument(document).ok).toBe(true);
-    expect([document.rig, document.animations]).toEqual([chibi, ANIMATION_KINDS.map((kind) => blankAnimation(chibi, kind, kind))]);
+describe("the library model", () => {
+  it("starts the editor on the library's chibi, its rest-pose animation per kind and all four weapons, saved", () => {
+    const model = libraryModel(LIBRARY);
+    expect(validateModel(model).ok).toBe(true);
+    expect([model.rig, model.animations]).toEqual([chibi, ANIMATION_KINDS.map((kind) => blankAnimation(chibi, kind, kind))]);
+    expect(model.weapons.map((item) => item.weapon.name)).toEqual(["sword", "spear", "axe", "daggers"]);
     const state = initialState();
-    expect(documentOf(state)).toEqual(document);
+    expect(modelOf(state)).toEqual(model);
     expect([state.activeAnimation, isDirty(state)]).toEqual(["idle", false]);
   });
 });

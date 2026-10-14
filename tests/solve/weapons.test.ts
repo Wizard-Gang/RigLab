@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Pose } from "../../vendor/hexframe/src/rig";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { blankAnimation, restPose } from "../../src/editor/animations";
 import { setKeyPose } from "../../src/editor/poseEdits";
 import type { RigLabAnimation } from "../../src/format";
@@ -13,7 +13,7 @@ import type { Constraints, Wielded } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
 import { STAFF, TWIN } from "../format/weapon-fixtures";
 
-const rig = CHIBI_RIG;
+const rig = LIBRARY.rig;
 const rest = restPose(rig);
 const weapons = [STAFF, TWIN];
 const chain = (name: string) => rig.chains.find((candidate) => candidate.name === name)!;

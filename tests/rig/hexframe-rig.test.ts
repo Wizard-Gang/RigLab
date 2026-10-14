@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { forwardKinematics, hierarchyOrder } from "../../vendor/hexframe/src/rig";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { blankAnimation } from "../../src/editor/animations";
 import { ANIMATION_KINDS } from "../../src/format";
 import { engineOf, playAt, runtimeRig } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
 
-const rig = runtimeRig(CHIBI_RIG);
+const rig = runtimeRig(LIBRARY.rig);
 const close = (value: number, expected: number): void => expect(value).toBeCloseTo(expected, 9);
 
 describe("the chibi on Hexframe's rig engine", () => {
@@ -44,22 +44,22 @@ describe("the chibi on Hexframe's rig engine", () => {
   it("keeps every limb at its rest length on every frame the engine plays, moving only the root", () => {
     const rest = new Map(skeletonFor(rig, {}).segments.map((segment) => [`${segment.bone}:${segment.kind}`, segmentLength(segment)]));
     for (const kind of ANIMATION_KINDS) {
-      const blank = blankAnimation(CHIBI_RIG, kind, kind);
+      const blank = blankAnimation(LIBRARY.rig, kind, kind);
       const animation = {
         ...blank,
         keys: blank.keys.map((key, index) => ({
           ...key,
-          pose: Object.fromEntries(CHIBI_RIG.bones.map((bone, at) => [
+          pose: Object.fromEntries(LIBRARY.rig.bones.map((bone, at) => [
             bone.name,
-            bone.name === CHIBI_RIG.root ? { x: 2 * index, y: -3 * index, rotation: 5 * index } : { rotation: ((index + 2) * (at + 1) * 13) % 90 - 45 },
+            bone.name === LIBRARY.rig.root ? { x: 2 * index, y: -3 * index, rotation: 5 * index } : { rotation: ((index + 2) * (at + 1) * 13) % 90 - 45 },
           ])),
         })),
       };
-      const engine = engineOf(CHIBI_RIG, animation);
+      const engine = engineOf(LIBRARY.rig, animation);
       for (let frame = 0; frame <= animation.length; frame += 1) {
         const pose = playAt(engine, frame).pose;
         for (const [bone, value] of Object.entries(pose)) {
-          if (bone !== CHIBI_RIG.root) expect([value.x, value.y], `${kind}@${frame} ${bone}`).toEqual([undefined, undefined]);
+          if (bone !== LIBRARY.rig.root) expect([value.x, value.y], `${kind}@${frame} ${bone}`).toEqual([undefined, undefined]);
         }
         for (const segment of skeletonFor(rig, pose).segments) close(segmentLength(segment), rest.get(`${segment.bone}:${segment.kind}`)!);
       }

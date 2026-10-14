@@ -34,7 +34,7 @@ export interface Engine {
   readonly poses: readonly Played[];
 }
 
-/** The animation as Hexframe's clip; keys may hold the given weapons, as the document carries them. */
+/** The animation as Hexframe's clip; keys may hold the given weapons, the library's. */
 export function engineOf(rig: RigLabRig, animation: RigLabAnimation, weapons: readonly RigLabWeapon[] = []): Engine {
   const poses = poseFrames(animation.length).map((frame) => {
     const held = samplePose(rig, animation, frame, weapons);

@@ -4,12 +4,13 @@ import { bodyTransforms, engineOf, NO_CONSTRAINTS, playAt } from "../solve";
 import { constraintGeometry } from "../viewer/constraintGeometry";
 import { ArtLayer } from "../viewer/ArtLayer";
 import { artPlacements, withWeaponArt } from "../hexframe/art";
-import { ART_PARTS } from "../editor/templates";
 import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
-import { activeAnimationOf, documentOf, editorReducer, initialState, isDirty } from "../editor/state";
+import { weaponRigs } from "../editor/model";
+import { activeAnimationOf, editorReducer, initialState, isDirty, modelOf } from "../editor/state";
 import { fitView, zoomAbout } from "../editor/view";
-import { LIBRARY_LABEL } from "../library/active";
+import { LIBRARY, LIBRARY_LABEL } from "../library/active";
+import { partsBySlot } from "../library/parts";
 import type { Point } from "../editor/view";
 import { Hierarchy } from "../viewer/Hierarchy";
 import { RigCanvas } from "../viewer/RigCanvas";
@@ -28,12 +29,15 @@ import { useShortcuts } from "./useShortcuts";
 
 const platform = platformOf(navigator.userAgent);
 const RIGHT_TITLES = { setup: "Rig setup", pose: "Pose", animate: "Inspector", export: "Export" } as const;
+/** The editor draws the library's first skin, and the weapons' parts on their own slots. */
+const PARTS = partsBySlot(LIBRARY);
 
 export function App() {
   const [state, dispatch] = useReducer(editorReducer, undefined, () => initialState());
   const [cursor, setCursor] = useState<Point | null>(null);
   const [panels, togglePanel] = usePanels();
-  const document = documentOf(state);
+  const model = modelOf(state);
+  const weapons = useMemo(() => weaponRigs(model), [model.weapons]);
   const animation = activeAnimationOf(state);
   const dirty = isDirty(state);
   const save = useLibrarySave(state, dispatch);
@@ -48,8 +52,8 @@ export function App() {
   });
   const posed = state.mode !== "setup" && animation !== null;
   const engine = useMemo(
-    () => (posed ? engineOf(document.rig, animation, document.weapons) : null),
-    [posed, document.rig, animation, document.weapons],
+    () => (posed ? engineOf(model.rig, animation, weapons) : null),
+    [posed, model.rig, animation, weapons],
   );
   const played = useMemo(
     () => (engine ? playAt(engine, state.frame) : { pose: {}, constraints: NO_CONSTRAINTS, violations: [] }),
@@ -60,15 +64,15 @@ export function App() {
   const pose = drags.pose;
   const skeleton = useMemo(() => skeletonFor(rig, pose), [rig, pose]);
   const markers = useMemo(
-    () => (posed ? constraintGeometry(document.rig, pose, drags.constraints) : undefined),
-    [posed, document.rig, pose, drags.constraints],
+    () => (posed ? constraintGeometry(model.rig, pose, drags.constraints) : undefined),
+    [posed, model.rig, pose, drags.constraints],
   );
   const art = useMemo(() => {
     if (!state.art) return null;
-    const placements = artPlacements(drags.rig, rig, skeleton.placed, ART_PARTS, state.activeAnimation);
+    const placements = artPlacements(drags.rig, rig, skeleton.placed, PARTS, state.activeAnimation);
     const wielded = posed ? drags.constraints.weapon : null;
     if (!wielded) return placements;
-    return withWeaponArt(drags.rig, rig, placements, bodyTransforms(drags.rig, pose, wielded), wielded.weapon, ART_PARTS, state.activeAnimation);
+    return withWeaponArt(drags.rig, rig, placements, bodyTransforms(drags.rig, pose, wielded), wielded.weapon, PARTS, state.activeAnimation);
   }, [state.art, posed, drags.rig, drags.constraints, rig, pose, skeleton.placed, state.activeAnimation]);
   const ghosts = useMemo(() => {
     if (!engine || !animation || !state.onion || playback.playing) return undefined;
@@ -119,7 +123,7 @@ export function App() {
       <SidePanel
         side="left"
         label="Hierarchy and animations"
-        title={<>Hierarchy · <code>{document.rig.name}</code></>}
+        title={<>Hierarchy · <code>{model.rig.name}</code></>}
         titleId="hierarchy-title"
         collapsed={panels.left}
         onToggle={() => togglePanel("left")}
@@ -128,7 +132,7 @@ export function App() {
           <Hierarchy rig={rig} selected={selectedBone} onSelect={(name) => dispatch({ type: "select", selection: { kind: "bone", name } })} />
         </section>
         <AnimationsPanel
-          animations={document.animations}
+          animations={model.animations}
           active={state.activeAnimation}
           selected={state.selection?.kind === "animation" ? state.selection.name : null}
           onSelect={(name) => dispatch({ type: "select", selection: { kind: "animation", name } })}
@@ -168,7 +172,7 @@ export function App() {
         <ModePanel
           state={state}
           dispatch={dispatch}
-          document={document}
+          model={model}
           animation={animation}
           pose={pose}
           constraints={drags.constraints}
@@ -212,7 +216,7 @@ export function App() {
         grid={state.grid}
         snap={state.snap}
         onZoom={(factor) => dispatch({ type: "setView", view: zoomAbout(state.view, factor) })}
-        onFit={() => dispatch({ type: "setView", view: fitView(document.rig.space) })}
+        onFit={() => dispatch({ type: "setView", view: fitView(model.rig.space) })}
         onGrid={(spacing) => dispatch({ type: "setGrid", spacing })}
         onSnap={(snap) => dispatch({ type: "setSnap", snap })}
         rotationSnap={state.rotationSnap}

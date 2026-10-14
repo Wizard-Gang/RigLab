@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { restPose } from "../../src/editor/animations";
 import type { RigLabRig } from "../../src/format/rig";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { aimBone, dragJoint, moveRoot, nearest, place, setRotation, snapAngle, wrap } from "../../src/solve";
 
-const rest = restPose(CHIBI_RIG);
+const rest = restPose(LIBRARY.rig);
 
 describe("angle helpers", () => {
   it("wraps into (-180, 180] and keeps rotations continuous", () => {
@@ -18,8 +18,8 @@ describe("angle helpers", () => {
 
 describe("rotation-only posing", () => {
   it("swings a parent bone so the dragged joint points at the target", () => {
-    const solved = dragJoint(CHIBI_RIG, rest, "forearm-front", { x: 40, y: -45 });
-    const placed = place(CHIBI_RIG, solved.pose);
+    const solved = dragJoint(LIBRARY.rig, rest, "forearm-front", { x: 40, y: -45 });
+    const placed = place(LIBRARY.rig, solved.pose);
     const shoulder = placed.get("arm-front")!;
     const elbow = placed.get("forearm-front")!;
     expect([shoulder.x, shoulder.y]).toEqual([9, -45]);
@@ -29,18 +29,18 @@ describe("rotation-only posing", () => {
   });
 
   it("translates only the root", () => {
-    const solved = moveRoot(CHIBI_RIG, rest, { x: 3, y: -21 });
+    const solved = moveRoot(LIBRARY.rig, rest, { x: 3, y: -21 });
     expect(solved.pose.pelvis).toEqual({ x: 3, y: 4, rotation: 0 });
-    expect(dragJoint(CHIBI_RIG, rest, "pelvis", { x: 3, y: -21 })).toEqual(solved);
-    const placed = place(CHIBI_RIG, solved.pose);
+    expect(dragJoint(LIBRARY.rig, rest, "pelvis", { x: 3, y: -21 })).toEqual(solved);
+    const placed = place(LIBRARY.rig, solved.pose);
     expect([placed.get("torso")!.x, placed.get("torso")!.y]).toEqual([3, -25]);
   });
 
   it("snaps rotations to the increment, then holds them inside the bone's limits", () => {
-    expect(setRotation(CHIBI_RIG, rest, "head", 22, 15).pose.head!.rotation).toBe(15);
+    expect(setRotation(LIBRARY.rig, rest, "head", 22, 15).pose.head!.rotation).toBe(15);
     const limited: RigLabRig = {
-      ...CHIBI_RIG,
-      bones: CHIBI_RIG.bones.map((bone) => (bone.name === "head" ? { ...bone, limits: { min: -20, max: 30 } } : bone)),
+      ...LIBRARY.rig,
+      bones: LIBRARY.rig.bones.map((bone) => (bone.name === "head" ? { ...bone, limits: { min: -20, max: 30 } } : bone)),
     };
     expect(setRotation(limited, rest, "head", 50)).toMatchObject({ status: "limited", message: "head is held at its maximum angle" });
     expect(setRotation(limited, rest, "head", -50).pose.head!.rotation).toBe(-20);
@@ -51,11 +51,11 @@ describe("rotation-only posing", () => {
 
   it("chooses the equivalent rotation nearest the current one", () => {
     const turned = { ...rest, "arm-front": { rotation: 350 } };
-    const solved = dragJoint(CHIBI_RIG, turned, "forearm-front", { x: 40, y: -45 });
+    const solved = dragJoint(LIBRARY.rig, turned, "forearm-front", { x: 40, y: -45 });
     expect(solved.pose["arm-front"]!.rotation).toBeCloseTo(270, 9);
   });
 
   it("leaves the pose alone for a target on the joint itself", () => {
-    expect(dragJoint(CHIBI_RIG, rest, "forearm-front", { x: 9, y: -45 }).pose).toBe(rest);
+    expect(dragJoint(LIBRARY.rig, rest, "forearm-front", { x: 9, y: -45 }).pose).toBe(rest);
   });
 });

@@ -1,6 +1,6 @@
-// The editor's pure state machine. Document edits go through the undo history; view and selection do not.
+// The editor's pure state machine. Model edits go through the undo history; view and selection do not.
 import { reconcile } from "./core";
-import { animationEdit, poseEdit, rigEdit, timelineEdit } from "./documentEdits";
+import { animationEdit, poseEdit, rigEdit, timelineEdit } from "./modelEdits";
 import { weaponEdit } from "./weaponEdits";
 import { redo, undo } from "./history";
 import { activeAnimationOf, info } from "./types";
@@ -8,7 +8,7 @@ import type { Action, EditorState } from "./types";
 import { GRID_SPACINGS, ROTATION_SNAPS } from "./view";
 
 export { initialState } from "./core";
-export { activeAnimationOf, documentOf, isDirty, MODES } from "./types";
+export { activeAnimationOf, isDirty, modelOf, MODES } from "./types";
 export type { Action, EditorState, Mode, Selection, Status } from "./types";
 
 /** The next or previous key frame from the current frame, or the current frame when there is none. */
@@ -21,7 +21,7 @@ function steppedKey(state: EditorState, direction: -1 | 1): number {
 export function editorReducer(state: EditorState, action: Action): EditorState {
   switch (action.type) {
     case "saved":
-      return { ...state, saved: action.document, status: info(action.note) };
+      return { ...state, saved: action.model, status: info(action.note) };
     case "status":
       return { ...state, status: action.status };
     case "undo":

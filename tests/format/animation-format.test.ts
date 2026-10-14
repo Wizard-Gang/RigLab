@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { POSE_INTERVALS } from "../../vendor/hexframe/src/rig";
 import type { Pose } from "../../vendor/hexframe/src/rig";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { ANIMATION_KINDS, ENGINE_FPS, keyFrames, KINDS, poseFrames, sampleAnimation, validateAnimation } from "../../src/format";
 import type { AnimationKind, Key, RigLabAnimation } from "../../src/format";
 
@@ -9,9 +9,9 @@ type Mutable = Record<string, any>;
 
 /** A full chibi pose: every bone rotated by `rotation`, the root lifted by `y`. */
 function pose(rotation: number, y = 0): Pose {
-  return Object.fromEntries(CHIBI_RIG.bones.map((bone) => [
+  return Object.fromEntries(LIBRARY.rig.bones.map((bone) => [
     bone.name,
-    bone.name === CHIBI_RIG.root ? { x: 0, y, rotation } : { rotation },
+    bone.name === LIBRARY.rig.root ? { x: 0, y, rotation } : { rotation },
   ]));
 }
 
@@ -36,7 +36,7 @@ const rotationAt = (value: RigLabAnimation, frame: number): number => sampleAnim
 function errorsOf(change: (value: Mutable) => void): string {
   const value = structuredClone(animation("attack", [0, 40, 20, 0], "linear")) as Mutable;
   change(value);
-  const result = validateAnimation(value, CHIBI_RIG);
+  const result = validateAnimation(value, LIBRARY.rig);
   expect(result.ok).toBe(false);
   return result.ok ? "" : result.errors.join("\n");
 }
@@ -70,7 +70,7 @@ describe("riglab.anim validation", () => {
   it("accepts every kind's keys", () => {
     for (const kind of ANIMATION_KINDS) {
       const value = animation(kind, [0, 20, 40, 10]);
-      expect(validateAnimation(value, CHIBI_RIG)).toEqual({ ok: true, value });
+      expect(validateAnimation(value, LIBRARY.rig)).toEqual({ ok: true, value });
     }
   });
 

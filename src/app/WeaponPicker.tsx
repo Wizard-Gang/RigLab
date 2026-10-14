@@ -1,6 +1,6 @@
-import { WEAPONS } from "../weapons/weapons";
-
 interface WeaponPickerProps {
+  /** The library's weapons, in config order. */
+  readonly weapons: readonly string[];
   /** The weapon the key in force holds, if any. */
   readonly held: string | null;
   readonly frame: number;
@@ -11,9 +11,8 @@ interface WeaponPickerProps {
 
 const label = (name: string): string => `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
 
-/** Pose mode's weapon for the key at this frame: none, or one of the chibi's weapons at its ready hold. */
-export function WeaponPicker({ held, frame, keyed, onPick }: WeaponPickerProps) {
-  const names = WEAPONS.map((weapon) => weapon.name);
+/** Pose mode's weapon for the key at this frame: none, or one of the library's weapons at its hold. */
+export function WeaponPicker({ weapons, held, frame, keyed, onPick }: WeaponPickerProps) {
   const note = !keyed
     ? `Frame ${frame} is between keys. Step to a key to change its weapon.`
     : held
@@ -30,8 +29,7 @@ export function WeaponPicker({ held, frame, keyed, onPick }: WeaponPickerProps) 
         onChange={(event) => onPick(event.target.value || null)}
       >
         <option value="">None</option>
-        {names.map((name) => <option key={name} value={name}>{label(name)}</option>)}
-        {held && !names.includes(held) ? <option value={held}>{label(held)}</option> : null}
+        {weapons.map((name) => <option key={name} value={name}>{label(name)}</option>)}
       </select>
       <p className="panel__note">{note}</p>
     </section>

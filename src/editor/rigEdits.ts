@@ -1,11 +1,12 @@
-// Rig setup edits. Each returns a whole new document that passes validateDocument, or a reason it was refused.
+// Rig setup edits. Each returns a whole new model that passes validateModel, or a reason it was refused.
 import type { DepthProfiles, DepthSides, Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
-import { validateDocument } from "../format/document";
-import type { RigLabDocument } from "../format/document";
 import { validateRig } from "../format/rig";
 import type { AngleLimits, Chain, RigLabBone, RigLabRig } from "../format/rig";
+import { weaponChains } from "../format/weapon";
 import { isValidName, uniqueName } from "./animations";
+import { validateModel } from "./model";
+import type { LibraryModel } from "./model";
 
 export type RigEdit =
   | { readonly kind: "moveJoint"; readonly bone: string; readonly offset: readonly [number, number] }
@@ -20,7 +21,7 @@ export type RigEdit =
   | { readonly kind: "setBend"; readonly chain: string; readonly bend: 1 | -1 };
 
 export type RigEditResult =
-  | { readonly ok: true; readonly document: RigLabDocument; readonly message: string; readonly select?: string | null }
+  | { readonly ok: true; readonly model: LibraryModel; readonly message: string; readonly select?: string | null }
   | { readonly ok: false; readonly error: string };
 
 const refuse = (error: string): RigEditResult => ({ ok: false, error });
@@ -48,11 +49,22 @@ export function subtreeOf(rig: RigLabRig, name: string): Set<string> {
   return names;
 }
 
-/** Accept the edited document only if the whole document still validates; report the first failure. */
-function commit(document: RigLabDocument, message: string, select?: string | null): RigEditResult {
-  const result = validateDocument(document);
+/** A chain some library weapon grips that the rig no longer has. */
+function lostGrip(model: LibraryModel): string | null {
+  for (const { weapon } of model.weapons) {
+    const chain = weaponChains(weapon).find((name) => !model.rig.chains.some((candidate) => candidate.name === name));
+    if (chain) return `The ${weapon.name} grips chain '${chain}', so the rig must keep it`;
+  }
+  return null;
+}
+
+/** Accept the edited model only if the whole model still validates; report the first failure. */
+function commit(model: LibraryModel, message: string, select?: string | null): RigEditResult {
+  const lost = lostGrip(model);
+  if (lost) return refuse(lost);
+  const result = validateModel(model);
   if (!result.ok) return refuse(result.errors[0]!.replace(/^\$\.rig/, "rig"));
-  return select === undefined ? { ok: true, document, message } : { ok: true, document, message, select };
+  return select === undefined ? { ok: true, model, message } : { ok: true, model, message, select };
 }
 
 function renameDepth(depth: DepthProfiles, swap: (name: string) => string): DepthProfiles {
@@ -72,71 +84,71 @@ function renameIn(rig: RigLabRig, from: string, to: string): RigLabRig {
   };
 }
 
-function deleteFrom(document: RigLabDocument, removed: ReadonlySet<string>): { document: RigLabDocument; droppedDepth: boolean } {
-  const { depthProfiles, ...rest } = document.rig;
+function deleteFrom(model: LibraryModel, removed: ReadonlySet<string>): { model: LibraryModel; droppedDepth: boolean } {
+  const { depthProfiles, ...rest } = model.rig;
   const rig: RigLabRig = {
     ...rest,
-    bones: document.rig.bones.filter((bone) => !removed.has(bone.name)),
-    chains: document.rig.chains.filter((chain) => !removed.has(chain.upper) && !removed.has(chain.lower)),
+    bones: model.rig.bones.filter((bone) => !removed.has(bone.name)),
+    chains: model.rig.chains.filter((chain) => !removed.has(chain.upper) && !removed.has(chain.lower)),
   };
   // Layering hints that name a deleted bone can no longer place it; they go rather than block the edit.
   const keepDepth = depthProfiles !== undefined && validateRig({ ...rig, depthProfiles }).ok;
-  const animations = mapPoses(document.animations, (pose) =>
+  const animations = mapPoses(model.animations, (pose) =>
     Object.fromEntries(Object.entries(pose).filter(([bone]) => !removed.has(bone))));
   return {
-    document: { ...document, rig: keepDepth ? { ...rig, depthProfiles } : rig, animations },
+    model: { ...model, rig: keepDepth ? { ...rig, depthProfiles } : rig, animations },
     droppedDepth: depthProfiles !== undefined && !keepDepth,
   };
 }
 
-export function applyRigEdit(document: RigLabDocument, edit: RigEdit): RigEditResult {
-  const { rig } = document;
+export function applyRigEdit(model: LibraryModel, edit: RigEdit): RigEditResult {
+  const { rig } = model;
   const bone = "bone" in edit ? rig.bones.find((candidate) => candidate.name === edit.bone) : undefined;
   if ("bone" in edit && !bone) return refuse(`The rig has no bone '${edit.bone}'`);
   switch (edit.kind) {
     case "moveJoint":
-      return commit({ ...document, rig: mapBones(rig, (b) => (b.name === edit.bone ? { ...b, offset: [...edit.offset] } : b)) },
+      return commit({ ...model, rig: mapBones(rig, (b) => (b.name === edit.bone ? { ...b, offset: [...edit.offset] } : b)) },
         `Moved ${edit.bone} to ${edit.offset.map((value) => +value.toFixed(3)).join(", ")}`);
     case "setTip":
-      return commit({ ...document, rig: mapBones(rig, (b) => (b.name === edit.bone ? { ...b, tip: edit.tip && [...edit.tip] } : b)) },
+      return commit({ ...model, rig: mapBones(rig, (b) => (b.name === edit.bone ? { ...b, tip: edit.tip && [...edit.tip] } : b)) },
         edit.tip ? `Set the tip of ${edit.bone}` : `Removed the tip of ${edit.bone}`);
     case "setSlot":
       if (!isValidName(edit.slot)) return refuse(`'${edit.slot}' is not a valid slot name`);
-      return commit({ ...document, rig: mapBones(rig, (b) => (b.name === edit.bone ? { ...b, slot: edit.slot } : b)) }, `Set the slot of ${edit.bone}`);
+      return commit({ ...model, rig: mapBones(rig, (b) => (b.name === edit.bone ? { ...b, slot: edit.slot } : b)) }, `Set the slot of ${edit.bone}`);
     case "setLimits":
-      return commit({ ...document, rig: mapBones(rig, (b) => (b.name === edit.bone ? { ...b, limits: edit.limits && { ...edit.limits } } : b)) },
+      return commit({ ...model, rig: mapBones(rig, (b) => (b.name === edit.bone ? { ...b, limits: edit.limits && { ...edit.limits } } : b)) },
         edit.limits ? `Limited ${edit.bone} to ${edit.limits.min}° to ${edit.limits.max}°` : `Removed the limits of ${edit.bone}`);
     case "renameBone": {
       if (edit.name === edit.bone) return refuse("The name is unchanged");
       if (!isValidName(edit.name)) return refuse(`'${edit.name}' is not a valid name: use 1-64 letters, digits, '_' or '-', starting with a letter`);
       if (rig.bones.some((candidate) => candidate.name === edit.name)) return refuse(`A bone named '${edit.name}' already exists`);
-      const animations = mapPoses(document.animations, (pose) =>
+      const animations = mapPoses(model.animations, (pose) =>
         Object.fromEntries(Object.entries(pose).map(([name, value]) => [name === edit.bone ? edit.name : name, value])));
-      return commit({ ...document, rig: renameIn(rig, edit.bone, edit.name), animations }, `Renamed ${edit.bone} to ${edit.name}`, edit.name);
+      return commit({ ...model, rig: renameIn(rig, edit.bone, edit.name), animations }, `Renamed ${edit.bone} to ${edit.name}`, edit.name);
     }
     case "addChild": {
       const name = uniqueName("bone", rig.bones.map((candidate) => candidate.name));
       const child: RigLabBone = { name, parent: edit.bone, offset: [0, 10], tip: null, slot: name, artHeight: 0, hand: null, limits: null };
-      const animations = mapPoses(document.animations, (pose) => ({ ...pose, [name]: { rotation: 0 } }));
-      return commit({ ...document, rig: { ...rig, bones: [...rig.bones, child] }, animations }, `Added ${name} under ${edit.bone}`, name);
+      const animations = mapPoses(model.animations, (pose) => ({ ...pose, [name]: { rotation: 0 } }));
+      return commit({ ...model, rig: { ...rig, bones: [...rig.bones, child] }, animations }, `Added ${name} under ${edit.bone}`, name);
     }
     case "deleteBone": {
       if (edit.bone === rig.root) return refuse("The root bone cannot be deleted");
       const removed = subtreeOf(rig, edit.bone);
-      const result = deleteFrom(document, removed);
+      const result = deleteFrom(model, removed);
       const count = removed.size === 1 ? edit.bone : `${edit.bone} and ${removed.size - 1} bone${removed.size === 2 ? "" : "s"} below it`;
-      return commit(result.document, `Deleted ${count}${result.droppedDepth ? "; its depth profiles named a deleted bone and were removed" : ""}`, bone!.parent);
+      return commit(result.model, `Deleted ${count}${result.droppedDepth ? "; its depth profiles named a deleted bone and were removed" : ""}`, bone!.parent);
     }
     case "addChain": {
       const children = rig.bones.filter((candidate) => candidate.parent === edit.upper);
       if (children.length !== 1) return refuse(`A chain needs '${edit.upper}' to have exactly one child`);
       const chain: Chain = { name: edit.upper, upper: edit.upper, lower: children[0]!.name, bend: 1 };
-      return commit({ ...document, rig: { ...rig, chains: [...rig.chains, chain] } }, `Added chain ${chain.name}`);
+      return commit({ ...model, rig: { ...rig, chains: [...rig.chains, chain] } }, `Added chain ${chain.name}`);
     }
     case "removeChain":
-      return commit({ ...document, rig: { ...rig, chains: rig.chains.filter((chain) => chain.name !== edit.chain) } }, `Removed chain ${edit.chain}`);
+      return commit({ ...model, rig: { ...rig, chains: rig.chains.filter((chain) => chain.name !== edit.chain) } }, `Removed chain ${edit.chain}`);
     case "setBend":
-      return commit({ ...document, rig: { ...rig, chains: rig.chains.map((chain) => (chain.name === edit.chain ? { ...chain, bend: edit.bend } : chain)) } },
+      return commit({ ...model, rig: { ...rig, chains: rig.chains.map((chain) => (chain.name === edit.chain ? { ...chain, bend: edit.bend } : chain)) } },
         `Set ${edit.chain} to bend ${edit.bend > 0 ? "+" : "−"}`);
     default:
       return refuse("Unknown edit");
