@@ -5,34 +5,28 @@ import { setKeyPose } from "../../src/editor/poseEdits";
 import { bakeAnimation, frameCount } from "../../src/export/bake";
 import { buildBundle, EXPORT_ROOT, readBundle } from "../../src/export/bundle";
 import { crc32, unzip, zip } from "../../src/export/zip";
+import { poseFrames } from "../../src/format";
 import type { RigLabDocument } from "../../src/format";
 import { CHIBI_RIG } from "../../src/chibi/chibi";
-import { dragInPose, engineOf, NO_CONSTRAINTS, place, playAt, toggleGrip, togglePin } from "../../src/solve";
+import { chainEnd, dragInPose, engineOf, NO_CONSTRAINTS, place, playAt, togglePin } from "../../src/solve";
 
 const rig = CHIBI_RIG;
 const GENERATOR = "RigLab test";
 
-/** A blank idle and walk, plus a looping idle whose first two keys carry pins and a two-handed axe. */
+/** A blank idle and walk, plus a looping crouch whose first two keys pin both feet while the pelvis drops. */
 function authored(): RigLabDocument {
   const rest = restPose(rig);
-  let constraints = NO_CONSTRAINTS;
-  for (const step of [
-    (c: typeof constraints) => togglePin(rig, rest, c, "leg-front"),
-    (c: typeof constraints) => togglePin(rig, rest, c, "leg-back"),
-    (c: typeof constraints) => toggleGrip(rig, rest, c, "arm-front"),
-    (c: typeof constraints) => toggleGrip(rig, rest, c, "arm-back"),
-  ]) {
-    const result = step(constraints);
+  let feet = NO_CONSTRAINTS;
+  for (const chain of ["leg-front", "leg-back"]) {
+    const result = togglePin(rig, rest, feet, chain);
     if (!result.ok) throw new Error(result.error);
-    constraints = result.constraints;
+    feet = result.constraints;
   }
-  const axe = { ...constraints, prop: { ...constraints.prop!, name: "axe" } };
-  const ready = setKeyPose(rig, blankAnimation(rig, "axe-ready", "idle"), 0, rest, axe);
-  if (!ready.ok) throw new Error(ready.error);
-  const lunge = dragInPose(rig, rest, axe, { kind: "joint", bone: "pelvis" }, { x: 3, y: -22 });
-  const raised = dragInPose(rig, lunge.pose, lunge.constraints, { kind: "prop-move" }, { x: 13, y: -40 });
-  if (raised.status !== "ok") throw new Error(raised.message ?? raised.status);
-  const keyed = setKeyPose(rig, ready.animation, 15, raised.pose, raised.constraints);
+  const planted = setKeyPose(rig, blankAnimation(rig, "crouch", "idle"), 0, rest, feet);
+  if (!planted.ok) throw new Error(planted.error);
+  const low = dragInPose(rig, rest, feet, { kind: "joint", bone: "pelvis" }, { x: 3, y: -20 });
+  if (low.status !== "ok") throw new Error(low.message ?? low.status);
+  const keyed = setKeyPose(rig, planted.animation, 15, low.pose, low.constraints);
   if (!keyed.ok) throw new Error(keyed.error);
   return { ...libraryDocument(), animations: [blankAnimation(rig, "idle", "idle"), blankAnimation(rig, "walk", "walk"), keyed.animation] };
 }
@@ -53,13 +47,13 @@ describe("riglab-export bundles", () => {
     const files = await buildBundle(authored(), { baked: true, generator: GENERATOR });
     expect([...files.keys()]).toEqual([
       "manifest.json", "chibi.rig.json",
-      "animations/idle.anim.json", "animations/walk.anim.json", "animations/axe-ready.anim.json",
-      "baked/idle.baked.json", "baked/walk.baked.json", "baked/axe-ready.baked.json",
+      "animations/idle.anim.json", "animations/walk.anim.json", "animations/crouch.anim.json",
+      "baked/idle.baked.json", "baked/walk.baked.json", "baked/crouch.baked.json",
     ]);
     const manifest = JSON.parse(text(files.get("manifest.json")!));
     expect(manifest).toMatchObject({ format: "riglab.export", version: 1, generator: GENERATOR, rig: { name: "chibi", file: "chibi.rig.json" } });
     expect(manifest.animations.map((entry: { sha256: string }) => entry.sha256)).toHaveLength(3);
-    expect(JSON.parse(text(files.get("animations/axe-ready.anim.json")!))).toMatchObject({ version: 2, kind: "idle", fps: 60, length: 60, loop: true });
+    expect(JSON.parse(text(files.get("animations/crouch.anim.json")!))).toMatchObject({ version: 2, kind: "idle", fps: 60, length: 60, loop: true });
     expect((await buildBundle(authored(), { baked: false, generator: GENERATOR })).has("baked/idle.baked.json")).toBe(false);
   });
 
@@ -86,9 +80,16 @@ describe("riglab-export bundles", () => {
         expect(Math.abs(x - at.x) + Math.abs(y - at.y) + Math.abs(rotation - (at.rotation * 180) / Math.PI)).toBeLessThan(3e-6);
       });
     }
-    expect(baked.props?.[0]).toMatchObject({ name: "axe" });
-    expect(baked.props?.[7]).toEqual({ ...baked.props?.[7], x: expect.closeTo((baked.props![6]!.x + baked.props![8]!.x) / 2, 5) });
-    expect(bakeAnimation(rig, authored().animations[0]!).props).toBeUndefined();
+    // Both feet hold their pins on Hexframe's poses up to the unpinned key at 30, and a bake has no `props` field.
+    for (const frame of poseFrames(animation.length).filter((frame) => frame < 30)) {
+      const played = playAt(engine, frame);
+      expect(played.constraints.pins, `frame ${frame}`).toHaveLength(2);
+      for (const pin of played.constraints.pins) {
+        const end = chainEnd(rig, played.pose, rig.chains.find((chain) => chain.name === pin.chain)!);
+        expect(Math.hypot(end.x - pin.x, end.y - pin.y), `${pin.chain} at frame ${frame}`).toBeLessThan(1e-5);
+      }
+    }
+    expect(Object.keys(baked)).toEqual(["format", "version", "rig", "animation", "fps", "loop", "bones", "frames"]);
   });
 
   it("refuse a tampered file, an unknown version and a missing or dangling reference", async () => {

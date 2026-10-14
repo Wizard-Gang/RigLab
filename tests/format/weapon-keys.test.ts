@@ -65,10 +65,10 @@ describe("keys that hold weapons", () => {
     })).toBe("$.animations[0].keys[1].weapon.bodies[0].body: 'front' rides its hand and takes no placement");
   });
 
-  it("hold a prop or a weapon, and never pin a chain the weapon grips", () => {
+  it("refuse the legacy prop beside a weapon, and never pin a chain the weapon grips", () => {
     expect(errorsOf((value) => {
       value.animations[0].keys[0].prop = { name: "prop", x: 0, y: 0, rotation: 0, grips: [{ chain: "leg-front", at: [0, 0] }] };
-    })).toBe(`${KEY}: holds both a prop and a weapon; a key holds one or the other`);
+    })).toBe(`${KEY}: has unknown field 'prop'`);
     expect(errorsOf((value) => {
       value.animations[0].keys[0].pins = [{ chain: "arm-back", x: 0, y: 0 }];
     })).toBe(`${KEY}.weapon.name: grips chain 'arm-back', which the key already holds`);

@@ -10,7 +10,7 @@ import type { Skeleton } from "./skeleton";
 import { useElementSize } from "./useElementSize";
 import { WeaponHandles, WeaponLines } from "./WeaponMarkers";
 
-/** A draggable point: a bone's joint, the end of a tipped bone, or a prop's or free weapon body's move and turn handles. */
+/** A draggable point: a bone's joint, the end of a tipped bone, or a free weapon body's move and turn handles. */
 export type Handle = DragHandle;
 
 interface RigCanvasProps {
@@ -25,7 +25,7 @@ interface RigCanvasProps {
   readonly grid: number;
   /** Which handles can be dragged; `done` marks the drop, and a non-finite point a cancelled drag. */
   readonly drag?: { readonly tips: boolean; readonly onDrag: (handle: Handle, point: Point, done: boolean) => void };
-  /** Pins, the prop and the weapon for this frame. */
+  /** Pins and the weapon for this frame. */
   readonly constraints?: ConstraintGeometry;
   /** Draw held weapon bodies as lines, for when no art draws them. */
   readonly weaponLines?: boolean;
@@ -150,9 +150,6 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
       {constraints ? (
         <g className="constraints">
           {weaponLines ? <WeaponLines markers={constraints.weapons} /> : null}
-          {constraints.prop ? (
-            <line className="prop" x1={constraints.prop.start.x} y1={constraints.prop.start.y} x2={constraints.prop.end.x} y2={constraints.prop.end.y} />
-          ) : null}
           {constraints.pins.map((pin) => (
             <g key={pin.chain}>
               {Math.hypot(pin.end.x - pin.at.x, pin.end.y - pin.at.y) > 1e-3 ? (
@@ -206,24 +203,6 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
         ))}
       </g>
       {constraints && drag ? <WeaponHandles markers={constraints.weapons} scale={scale} grab={grab} /> : null}
-      {constraints?.prop && drag ? (
-        <g className="prop-handles">
-          <circle className="prop-handle" cx={constraints.prop.origin.x} cy={constraints.prop.origin.y} r={4.5 / scale} onPointerDown={grab({ kind: "prop-move" })}>
-            <title>{`Move ${constraints.prop.name}`}</title>
-          </circle>
-          <rect
-            className="prop-handle"
-            x={constraints.prop.end.x - 4 / scale}
-            y={constraints.prop.end.y - 4 / scale}
-            width={8 / scale}
-            height={8 / scale}
-            transform={`rotate(45 ${constraints.prop.end.x} ${constraints.prop.end.y})`}
-            onPointerDown={grab({ kind: "prop-turn" })}
-          >
-            <title>{`Turn ${constraints.prop.name}`}</title>
-          </rect>
-        </g>
-      ) : null}
     </svg>
   );
 }

@@ -69,7 +69,6 @@ export function Inspector({ rig, selection, active, pose, placed, animations, on
         <dt>Time</dt><dd>{fixed(key.frame / active.fps)} s</dd>
         <dt>To next key</dt><dd>{key.interpolation}{next ? ` over ${next.frame - key.frame} frames` : active.loop ? " back to frame 0" : " (last key holds)"}</dd>
         <dt>Pins</dt><dd>{key.pins?.length ? key.pins.map((pin) => pin.chain).join(", ") : "none"}</dd>
-        <dt>Prop</dt><dd>{key.prop ? `${key.prop.name} held by ${key.prop.grips.map((grip) => grip.chain).join(", ")}` : "none"}</dd>
       </dl>
     );
   }

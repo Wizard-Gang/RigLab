@@ -12,13 +12,6 @@ export const BAKED_VERSION = 1;
 /** A world transform: x, y and rotation in degrees, in rig space. */
 export type Transform = readonly [number, number, number];
 
-export interface BakedProp {
-  readonly name: string;
-  readonly x: number;
-  readonly y: number;
-  readonly rotation: number;
-}
-
 /** The held weapon on a frame: each of its bodies' world transforms by body name, riding bodies included. */
 export interface BakedWeapon {
   readonly name: string;
@@ -36,8 +29,6 @@ export interface RigLabBaked {
   readonly bones: readonly string[];
   /** One entry per output frame: 0..length-1 when looping, 0..length otherwise. */
   readonly frames: readonly (readonly Transform[])[];
-  /** The held prop on each frame, or null; omitted when no frame has one. */
-  readonly props?: readonly (BakedProp | null)[];
   /** The held weapon on each frame, or null; omitted when no frame holds one. */
   readonly weapons?: readonly (BakedWeapon | null)[];
 }
@@ -53,7 +44,6 @@ export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation, weapon
   const bones = rig.bones.map((bone) => bone.name);
   const engine = engineOf(rig, animation, weapons);
   const frames: Transform[][] = [];
-  const props: (BakedProp | null)[] = [];
   const held: (BakedWeapon | null)[] = [];
   for (let frame = 0; frame < frameCount(animation); frame += 1) {
     const played = playAt(engine, frame);
@@ -62,8 +52,6 @@ export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation, weapon
       const at = placed.get(name)!;
       return [round(at.x), round(at.y), round((at.rotation * 180) / Math.PI)];
     }));
-    const prop = played.constraints.prop;
-    props.push(prop ? { name: prop.name, x: round(prop.x), y: round(prop.y), rotation: round(prop.rotation) } : null);
     const wielded = played.constraints.weapon;
     held.push(wielded ? {
       name: wielded.weapon.name,
@@ -79,7 +67,6 @@ export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation, weapon
     loop: animation.loop,
     bones,
     frames,
-    ...(props.some((prop) => prop !== null) ? { props } : {}),
     ...(held.some((weapon) => weapon !== null) ? { weapons: held } : {}),
   };
 }
@@ -107,7 +94,7 @@ function validateBakedWeapons(issues: Issues, value: unknown, count: number, wea
 export function validateBaked(value: unknown, rig: RigLabRig, animation: RigLabAnimation, weapons: readonly RigLabWeapon[] = []): Validation<RigLabBaked> {
   const issues = new Issues();
   const fields = ["format", "version", "rig", "animation", "fps", "loop", "bones", "frames"];
-  if (!closedObject(issues, "$", value, fields, ["props", "weapons"])) return issues.result(value);
+  if (!closedObject(issues, "$", value, fields, ["weapons"])) return issues.result(value);
   if (value.format !== BAKED_FORMAT) issues.add("$.format", `must be '${BAKED_FORMAT}'`);
   if (value.version !== BAKED_VERSION) issues.add("$.version", `must be ${BAKED_VERSION}`);
   if (value.rig !== rig.name) issues.add("$.rig", `must name rig '${rig.name}'`);
@@ -123,18 +110,6 @@ export function validateBaked(value: unknown, rig: RigLabRig, animation: RigLabA
     frames.forEach((frame: unknown, index) => {
       if (!Array.isArray(frame) || frame.length !== bones.length || !frame.every(isTransform)) issues.add(`$.frames[${index}]`, "must hold one [x, y, rotation] per bone");
     });
-  }
-  if (value.props !== undefined) {
-    if (!Array.isArray(value.props) || value.props.length !== frameCount(animation)) issues.add("$.props", "must hold one entry per frame");
-    else {
-      value.props.forEach((prop: unknown, index) => {
-        if (prop === null) return;
-        const at = `$.props[${index}]`;
-        if (!closedObject(issues, at, prop, ["name", "x", "y", "rotation"])) return;
-        checkName(issues, `${at}.name`, prop.name);
-        if (![prop.x, prop.y, prop.rotation].every(isFiniteNumber)) issues.add(at, "must have finite x, y and rotation");
-      });
-    }
   }
   if (value.weapons !== undefined) validateBakedWeapons(issues, value.weapons, frameCount(animation), weapons);
   return issues.result(value);

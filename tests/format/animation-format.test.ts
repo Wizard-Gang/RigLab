@@ -100,6 +100,11 @@ describe("riglab.anim validation", () => {
     expect(errorsOf((value) => { delete value.keys[1].pose.pelvis.y; })).toMatch(/pose\.pelvis: is missing 'y'/);
     expect(errorsOf((value) => { value.keys[1].pose.torso.rotation = Infinity; })).toMatch(/pose\.torso\.rotation: must be a finite number/);
   });
+
+  it("refuses a key that still holds the legacy prop, at the key's path", () => {
+    const prop = { name: "prop", x: 9, y: -24, rotation: 180, grips: [{ chain: "arm-front", at: [0, 0] }, { chain: "arm-back", at: [18, 0] }] };
+    expect(errorsOf((value) => { value.keys[2].prop = prop; })).toBe("$.keys[2]: has unknown field 'prop'");
+  });
 });
 
 describe("sampleAnimation", () => {

@@ -5,9 +5,7 @@ import { setKeyPose } from "../../src/editor/poseEdits";
 import { sampleAnimation, validateAnimation } from "../../src/format";
 import type { RigLabAnimation } from "../../src/format";
 import { CHIBI_RIG } from "../../src/chibi/chibi";
-import {
-  chainEnd, constraintsAt, dragInPose, gripPoint, NO_CONSTRAINTS, runtimeRig, samplePose, toggleGrip, togglePin,
-} from "../../src/solve";
+import { chainEnd, constraintsAt, dragInPose, NO_CONSTRAINTS, runtimeRig, samplePose, togglePin } from "../../src/solve";
 import type { Constraints } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
 
@@ -23,14 +21,6 @@ function pinned(...chains: string[]): Constraints {
     if (!result.ok) throw new Error(result.error);
     return result.constraints;
   }, NO_CONSTRAINTS);
-}
-
-function gripped(): Constraints {
-  const first = toggleGrip(rig, rest, NO_CONSTRAINTS, "arm-front");
-  if (!first.ok) throw new Error(first.error);
-  const second = toggleGrip(rig, rest, first.constraints, "arm-back");
-  if (!second.ok) throw new Error(second.error);
-  return second.constraints;
 }
 
 describe("planted feet", () => {
@@ -62,39 +52,6 @@ describe("planted feet", () => {
   });
 });
 
-describe("two-handed grip", () => {
-  it("turns the second hand into a straight, rigid shaft", () => {
-    const { prop } = gripped();
-    expect(prop).toEqual({ name: "prop", x: 9, y: -24, rotation: 180, grips: [{ chain: "arm-front", at: [0, 0] }, { chain: "arm-back", at: [18, 0] }] });
-    const third = toggleGrip(rig, rest, { ...gripped(), prop: { ...prop!, grips: [prop!.grips[0]!, { chain: "leg-front", at: [5, 0] }] } }, "arm-back");
-    expect(third.ok ? "" : third.error).toBe("prop is already held by two hands");
-  });
-
-  it("carries both hands when the prop moves, turns, or one hand drags it", () => {
-    const hands = gripped();
-    for (const [handle, target] of [
-      [{ kind: "prop-move" }, { x: 14, y: -40 }],
-      [{ kind: "prop-turn" }, { x: 0, y: -40 }],
-      [{ kind: "tip", bone: "forearm-front" }, { x: 14, y: -30 }],
-    ] as const) {
-      const moved = dragInPose(rig, rest, hands, handle, target);
-      expect(moved.status, handle.kind).toBe("ok");
-      for (const grip of moved.constraints.prop!.grips) {
-        expect(distance(chainEnd(rig, moved.pose, chain(grip.chain)), gripPoint(moved.constraints.prop!, grip)), grip.chain).toBeLessThan(1e-6);
-      }
-    }
-    const far = dragInPose(rig, rest, hands, { kind: "prop-move" }, { x: 45, y: -20 });
-    expect(far.message).toMatch(/prop grip: arm-(front|back) cannot reach/);
-  });
-
-  it("takes a hand off the prop and drops the prop with its last hand", () => {
-    const one = toggleGrip(rig, rest, gripped(), "arm-back");
-    expect(one.ok && one.constraints.prop?.grips.map((grip) => grip.chain)).toEqual(["arm-front"]);
-    const none = one.ok ? toggleGrip(rig, rest, one.constraints, "arm-front") : one;
-    expect(none.ok && none.constraints.prop).toBeNull();
-  });
-});
-
 describe("constraints on keys", () => {
   const keyed = (constraints: Constraints, frame: number, animation: RigLabAnimation): RigLabAnimation => {
     const result = setKeyPose(rig, animation, frame, sampleAnimation(animation, frame), constraints);
@@ -107,14 +64,14 @@ describe("constraints on keys", () => {
     const animation = keyed(pinned("leg-front"), 0, blankAnimation(rig, "idle", "idle"));
     expect(animation.keys[0]!.pins).toEqual([{ chain: "leg-front", x: 5, y: 0 }]);
     expect(validateAnimation({ ...animation, keys: [{ ...animation.keys[0]!, pins: [{ chain: "tail", x: 0, y: 0 }] }, ...animation.keys.slice(1)] }, rig).ok).toBe(false);
-    const both = { ...animation.keys[0]!, prop: { ...gripped().prop!, grips: [{ chain: "leg-front", at: [0, 0] as const }] } };
-    const result = validateAnimation({ ...animation, keys: [both, ...animation.keys.slice(1)] }, rig);
-    expect(result.ok ? "" : result.errors.join("\n")).toMatch(/holds chain 'leg-front' twice/);
+    const twice = { ...animation.keys[0]!, pins: [...animation.keys[0]!.pins!, { chain: "leg-front", x: 6, y: 0 }] };
+    const result = validateAnimation({ ...animation, keys: [twice, ...animation.keys.slice(1)] }, rig);
+    expect(result.ok ? "" : result.errors.join("\n")).toBe("$.keys[0].pins[1].chain: holds chain 'leg-front' twice");
   });
 
   it("move between keys with the pose's easing, and hold when only the key in force has them", () => {
-    let animation = keyed({ pins: [{ chain: "leg-front", x: 5, y: 0 }], prop: null }, 0, linear(blankAnimation(rig, "lunge", "attack")));
-    animation = keyed({ pins: [{ chain: "leg-front", x: 13, y: 0 }], prop: null }, 8, animation);
+    let animation = keyed({ pins: [{ chain: "leg-front", x: 5, y: 0 }] }, 0, linear(blankAnimation(rig, "lunge", "attack")));
+    animation = keyed({ pins: [{ chain: "leg-front", x: 13, y: 0 }] }, 8, animation);
     expect(animation.keys.map((key) => [key.frame, key.interpolation])).toEqual([[0, "linear"], [8, "linear"], [16, "linear"], [24, "linear"]]);
     expect(constraintsAt(animation, 4).pins).toEqual([{ chain: "leg-front", x: 9, y: 0 }]);
     expect(constraintsAt(animation, 8).pins).toEqual([{ chain: "leg-front", x: 13, y: 0 }]);
