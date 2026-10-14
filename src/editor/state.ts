@@ -1,5 +1,5 @@
 // The editor's pure state machine. Document edits go through the undo history; view and selection do not.
-import { initialState, reconcile } from "./core";
+import { reconcile } from "./core";
 import { animationEdit, poseEdit, rigEdit, timelineEdit } from "./documentEdits";
 import { weaponEdit } from "./weaponEdits";
 import { redo, undo } from "./history";
@@ -19,11 +19,7 @@ function steppedKey(state: EditorState, direction: -1 | 1): number {
 }
 
 export function editorReducer(state: EditorState, action: Action): EditorState {
-  const keep = { mode: state.mode, grid: state.grid, snap: state.snap, rotationSnap: state.rotationSnap, onion: state.onion, art: state.art };
   switch (action.type) {
-    // An import is unsaved until Save writes it into the library folder.
-    case "imported":
-      return { ...initialState(action.document), ...keep, saved: state.saved, status: info(`Imported ${action.source}; Save writes it to the library`) };
     case "saved":
       return { ...state, saved: action.document, status: info(action.note) };
     case "status":

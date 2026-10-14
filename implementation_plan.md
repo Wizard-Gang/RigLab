@@ -2,19 +2,9 @@
 
 ## Open tasks
 
-### RL-037 — [REFACTOR] Remove bundle import so motion enters only through the library folder
-
-- Dependency: None.
-- Why: The owner approved the cut on 2026-10-13. The library folder is the only source of motion ("we dont want multiple sources"), yet Export mode can still import a bundle and replace the editor's rig and animations. Only import needs the bundle reader and its manifest checks, a ZIP reader with deflate support, baked-file validation and the editor's `imported` action.
-- Scope: Remove Import folder… and Import zip… from the Export panel. Remove the `imported` action, `readBundle` with its manifest and file checks, `validateBaked`, the ZIP reader `unzip`, and the folder and zip readers in `src/editor/bundleFiles.ts`. Export still writes the bundle to a folder or a zip, with optional baked frames, and still downloads the Hexframe rig and clip. Tests check what export writes, directly. Each manifest entry's SHA-256 matches its bytes. The rig, animation and weapon files parse back to the editor's own, and each baked file equals a fresh bake. The ZIP writer's test reads its stored entries with a few lines of test code. Both acceptance tests swap their zip-and-reload round trip for these checks. Update README and ARCHITECTURE (Export bundles).
-- Non-goals: Changing the bundle, baked or Hexframe formats, and any other way into the library.
-- Acceptance: The Export panel has no import controls, and nothing in `src/` reads a bundle or a zip. The export and acceptance tests pass with the direct checks. The zip of the placeholder library's bundle keeps the SHA-256 it has on main. Headless Chrome on a worktree dev server downloads a zip from the Export panel with no console errors. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused export and acceptance tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/app/ExportPanel.tsx`, `src/app/ModePanel.tsx`, `src/export/bundle.ts`, `src/export/bake.ts`, `src/export/zip.ts`, `src/editor/bundleFiles.ts`, `src/editor/types.ts`, `src/editor/state.ts`, `tests/export/`, `tests/acceptance/`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's approval on 2026-10-13.
-
 ### RL-038 — [REFACTOR] Make the editor's model the library itself
 
-- Dependency: RL-037, so the model drops its code paths first.
+- Dependency: None.
 - Why: The owner approved cutting the `riglab.document` leftovers and the re-export layers on 2026-10-13. Since RL-032 the editor's document is never a file. It still carries a format header, parse and serialize helpers that only tests call, and pruned copies of the weapons its keys hold, kept "so the document stays self-contained". `src/chibi/chibi.ts`, `src/weapons/weapons.ts` and `src/editor/templates.ts` only rename parts of `LIBRARY`. The weapon editing below needs a model that carries every weapon and its hold.
 - Scope: Replace `RigLabDocument` (`src/format/document.ts`) with the editor's model of the library in `src/editor/model.ts`: `{ rig, weapons, animations }`. `weapons` lists every library weapon in config order, each with its rig and its hold. `validateModel` checks the model whole, as `validateDocument` did. Remove `DOCUMENT_FORMAT`, `DOCUMENT_VERSION`, `parseDocument`, `serializeDocument`, `pruneWeapons` and the weapon-copy bookkeeping of the weapon pick. Delete `src/chibi/`, `src/weapons/` and `src/editor/templates.ts`. The editor, wardrobe, export and tests read `LIBRARY` or the model directly, and one helper in `src/library/` gives art parts by slot. Save still posts only the rig and animations, and export still lists only the weapons the animations hold. Update README and ARCHITECTURE (Editor, The chibi, Weapons, Source layout).
 - Non-goals: Saving weapons or holds (RL-041), the class model (RL-039), and any change a user can see. The editor, the wardrobe, saves and export bytes stay as they are.

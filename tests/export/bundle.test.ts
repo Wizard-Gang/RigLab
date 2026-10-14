@@ -3,12 +3,13 @@ import { blankAnimation, restPose } from "../../src/editor/animations";
 import { libraryDocument } from "../../src/editor/templates";
 import { setKeyPose } from "../../src/editor/poseEdits";
 import { bakeAnimation, frameCount } from "../../src/export/bake";
-import { buildBundle, EXPORT_ROOT, readBundle } from "../../src/export/bundle";
-import { crc32, unzip, zip } from "../../src/export/zip";
+import { buildBundle, EXPORT_ROOT } from "../../src/export/bundle";
+import { crc32, zip } from "../../src/export/zip";
 import { poseFrames } from "../../src/format";
 import type { RigLabDocument } from "../../src/format";
 import { CHIBI_RIG } from "../../src/chibi/chibi";
 import { chainEnd, dragInPose, engineOf, NO_CONSTRAINTS, place, playAt, togglePin } from "../../src/solve";
+import { written } from "./written";
 
 const rig = CHIBI_RIG;
 const GENERATOR = "RigLab test";
@@ -32,14 +33,19 @@ function authored(): RigLabDocument {
 }
 
 const text = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
-const bytesOf = (value: unknown): Uint8Array => new TextEncoder().encode(`${JSON.stringify(value, null, 2)}\n`);
 
-async function refusal(change: (files: Map<string, Uint8Array>) => void | Promise<void>): Promise<string> {
-  const files = await buildBundle(authored(), { baked: true, generator: GENERATOR });
-  await change(files);
-  const result = await readBundle(files);
-  expect(result.ok).toBe(false);
-  return result.ok ? "" : result.errors.join("\n");
+/** Read a ZIP's stored entries by their local headers: just enough to check what the writer wrote. */
+function storedEntries(archive: Uint8Array): Map<string, { readonly crc: number; readonly bytes: Uint8Array }> {
+  const view = new DataView(archive.buffer, archive.byteOffset, archive.byteLength);
+  const entries = new Map<string, { readonly crc: number; readonly bytes: Uint8Array }>();
+  for (let at = 0; view.getUint32(at, true) === 0x04034b50;) {
+    expect(view.getUint16(at + 8, true), "method").toBe(0);
+    const [size, nameEnd] = [view.getUint32(at + 18, true), at + 30 + view.getUint16(at + 26, true)];
+    const start = nameEnd + view.getUint16(at + 28, true);
+    entries.set(text(archive.subarray(at + 30, nameEnd)), { crc: view.getUint32(at + 14, true), bytes: archive.slice(start, start + size) });
+    at = start + size;
+  }
+  return entries;
 }
 
 describe("riglab-export bundles", () => {
@@ -57,13 +63,12 @@ describe("riglab-export bundles", () => {
     expect((await buildBundle(authored(), { baked: false, generator: GENERATOR })).has("baked/idle.baked.json")).toBe(false);
   });
 
-  it("re-import deep-equal, from the folder layout or from a zip", async () => {
+  it("pin every file by SHA-256, write the document's own rig and animations, and bake each one fresh", async () => {
     const document = authored();
-    const files = await buildBundle(document, { baked: true, generator: GENERATOR });
-    expect(await readBundle(files)).toEqual({ ok: true, value: document });
-    const archive = zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])));
-    expect(zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])))).toEqual(archive);
-    expect(await readBundle(await unzip(archive))).toEqual({ ok: true, value: document });
+    for (const baked of [true, false]) {
+      const bundle = await written(await buildBundle(document, { baked, generator: GENERATOR }), document);
+      expect([bundle.animations.length, bundle.weapons.length, bundle.baked.size]).toEqual([3, 0, baked ? 3 : 0]);
+    }
   });
 
   it("bake every Hexframe tick as the engine plays it, through Hexframe's FK", () => {
@@ -91,62 +96,18 @@ describe("riglab-export bundles", () => {
     }
     expect(Object.keys(baked)).toEqual(["format", "version", "rig", "animation", "fps", "loop", "bones", "frames"]);
   });
-
-  it("refuse a tampered file, an unknown version and a missing or dangling reference", async () => {
-    expect(await refusal((files) => {
-      const bytes = files.get("animations/walk.anim.json")!;
-      bytes[40] = bytes[40]! ^ 1;
-    })).toBe("manifest.json $.animations[1].sha256: does not match animations/walk.anim.json");
-    expect(await refusal((files) => {
-      files.set("manifest.json", bytesOf({ ...JSON.parse(text(files.get("manifest.json")!)), version: 2 }));
-    })).toBe("manifest.json $.version: must be 1");
-    expect(await refusal((files) => { files.delete("baked/idle.baked.json"); }))
-      .toBe("manifest.json $.baked[0].file: names missing file baked/idle.baked.json");
-    expect(await refusal((files) => {
-      const manifest = JSON.parse(text(files.get("manifest.json")!));
-      manifest.baked[0].animation = "ghost";
-      manifest.baked[0].file = "baked/ghost.baked.json";
-      files.set("baked/ghost.baked.json", files.get("baked/idle.baked.json")!);
-      files.set("manifest.json", bytesOf(manifest));
-    })).toBe("manifest.json $.baked[0].animation: names no animation in the bundle");
-    expect(await refusal((files) => { files.delete("manifest.json"); })).toBe("bundle: names missing file manifest.json");
-  });
-
-  it("refuse content that disagrees with the manifest, even with matching hashes", async () => {
-    const message = await refusal(async (files) => {
-      const manifest = JSON.parse(text(files.get("manifest.json")!));
-      const walk = JSON.parse(text(files.get("animations/walk.anim.json")!));
-      const renamed = bytesOf({ ...walk, name: "run" });
-      files.set("animations/walk.anim.json", renamed);
-      const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", renamed as BufferSource));
-      manifest.animations[1].sha256 = [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-      files.set("manifest.json", bytesOf(manifest));
-    });
-    expect(message).toContain("animations/walk.anim.json $.name: must be 'walk' as the manifest says");
-  });
 });
 
 describe("zip", () => {
-  it("reads deflated entries written by other tools and checks every CRC", async () => {
-    const data = new TextEncoder().encode("riglab ".repeat(40));
-    const stored = zip(new Map([["a.txt", data]]));
-    const deflated = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer());
-    // Rebuild the one-entry archive with method 8 and the compressed payload.
-    const local = stored.slice(0, 30 + 5);
-    const view = (bytes: Uint8Array) => new DataView(bytes.buffer);
-    view(local).setUint16(8, 8, true);
-    view(local).setUint32(18, deflated.length, true);
-    const central = stored.slice(30 + 5 + data.length, 30 + 5 + data.length + 46 + 5);
-    view(central).setUint16(10, 8, true);
-    view(central).setUint32(20, deflated.length, true);
-    const end = stored.slice(stored.length - 22);
-    view(end).setUint32(16, local.length + deflated.length, true);
-    const archive = new Uint8Array([...local, ...deflated, ...central, ...end]);
-    expect(text((await unzip(archive)).get("a.txt")!)).toBe("riglab ".repeat(40));
+  it("stores every bundle file under riglab-export/ with its bytes and CRC, the same way every time", async () => {
+    const files = await buildBundle(authored(), { baked: true, generator: GENERATOR });
+    const archive = zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])));
+    const entries = storedEntries(archive);
+    expect([...entries.keys()]).toEqual([...files.keys()].map((path) => `${EXPORT_ROOT}/${path}`));
+    for (const [path, bytes] of files) expect(entries.get(`${EXPORT_ROOT}/${path}`), path).toEqual({ crc: crc32(bytes), bytes });
+    // The central directory's end record counts every entry.
+    expect(new DataView(archive.buffer).getUint16(archive.length - 22 + 10, true)).toBe(files.size);
+    expect(zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])))).toEqual(archive);
     expect(crc32(new TextEncoder().encode("123456789"))).toBe(0xcbf43926);
-    const corrupt = stored.slice();
-    corrupt[30 + 5] = corrupt[30 + 5]! ^ 1;
-    await expect(unzip(corrupt)).rejects.toThrow("a.txt: ZIP checksum mismatch");
-    await expect(unzip(new Uint8Array(10))).rejects.toThrow("not a ZIP file");
   });
 });

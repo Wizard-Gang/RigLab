@@ -1,20 +1,19 @@
 // One acceptance run per weapon, through the editor's own reducer and export path: the chibi plants both feet, picks
-// the weapon at each of an attack's four keys and swings it, then the bundle is exported with baked frames, zipped,
-// unzipped and reloaded. Every frame must keep the skeleton connected, the feet planted and the weapon in hand, and
-// Hexframe must play the exported clip exactly as RigLab baked it.
+// the weapon at each of an attack's four keys and swings it, then the bundle is exported with baked frames and what it
+// wrote is checked. Every frame must keep the skeleton connected, the feet planted and the weapon in hand, and Hexframe
+// must play the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
 import { activeAnimationOf, documentOf, editorReducer, initialState } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
-import { bakeAnimation } from "../../src/export/bake";
 import type { RigLabBaked } from "../../src/export/bake";
-import { buildBundle, EXPORT_ROOT, readBundle } from "../../src/export/bundle";
-import { unzip, zip } from "../../src/export/zip";
+import { buildBundle } from "../../src/export/bundle";
 import type { RigLabDocument } from "../../src/format";
 import { toHexframeClip } from "../../src/hexframe/adapter";
 import { constraintsAt, dragInPose, engineOf, gripCenter, place, playAt, rotate, samplePose, togglePin } from "../../src/solve";
 import type { DragHandle } from "../../src/solve";
 import { weaponNamed } from "../../src/weapons/weapons";
+import { written } from "../export/written";
 
 const TOLERANCE = 1e-5;
 /** Hexframe interpolates joint angles between its 13 poses, not grips, so a free body's grips may drift this far there. */
@@ -109,23 +108,19 @@ const gap = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.h
 
 describe("weapon acceptance", () => {
   for (const name of ["sword", "spear", "axe", "daggers"]) {
-    it(`authors, exports and reloads a ${name} attack with the skeleton connected, the feet planted and the ${name} in hand`, async () => {
+    it(`authors and exports a ${name} attack with the skeleton connected, the feet planted and the ${name} in hand`, async () => {
       const document = author(name);
       const named = (animations: RigLabDocument["animations"]) => animations.find((item) => item.name === `${name}-attack`)!;
       const animation = named(document.animations);
       expect(animation.keys.map((key) => [key.frame, key.weapon?.name, key.pins?.length])).toEqual([0, 8, 16, 24].map((frame) => [frame, name, 2]));
-      const files = await buildBundle(document, { baked: true, generator: "RigLab acceptance" });
-      const reloaded = await readBundle(await unzip(zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])))));
-      if (!reloaded.ok) throw new Error(reloaded.errors.join("\n"));
-      expect(reloaded.value).toEqual(document);
-
-      const { rig, weapons } = reloaded.value;
-      const again = named(reloaded.value.animations);
-      const baked: RigLabBaked = JSON.parse(new TextDecoder().decode(files.get(`baked/${again.name}.baked.json`)!));
-      expect(bakeAnimation(rig, again, weapons)).toEqual(baked);
+      // The bundle's files are the document's own, and its baked frames are a fresh bake of them.
+      const bundle = await written(await buildBundle(document, { baked: true, generator: "RigLab acceptance" }), document);
+      const { rig, weapons } = bundle;
+      const again = named(bundle.animations);
+      const baked: RigLabBaked = bundle.baked.get(again.name)!;
       const clip = toHexframeClip(rig, again, weapons);
       const [engine, original] = [engineOf(rig, again, weapons), engineOf(document.rig, animation, document.weapons)];
-      const weapon = weapons!.find((candidate) => candidate.name === name)!;
+      const weapon = weapons.find((candidate) => candidate.name === name)!;
       const transformOf = (frame: number, bone: string) => baked.frames[frame]![baked.bones.indexOf(bone)]!;
       let drift = 0;
 
