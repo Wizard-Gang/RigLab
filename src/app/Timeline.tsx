@@ -3,6 +3,7 @@ import { INTERPOLATIONS } from "../format/animation";
 import { keyIndexAt } from "../format/sample";
 import { KINDS } from "../format/timing";
 import type { TimelineEdit } from "../editor/timeline";
+import { classLabel } from "./labels";
 import { TimelineTrack } from "./TimelineTrack";
 
 interface TimelineProps {
@@ -41,7 +42,7 @@ export function Timeline(props: TimelineProps) {
           <button type="button" className="tool tool--small" aria-label="Next key" title="Next key (⇧→)" onClick={() => onStepKey(1)}>⏭</button>
         </div>
         <output className="transport__frame">
-          <code>{animation.name}</code> · frame {frame} / {animation.length} · {keyHere ? "key" : `after key ${inForce.frame}`}
+          <span className="transport__name" title={animation.name}>{classLabel(animation.class)} · {KINDS[animation.kind].label}</span> · frame {frame} / {animation.length} · {keyHere ? "key" : `after key ${inForce.frame}`}
         </output>
         <div className="toolbar timeline__keys" role="toolbar" aria-label="Keys">
           <div className="segmented" role="radiogroup" aria-label="Interpolation to the next key">

@@ -1,8 +1,9 @@
 // The editor's pure state machine. Model edits go through the undo history; view and selection do not.
+import { animationName } from "../format/classes";
 import { reconcile } from "./core";
 import { deleteEdit, poseEdit, rigEdit, timelineEdit } from "./modelEdits";
 import { redo, undo } from "./history";
-import { activeAnimationOf, info } from "./types";
+import { activeAnimationOf, error, info, modelOf } from "./types";
 import type { Action, EditorState } from "./types";
 import { GRID_SPACINGS, ROTATION_SNAPS } from "./view";
 
@@ -15,6 +16,19 @@ function steppedKey(state: EditorState, direction: -1 | 1): number {
   const frames = activeAnimationOf(state)?.keys.map((key) => key.frame) ?? [];
   const next = direction > 0 ? frames.find((frame) => frame > state.frame) : frames.filter((frame) => frame < state.frame).at(-1);
   return next ?? state.frame;
+}
+
+/**
+ * The class's animation of the active animation's kind, so `sword-attack` goes to `spear-attack`. The frame stays, since
+ * the kind fixes the timing, and a selected animation becomes the new one; a bone or key stays selected.
+ */
+function switchClass(state: EditorState, animationClass: string): EditorState {
+  const kind = activeAnimationOf(state)?.kind ?? "idle";
+  const name = animationName(animationClass, kind);
+  if (name === state.activeAnimation) return state;
+  if (!modelOf(state).animations.some((animation) => animation.name === name)) return { ...state, status: error(`The library has no ${name}`) };
+  const selection = state.selection?.kind === "animation" ? { kind: "animation" as const, name } : state.selection;
+  return reconcile({ ...state, activeAnimation: name, selection });
 }
 
 export function editorReducer(state: EditorState, action: Action): EditorState {
@@ -39,6 +53,8 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
     }
     case "activateAnimation":
       return reconcile({ ...state, activeAnimation: action.name, frame: 0 });
+    case "setClass":
+      return switchClass(state, action.animationClass);
     case "setMode":
       return { ...state, mode: action.mode };
     case "setFrame":

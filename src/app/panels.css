@@ -18,9 +18,27 @@
 .panel__empty { color: var(--muted); margin: 0; padding-inline: 0.75rem; }
 .panel--right .panel__empty { padding-inline: 0; }
 .panel__actions { display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.5rem 0.75rem 0; }
-/* A class heading in the Animations list, over its kinds. */
-.list__group { margin: 0.75rem 0 0.15rem; padding-inline: 0.75rem; font-size: 0.8rem; font-weight: 600; color: var(--text); }
-.panel__title + div > .list__group { margin-top: 0; }
+/* The class switcher over the active class's kinds, wrapping in a narrow panel. */
+.classes { display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0 0.75rem 0.5rem; }
+.list__missing { margin: 0; padding: 0.3rem 0.75rem; color: var(--muted); font-size: 0.9em; }
+/* The hierarchy's fold toggle, so the classes stay in view. */
+.panel__fold {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin-bottom: 0.25rem;
+  padding: 0.2rem 0.75rem;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: start;
+  cursor: pointer;
+}
+.panel__fold:hover { color: var(--text); }
+.panel__fold-chevron { width: 0.8rem; flex: none; }
 .panel__actions select { flex: 1 1 100%; min-width: 0; }
 /* The open panel's heading row carries its collapse toggle; a collapsed panel is one rail button. */
 .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; padding-inline: 0.75rem; }

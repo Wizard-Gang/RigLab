@@ -4,7 +4,7 @@ import type { RigLabAnimation } from "../format/animation";
 import type { RigLabRig } from "../format/rig";
 import { KINDS } from "../format/timing";
 import type { Selection } from "../editor/state";
-import { classLabel } from "./AnimationsPanel";
+import { classLabel } from "./labels";
 
 interface InspectorProps {
   readonly rig: RigLabRig;
