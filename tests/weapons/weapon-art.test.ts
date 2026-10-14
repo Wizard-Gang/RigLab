@@ -21,7 +21,7 @@ const wielded = (name: string): Wielded => {
 /** The paint order of the chibi's art with a weapon in an animation, as the art layer draws it. */
 function painted(name: string, animation: string | null, on: RigLabRig = rig): string[] {
   const held = wielded(name);
-  const pose = holdConstraints(on, restPose(on), { pins: [], prop: null, weapon: held }).pose;
+  const pose = holdConstraints(on, restPose(on), { pins: [], weapon: held }).pose;
   const placements = artPlacements(on, runtimeRig(on), place(on, pose), ART_PARTS, animation);
   return withWeaponArt(on, runtimeRig(on), placements, bodyTransforms(on, pose, held), held.weapon, ART_PARTS, animation)
     .map((item) => `${item.part.set}:${item.bone}`);
@@ -63,16 +63,16 @@ describe("weapon art", () => {
 describe("weapon markers", () => {
   it("give free bodies handles at their grips' midpoint and tip, and mark riding bodies", () => {
     const sword = wielded("sword");
-    const pose = holdConstraints(rig, restPose(rig), { pins: [], prop: null, weapon: sword }).pose;
-    const [marker] = constraintGeometry(rig, pose, { pins: [], prop: null, weapon: sword }).weapons;
+    const pose = holdConstraints(rig, restPose(rig), { pins: [], weapon: sword }).pose;
+    const [marker] = constraintGeometry(rig, pose, { pins: [], weapon: sword }).weapons;
     expect(marker!.free).toBe(true);
     expect(marker!.body).toBe("sword");
     const [upper, lower] = marker!.grips;
     expect(marker!.center.x).toBeCloseTo((upper!.x + lower!.x) / 2, 9);
     expect(marker!.center.y).toBeCloseTo((upper!.y + lower!.y) / 2, 9);
     expect(marker!.tip.y).toBeLessThan(marker!.butt.y);
-    const daggers = constraintGeometry(rig, restPose(rig), { pins: [], prop: null, weapon: wielded("daggers") }).weapons;
+    const daggers = constraintGeometry(rig, restPose(rig), { pins: [], weapon: wielded("daggers") }).weapons;
     expect(daggers.map((item) => [item.body, item.free])).toEqual([["dagger-front", false], ["dagger-back", false]]);
-    expect(constraintGeometry(rig, restPose(rig), { pins: [], prop: null }).weapons).toEqual([]);
+    expect(constraintGeometry(rig, restPose(rig), { pins: [] }).weapons).toEqual([]);
   });
 });

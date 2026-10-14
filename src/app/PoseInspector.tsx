@@ -1,10 +1,9 @@
 import type { Placed, Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabRig } from "../format/rig";
-import { holdConstraints, moveRoot, setRotation, toggleGrip, togglePin } from "../solve";
+import { holdConstraints, moveRoot, setRotation, togglePin } from "../solve";
 import type { Constraints, HoldResult, Solved } from "../solve";
-import { NAME } from "../format/validate";
 import { fixed } from "./Inspector";
-import { NumberField, TextField } from "./fields";
+import { NumberField } from "./fields";
 
 interface PoseInspectorProps {
   readonly rig: RigLabRig;
@@ -19,7 +18,7 @@ interface PoseInspectorProps {
   readonly onError: (message: string) => void;
 }
 
-/** Pose mode's inspector: rotation, root position, pins and an old document's prop for the key at this frame. */
+/** Pose mode's inspector: rotation, root position and pins for the key at this frame. */
 export function PoseInspector({ rig, bone: name, pose, constraints, placed, frame, keyed, onPose, onError }: PoseInspectorProps) {
   const bone = rig.bones.find((candidate) => candidate.name === name);
   const world = placed.get(name);
@@ -27,9 +26,7 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
   const local = pose[name] ?? {};
   const isRoot = bone.parent === null;
   const chain = rig.chains.find((candidate) => candidate.upper === name || candidate.lower === name);
-  const prop = constraints.prop;
   const pinned = chain !== undefined && constraints.pins.some((pin) => pin.chain === chain.name);
-  const gripped = chain !== undefined && prop !== null && prop.grips.some((grip) => grip.chain === chain.name);
   const wielding = chain && constraints.weapon?.weapon.bodies.some((body) => body.grips.some((grip) => grip.chain === chain.name))
     ? constraints.weapon.weapon.name : null;
 
@@ -58,7 +55,7 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
           </>
         ) : null}
         <dt>Limits</dt><dd>{bone.limits ? `${bone.limits.min}° to ${bone.limits.max}°` : "none"}</dd>
-        <dt>Chain</dt><dd>{chain ? `${chain.name} · bend\u00a0${chain.bend > 0 ? "+" : "−"}${pinned ? " · pinned" : ""}${gripped ? " · on prop" : ""}${wielding ? ` · holds the ${wielding}` : ""}` : "—"}</dd>
+        <dt>Chain</dt><dd>{chain ? `${chain.name} · bend\u00a0${chain.bend > 0 ? "+" : "−"}${pinned ? " · pinned" : ""}${wielding ? ` · holds the ${wielding}` : ""}` : "—"}</dd>
         <dt>World position</dt><dd>{fixed(world.x)}, {fixed(world.y)}</dd>
         <dt>World rotation</dt><dd>{fixed((world.rotation * 180) / Math.PI)}°</dd>
       </dl>
@@ -67,25 +64,7 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
           <button type="button" className="tool" aria-pressed={pinned} onClick={() => holds(togglePin(rig, pose, constraints, chain.name))}>
             {pinned ? "Unpin end" : "Pin end"}
           </button>
-          {gripped ? (
-            <button type="button" className="tool" onClick={() => holds(toggleGrip(rig, pose, constraints, chain.name))}>Let go of prop</button>
-          ) : null}
         </div>
-      ) : null}
-      {prop ? (
-        <dl className="inspector">
-          <dt>Prop</dt>
-          <dd>
-            <TextField
-              label="Prop name"
-              value={prop.name}
-              onCommit={(value) => (NAME.test(value) ? commit(pose, `Renamed the prop to ${value}`, null, { ...constraints, prop: { ...prop, name: value } }) : onError(`'${value}' is not a valid prop name`))}
-            />
-          </dd>
-          <dt>Turn</dt>
-          <dd><NumberField label="Prop rotation" value={prop.rotation} onCommit={(value) => commit(pose, `Turned ${prop.name} to ${value}°`, null, { ...constraints, prop: { ...prop, rotation: value } })} /></dd>
-          <dt>Held by</dt><dd>{prop.grips.map((grip) => grip.chain).join(", ")}</dd>
-        </dl>
       ) : null}
     </div>
   );

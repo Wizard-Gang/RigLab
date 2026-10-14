@@ -1,6 +1,6 @@
-// Per-key constraints: pinned chain ends, and either one rigid prop held by up to two chain ends or one weapon.
+// Per-key constraints: pinned chain ends and one held weapon.
 import type { RigLabRig } from "./rig";
-import { checkName, closedObject, isFiniteNumber, isPoint, Issues } from "./validate";
+import { checkName, closedObject, isFiniteNumber, Issues } from "./validate";
 import { freeBodies, weaponChains } from "./weapon";
 import type { RigLabWeapon } from "./weapon";
 
@@ -10,23 +10,6 @@ export interface Pin {
   readonly x: number;
   readonly y: number;
 }
-
-/** A chain end held at a point in the prop's own frame. */
-export interface Grip {
-  readonly chain: string;
-  readonly at: readonly [number, number];
-}
-
-/** A rigid prop, such as a two-handed weapon: a world position and rotation, and the chain ends that hold it. */
-export interface Prop {
-  readonly name: string;
-  readonly x: number;
-  readonly y: number;
-  readonly rotation: number;
-  readonly grips: readonly Grip[];
-}
-
-export const MAX_GRIPS = 2;
 
 /** Where a key places one of its weapon's free bodies: the body's origin in the world and its rotation in degrees. */
 export interface BodyPlacement {
@@ -89,10 +72,7 @@ export function validateHeldWeaponAlone(issues: Issues, at: string, value: unkno
   validateHeldWeapon(issues, at, value, [weapon], new Set());
 }
 
-/**
- * Validate a key's optional `pins`, `prop` and `weapon`. A key holds a prop or a weapon, never both, and a chain
- * end is pinned, on the prop or on the weapon, never two of them.
- */
+/** Validate a key's optional `pins` and `weapon`. A chain end is pinned or on the weapon, never both. */
 export function validateKeyConstraints(
   issues: Issues,
   path: string,
@@ -112,24 +92,5 @@ export function validateKeyConstraints(
       });
     }
   }
-  if (key.prop !== undefined && key.weapon !== undefined) issues.add(path, "holds both a prop and a weapon; a key holds one or the other");
   if (key.weapon !== undefined) validateHeldWeapon(issues, `${path}.weapon`, key.weapon, weapons, used);
-  if (key.prop === undefined) return;
-  const at = `${path}.prop`;
-  if (!closedObject(issues, at, key.prop, ["name", "x", "y", "rotation", "grips"])) return;
-  const prop = key.prop;
-  checkName(issues, `${at}.name`, prop.name);
-  for (const field of ["x", "y", "rotation"] as const) {
-    if (!isFiniteNumber(prop[field])) issues.add(`${at}.${field}`, "must be a finite number");
-  }
-  if (!Array.isArray(prop.grips) || prop.grips.length < 1 || prop.grips.length > MAX_GRIPS) {
-    issues.add(`${at}.grips`, `must hold 1 to ${MAX_GRIPS} grips`);
-    return;
-  }
-  prop.grips.forEach((grip: unknown, index) => {
-    const gripAt = `${at}.grips[${index}]`;
-    if (!closedObject(issues, gripAt, grip, ["chain", "at"])) return;
-    checkChain(issues, `${gripAt}.chain`, grip.chain, rig, used);
-    if (!isPoint(grip.at)) issues.add(`${gripAt}.at`, "must be [x, y] finite numbers");
-  });
 }

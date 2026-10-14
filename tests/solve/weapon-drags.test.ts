@@ -12,7 +12,7 @@ const chain = (name: string) => rig.chains.find((candidate) => candidate.name ==
 const lengths = (pose: Pose) => skeletonFor(runtimeRig(rig), pose).segments.map(segmentLength);
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 const body = STAFF.bodies[0]!;
-const staffAt = (x: number, y: number, rotation = 0): Constraints => ({ pins: [], prop: null, weapon: { weapon: STAFF, bodies: [{ body: "staff", x, y, rotation }] } });
+const staffAt = (x: number, y: number, rotation = 0): Constraints => ({ pins: [], weapon: { weapon: STAFF, bodies: [{ body: "staff", x, y, rotation }] } });
 /** The staff held at rest with both hands on it, as a key would carry it. */
 const start = staffAt(-6, -30);
 const held = holdConstraints(rig, restPose(rig), start).pose;
@@ -53,7 +53,7 @@ describe("dragging a free weapon body", () => {
 
 describe("dragging a hand that a body rides", () => {
   it("poses the arm by IK and the body follows the hand", () => {
-    const twin: Constraints = { pins: [], prop: null, weapon: { weapon: TWIN, bodies: [] } };
+    const twin: Constraints = { pins: [], weapon: { weapon: TWIN, bodies: [] } };
     const drag = dragInPose(rig, restPose(rig), twin, { kind: "tip", bone: "forearm-front" }, { x: 20, y: -40 });
     expect(drag.status).toBe("ok");
     expect(drag.constraints).toBe(twin);

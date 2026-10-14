@@ -37,7 +37,6 @@ export function setKeyPose(
     interpolation: existing.interpolation,
     pose,
     ...(held.pins.length ? { pins: held.pins } : {}),
-    ...(held.prop ? { prop: held.prop } : {}),
     ...(held.weapon ? { weapon: heldOf(held.weapon) } : {}),
   };
   const next = { ...animation, keys: animation.keys.map((candidate) => (candidate === existing ? key : candidate)) };

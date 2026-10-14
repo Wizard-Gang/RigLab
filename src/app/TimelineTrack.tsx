@@ -54,7 +54,7 @@ export function TimelineTrack({ animation, frame, selectedKey, onSeek, onSelectK
             "track__key",
             `track__key--${key.interpolation}`,
             key.frame === selectedKey ? "track__key--selected" : "",
-            key.pins || key.prop ? "track__key--held" : "",
+            key.pins ? "track__key--held" : "",
           ].join(" ").trim()}
           style={{ left: at(key.frame) }}
           aria-label={`Key at frame ${key.frame}, ${key.interpolation}`}

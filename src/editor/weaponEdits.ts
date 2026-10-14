@@ -63,7 +63,6 @@ export function weaponEdit(state: EditorState, name: string | null): EditorState
   const ready = weapon ? carryReady(rig, key.pose, readyHold(weapon), weapon) : null;
   const constraints = {
     pins: current.pins.filter((pin) => !chains.includes(pin.chain)),
-    prop: weapon ? null : current.prop,
     weapon: weapon && ready ? { weapon, bodies: ready.bodies } : null,
   };
   const solved = holdConstraints(rig, key.pose, constraints);
@@ -75,7 +74,6 @@ export function weaponEdit(state: EditorState, name: string | null): EditorState
   const released = current.pins.filter((pin) => chains.includes(pin.chain)).map((pin) => `unpinned ${pin.chain}`);
   const notes = [
     weapon ? `${animation.name} holds the ${weapon.name} at frame ${state.frame}` : `${animation.name} let go of the ${current.weapon!.weapon.name} at frame ${state.frame}`,
-    ...(weapon && current.prop ? [`let go of ${current.prop.name}`] : []),
     ...released,
     ...solved.violations,
   ];

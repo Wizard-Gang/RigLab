@@ -90,7 +90,7 @@ describe("a normal two-hand pose", () => {
       const ready = readyHold(weapon(name));
       expect(ready.bodies.map((placement) => placement.body)).toEqual([name]);
       const placement = ready.bodies[0]!;
-      const held: Constraints = { pins: FEET, prop: null, weapon: { weapon: weapon(name), bodies: ready.bodies } };
+      const held: Constraints = { pins: FEET, weapon: { weapon: weapon(name), bodies: ready.bodies } };
       const rest = restPose(rig);
       const result = holdConstraints(rig, rest, held);
       expect(result.violations).toEqual([]);
@@ -111,7 +111,7 @@ describe("a normal two-hand pose", () => {
     const guard = GUARD.reduce<Pose>((pose, [bone, rotation]) => withRotation(pose, bone, rotation), restPose(rig));
     const daggers = weapon("daggers");
     expect(readyHold(daggers)).toEqual({ name: "daggers", bodies: [] });
-    const held: Constraints = { pins: FEET, prop: null, weapon: { weapon: daggers, bodies: [] } };
+    const held: Constraints = { pins: FEET, weapon: { weapon: daggers, bodies: [] } };
     expect(holdConstraints(rig, guard, held).violations).toEqual([]);
     const placed = place(rig, guard);
     const transforms = bodyTransforms(rig, guard, held.weapon!);

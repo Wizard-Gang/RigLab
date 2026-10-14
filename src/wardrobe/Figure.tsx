@@ -26,7 +26,7 @@ export function Figure({ library, parts, weapon, motion, frame }: FigureProps) {
     const base = played?.pose ?? restPose(rig);
     const own = played?.constraints.weapon ?? null;
     const wielded = weapon ? { weapon: weapon.weapon, bodies: weapon.hold.bodies } : own;
-    const pose = weapon ? holdConstraints(rig, base, { pins: played?.constraints.pins ?? [], prop: null, weapon: wielded }).pose : base;
+    const pose = weapon ? holdConstraints(rig, base, { pins: played?.constraints.pins ?? [], weapon: wielded }).pose : base;
     const art = artPlacements(rig, runtime, place(rig, pose), parts, motion?.name ?? null);
     return wielded ? withWeaponArt(rig, runtime, art, bodyTransforms(rig, pose, wielded), wielded.weapon, parts, motion?.name ?? null) : art;
   }, [rig, runtime, engine, frame, weapon, parts, motion]);

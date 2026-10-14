@@ -2,26 +2,9 @@
 
 ## Open tasks
 
-### RL-036 — [REFACTOR] Remove the legacy prop
-
-- Dependency: None.
-- Why: The owner approved the cut on 2026-10-13. Weapons replaced the ad hoc two-hand prop, and the editor no longer creates one. A key's `prop` still validates, plays and bakes, and it still has its own solver paths, canvas handles, inspector rows and tests. No animation in either library holds one.
-- Scope: Remove the prop from these places:
-  - The format: `Key.prop`, `Prop`, `Grip`, `MAX_GRIPS` and their validation. `riglab.anim` stays version 2, and a key that still holds a `prop` is refused at its path.
-  - The solver: `Constraints.prop`, `gripPoint`, the prop branches of blending and holding, and `toggleGrip`, `moveProp`, `turnProp`, `propReach`, `propPoint` and `DEFAULT_PROP`.
-  - The canvas: the `prop-move` and `prop-turn` drag handles, `PropMarker`, and the canvas prop line and handles with their CSS.
-  - The panels: the pose inspector's prop fields and Let go of prop, the inspector's Prop row, and the prop half of the timeline's held-key mark.
-  - The bake: baked `props`.
-
-  Rewrite `tests/acceptance/spear-thrust.test.ts` to hold the spear weapon, or fold its forearm-lengthening path into `tests/acceptance/weapons.test.ts`, keeping its pins, lengths, connectivity and Hexframe checks. Update README and ARCHITECTURE.
-- Non-goals: Changing pins or weapons, version bumps of `riglab.anim` or `riglab.baked`, and the class model.
-- Acceptance: Format tests refuse a key with a `prop` at its path. Solver, drag, geometry and bake tests run with no prop, and a bake has no `props` field. The rewritten acceptance path passes. No `Prop`, `toggleGrip`, `prop-move` or `DEFAULT_PROP` remains in `src/` or `tests/`. `check:library` passes on the owner's unchanged folder. Headless Chrome on a worktree dev server pins and releases a foot and swings the sword, with no console errors. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused format, solve, export and acceptance tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, `npm run check:library`, the headless pass, and exact-head CI.
-- Authorities: `src/format/constraints.ts`, `src/format/animation.ts`, `src/solve/constraints.ts`, `src/solve/holds.ts`, `src/solve/poseDrag.ts`, `src/viewer/constraintGeometry.ts`, `src/viewer/RigCanvas.tsx`, `src/app/PoseInspector.tsx`, `src/app/Inspector.tsx`, `src/app/TimelineTrack.tsx`, `src/editor/weaponEdits.ts`, `src/export/bake.ts`, `tests/acceptance/`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's approval on 2026-10-13.
-
 ### RL-037 — [REFACTOR] Remove bundle import so motion enters only through the library folder
 
-- Dependency: RL-036, because both rewrite the acceptance tests.
+- Dependency: None.
 - Why: The owner approved the cut on 2026-10-13. The library folder is the only source of motion ("we dont want multiple sources"), yet Export mode can still import a bundle and replace the editor's rig and animations. Only import needs the bundle reader and its manifest checks, a ZIP reader with deflate support, baked-file validation and the editor's `imported` action.
 - Scope: Remove Import folder… and Import zip… from the Export panel. Remove the `imported` action, `readBundle` with its manifest and file checks, `validateBaked`, the ZIP reader `unzip`, and the folder and zip readers in `src/editor/bundleFiles.ts`. Export still writes the bundle to a folder or a zip, with optional baked frames, and still downloads the Hexframe rig and clip. Tests check what export writes, directly. Each manifest entry's SHA-256 matches its bytes. The rig, animation and weapon files parse back to the editor's own, and each baked file equals a fresh bake. The ZIP writer's test reads its stored entries with a few lines of test code. Both acceptance tests swap their zip-and-reload round trip for these checks. Update README and ARCHITECTURE (Export bundles).
 - Non-goals: Changing the bundle, baked or Hexframe formats, and any other way into the library.
@@ -31,7 +14,7 @@
 
 ### RL-038 — [REFACTOR] Make the editor's model the library itself
 
-- Dependency: RL-036 and RL-037, so the model drops their code paths first.
+- Dependency: RL-037, so the model drops its code paths first.
 - Why: The owner approved cutting the `riglab.document` leftovers and the re-export layers on 2026-10-13. Since RL-032 the editor's document is never a file. It still carries a format header, parse and serialize helpers that only tests call, and pruned copies of the weapons its keys hold, kept "so the document stays self-contained". `src/chibi/chibi.ts`, `src/weapons/weapons.ts` and `src/editor/templates.ts` only rename parts of `LIBRARY`. The weapon editing below needs a model that carries every weapon and its hold.
 - Scope: Replace `RigLabDocument` (`src/format/document.ts`) with the editor's model of the library in `src/editor/model.ts`: `{ rig, weapons, animations }`. `weapons` lists every library weapon in config order, each with its rig and its hold. `validateModel` checks the model whole, as `validateDocument` did. Remove `DOCUMENT_FORMAT`, `DOCUMENT_VERSION`, `parseDocument`, `serializeDocument`, `pruneWeapons` and the weapon-copy bookkeeping of the weapon pick. Delete `src/chibi/`, `src/weapons/` and `src/editor/templates.ts`. The editor, wardrobe, export and tests read `LIBRARY` or the model directly, and one helper in `src/library/` gives art parts by slot. Save still posts only the rig and animations, and export still lists only the weapons the animations hold. Update README and ARCHITECTURE (Editor, The chibi, Weapons, Source layout).
 - Non-goals: Saving weapons or holds (RL-041), the class model (RL-039), and any change a user can see. The editor, the wardrobe, saves and export bytes stay as they are.
@@ -41,7 +24,7 @@
 
 ### RL-039 — [FEAT] Give every animation a class
 
-- Dependency: RL-036 and RL-038.
+- Dependency: RL-038.
 - Why: The owner said on 2026-10-13 that weapons are classes of animation: unarmed, 2h sword, 2h spear, 2h axe and daggers, with the spear kept as the fifth class. "Kind" already means idle, walk, jump, attack or hit. A class holds its weapon on every key, where today any key can pick or drop any weapon. The owner chose one animation of each kind per class, a fixed grid named `<class>-<kind>`.
 - Scope: The change has four parts.
   - Format. `riglab.anim` version 3 adds `class`, which is `unarmed` or the name of a library weapon. Each key's `weapon` gives way to `bodies`, which place the class weapon's free bodies with `body`, `x`, `y` and `rotation`. Every key of a sword, spear or axe animation places its body. Unarmed and dagger keys place none. A pin may not hold a chain the class weapon grips. The name must be `<class>-<kind>`, so a library holds at most one animation per class and kind. No weapon may be named `unarmed`.

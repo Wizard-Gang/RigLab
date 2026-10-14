@@ -7,7 +7,7 @@ import type { RigLabAnimation } from "../../src/format";
 import type { RigLabRig } from "../../src/format/rig";
 import {
   bodyPoint, bodyTransforms, chainEnd, constraintsAt, constraintsOf, engineOf, holdConstraints, place, playAt, runtimeRig,
-  toggleGrip, togglePin, withRotation,
+  togglePin, withRotation,
 } from "../../src/solve";
 import type { Constraints, Wielded } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
@@ -19,8 +19,8 @@ const weapons = [STAFF, TWIN];
 const chain = (name: string) => rig.chains.find((candidate) => candidate.name === name)!;
 const lengths = (on: RigLabRig, pose: Pose) => skeletonFor(runtimeRig(on), pose).segments.map(segmentLength);
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
-const staffAt = (x: number, y: number, rotation = 0): Constraints => ({ pins: [], prop: null, weapon: { weapon: STAFF, bodies: [{ body: "staff", x, y, rotation }] } });
-const TWIN_HELD: Constraints = { pins: [], prop: null, weapon: { weapon: TWIN, bodies: [] } };
+const staffAt = (x: number, y: number, rotation = 0): Constraints => ({ pins: [], weapon: { weapon: STAFF, bodies: [{ body: "staff", x, y, rotation }] } });
+const TWIN_HELD: Constraints = { pins: [], weapon: { weapon: TWIN, bodies: [] } };
 
 /** Each staff grip's miss: how far its hand is from it. */
 function misses(on: RigLabRig, pose: Pose, wielded: Wielded): number[] {
@@ -107,10 +107,9 @@ describe("weapons between keys", () => {
     expect(engineOf(rig, animation).poses[0]!.constraints.weapon).toBeUndefined();
   });
 
-  it("refuse a prop or a pin on a hand that holds the weapon, and keep the weapon when a foot is pinned", () => {
-    expect(toggleGrip(rig, rest, staffAt(-6, -30), "arm-front")).toEqual({ ok: false, error: "The key holds the staff; let go of it to hold a prop" });
+  it("refuse a pin on a hand that holds the weapon, and keep the weapon when a foot is pinned", () => {
     expect(togglePin(rig, rest, staffAt(-6, -30), "arm-back")).toEqual({ ok: false, error: "arm-back holds the staff; let go of the weapon to pin it" });
     const foot = togglePin(rig, rest, staffAt(-6, -30), "leg-front");
-    expect(foot.ok && foot.constraints).toEqual({ pins: [{ chain: "leg-front", x: 5, y: 0 }], prop: null, weapon: staffAt(-6, -30).weapon });
+    expect(foot.ok && foot.constraints).toEqual({ pins: [{ chain: "leg-front", x: 5, y: 0 }], weapon: staffAt(-6, -30).weapon });
   });
 });

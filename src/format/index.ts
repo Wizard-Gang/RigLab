@@ -4,8 +4,7 @@ export { DOCUMENT_FORMAT, DOCUMENT_VERSION, parseDocument, serializeDocument, va
 export type { RigLabDocument } from "./document";
 export { RIG_FORMAT, RIG_VERSION, boneOf, createRigLabRig, validateRig } from "./rig";
 export type { AngleLimits, Chain, RigLabBone, RigLabRig } from "./rig";
-export { MAX_GRIPS } from "./constraints";
-export type { BodyPlacement, Grip, HeldWeapon, Pin, Prop } from "./constraints";
+export type { BodyPlacement, HeldWeapon, Pin } from "./constraints";
 export { freeBodies, isFree, MAX_BODY_GRIPS, parseWeapon, serializeWeapon, validateWeapon, WEAPON_EXTENSION, WEAPON_FORMAT, WEAPON_VERSION, weaponChains } from "./weapon";
 export type { RigLabWeapon, WeaponBody, WeaponGrip, WeaponPoint } from "./weapon";
 export { animationTime, blendPoses, keyIndexAt, sampleAnimation, segmentAt } from "./sample";

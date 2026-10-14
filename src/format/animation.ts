@@ -1,7 +1,7 @@
 // riglab.anim version 2: one kind's keys on Hexframe's engine grid, each a full pose with the interpolation to the next.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { validateKeyConstraints } from "./constraints";
-import type { HeldWeapon, Pin, Prop } from "./constraints";
+import type { HeldWeapon, Pin } from "./constraints";
 import type { RigLabRig } from "./rig";
 import { ANIMATION_KINDS, ENGINE_FPS, frameList, isKind, keyFrames, KINDS } from "./timing";
 import type { AnimationKind } from "./timing";
@@ -26,9 +26,7 @@ export interface Key {
   readonly pose: Pose;
   /** Chain ends held at world points while this key is in force. */
   readonly pins?: readonly Pin[];
-  /** A rigid prop the key's chain ends hold. */
-  readonly prop?: Prop;
-  /** A weapon of the document the key's hands hold; never with a prop. */
+  /** A weapon of the document the key's hands hold. */
   readonly weapon?: HeldWeapon;
 }
 
@@ -95,7 +93,7 @@ export function validateAnimation(value: unknown, rig: RigLabRig, weapons: reado
   if (frames && !anchored) issues.add("$.keys", `must hold ${frames.length} keys: ${kind} keys sit at frames ${frameList(frames)}`);
   value.keys.forEach((key: unknown, index) => {
     const path = `$.keys[${index}]`;
-    if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"], ["pins", "prop", "weapon"])) return;
+    if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"], ["pins", "weapon"])) return;
     if (anchored && key.frame !== frames[index]) issues.add(`${path}.frame`, `must be ${frames[index]}: ${kind} keys sit at frames ${frameList(frames)}`);
     if (!INTERPOLATIONS.includes(key.interpolation as Interpolation)) {
       issues.add(`${path}.interpolation`, "must be 'hold', 'linear' or 'smoothstep'");

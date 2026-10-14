@@ -19,7 +19,7 @@ export function hexframePose(rig: RigLabRig, pose: Pose): Pose {
   }));
 }
 
-/** A frame as Hexframe plays it, with the pins, prop and weapon RigLab keeps beside the pose. */
+/** A frame as Hexframe plays it, with the pins and weapon RigLab keeps beside the pose. */
 export interface Played {
   readonly pose: Pose;
   readonly constraints: Constraints;
@@ -30,7 +30,7 @@ export interface Played {
 export interface Engine {
   /** The clip Hexframe stores: 13 poses over `length` ticks, played linearly between poses. */
   readonly clip: Clip;
-  /** The 13 poses, each the keys sampled at its frame with that frame's pins and prop held. */
+  /** The 13 poses, each the keys sampled at its frame with that frame's pins and weapon held. */
   readonly poses: readonly Played[];
 }
 
@@ -45,7 +45,7 @@ export function engineOf(rig: RigLabRig, animation: RigLabAnimation, weapons: re
 
 /**
  * What Hexframe plays at a whole frame. On one of the 13 poses that is the pose itself; between two of them the
- * pose is Hexframe's sampler, and the pins, prop and weapon move linearly between the two the same way.
+ * pose is Hexframe's sampler, and the pins and weapon move linearly between the two the same way.
  */
 export function playAt(engine: Engine, frame: number): Played {
   const { clip, poses } = engine;

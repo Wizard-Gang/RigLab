@@ -17,7 +17,7 @@ export interface CanvasDrags {
   readonly rig: RigLabRig;
   /** The pose as shown: the sampled pose, or the solve previewed while dragging in Pose mode. */
   readonly pose: Pose;
-  /** The pins and prop as shown, including any moved by the drag in progress. */
+  /** The pins and weapon as shown, including any moved by the drag in progress. */
   readonly constraints: Constraints;
   /** What the solver reports about the drag in progress. */
   readonly message: string | null;
@@ -34,7 +34,7 @@ function withOffset(rig: RigLabRig, bone: string, offset: Offset): RigLabRig {
 
 /**
  * Rig setup drags joints in rest space and commits the drop as an offset in the parent's frame.
- * Pose mode drags joints, bone ends, pins and the prop through the solver, holds every pin and grip,
+ * Pose mode drags joints, bone ends, pins and weapon bodies through the solver, holds every pin and grip,
  * and commits the drop, constraints included, as the key at this frame.
  */
 export function useCanvasDrags(state: EditorState, dispatch: Dispatch<Action>, sampled: Pose, constraints: Constraints): CanvasDrags {
