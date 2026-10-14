@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-041 — [FEAT] Save weapon rigs and holds into the library folder
-
-- Dependency: None.
-- Why: The owner reported on 2026-10-13: "i dont see the prop (weapon) rigs at all". The library's `weapon.json` and `hold.json` change only by hand, because the RL-031 save endpoint writes only the rig and animations. Editing weapons in the editor (RL-043) first needs a write path, proven safe without UI as RL-031 was for animations.
-- Scope: The save body gains `weapons`: one `{ weapon, hold }` per library weapon, in config order. `planLibrarySave` writes `weapon.json` in the directory the weapon's line maps, and `hold.json` for a weapon with free bodies, each only when its text changes. It refuses a weapon that no `weapon` line maps, a weapon named unlike its line, and a hold for a weapon without free bodies. It never writes or removes part SVGs or palettes, or changes `config.txt`'s `weapon` lines. The merged library must still load, so a body slot without a part is refused. Backups, atomic writes and the `riglab:library-saved` event work as they do for animations. The editor's Save sends the model's weapons and holds, and an unchanged weapon writes nothing. Update README and ARCHITECTURE (Library folders, Saving).
-- Non-goals: Weapon editing UI (RL-043), creating, renaming or deleting weapons, and writing art or palettes.
-- Acceptance: Plan tests check the writes: an edited grip writes only `weapon.json`, an edited hold writes only `hold.json`, and an unchanged weapon writes nothing. They refuse an unmapped weapon, a renamed weapon, a hold for the daggers and a slot without a part, writing nothing. Endpoint tests on a temporary folder back up the previous `weapon.json` and `hold.json`. A live `curl` save to a worktree dev server over a temporary `RIGLAB_LIBRARY` copy changes the sword's hold on disk, and that server's wardrobe shows it. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused library tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the live `curl` save, and exact-head CI.
-- Authorities: `src/library/save.ts`, `src/library/write.ts`, `src/library/endpoint.ts`, `src/library/load.ts`, `src/format/weapon.ts`, `src/format/hold.ts`, `src/editor/librarySave.ts`, `src/editor/model.ts`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's report on 2026-10-13.
-
 ### RL-042 — [FEAT] Browse animations by class in the editor and the wardrobe
 
 - Dependency: None.
@@ -24,18 +14,18 @@
 
 ### RL-043 — [FEAT] Edit the active class's weapon rig and hold in Rig setup
 
-- Dependency: RL-041 and RL-042.
+- Dependency: RL-042.
 - Why: The owner said on 2026-10-13: "we need to be able to make the animations and adjust the props as well". They chose Spine-style modes, with Rig setup editing the chibi and the active class's weapon rig and hold at rest. Today a weapon's grips, axis and hold change only by hand-editing the library's JSON.
 - Scope: With an armed class active, Rig setup draws the chibi at rest holding the class weapon at its hold. It shows the weapon's art, axis, grip points and handles, with the hands solved to the grips. The hierarchy lists the weapon's bodies and their grips after the bones. Selecting one opens an inspector with numeric fields for:
   - the hold (`x`, `y`, `rotation`)
   - each grip's `at`, and its `angle` for a one-grip body
   - the axis butt and tip
 
-  The canvas edits the same values. A free body's move and turn handles set the hold. Dragging a grip point moves it in the body's frame, dragging the butt or tip moves the axis, and a one-grip body's turn handle sets its grip angle. Each weapon edit is one undo step and must leave the weapon and hold valid. A grip the hands cannot reach at rest is reported, never stretched. Keys place bodies and hands solve to grips, so a changed grip moves the hands on every key of that class, and the inspector says so. Save writes `weapon.json` and `hold.json` through RL-041. Update README and ARCHITECTURE.
+  The canvas edits the same values. A free body's move and turn handles set the hold. Dragging a grip point moves it in the body's frame, dragging the butt or tip moves the axis, and a one-grip body's turn handle sets its grip angle. Each weapon edit is one undo step and must leave the weapon and hold valid. A grip the hands cannot reach at rest is reported, never stretched. Keys place bodies and hands solve to grips, so a changed grip moves the hands on every key of that class, and the inspector says so. Save writes `weapon.json` and `hold.json` through the library save. Update README and ARCHITECTURE.
 - Non-goals: Adding or removing bodies or grips, binding a grip to another chain, adding, renaming or deleting weapons or classes, editing art or palettes, and moving existing keys' bodies when the hold changes.
 - Acceptance: Reducer tests cover each weapon edit and its undo. They refuse two grips on one point, and any weapon edit outside Rig setup. Geometry tests move a dragged grip's `at` by the drag in the body's frame. Headless Chrome on a worktree dev server over a temporary library copy, in the sword class, drags the hold and a grip and saves. `weapon.json` and `hold.json` change on disk, with their previous versions in `backups/`. `sword-idle` plays with the hands on the new grips, and the wardrobe shows the new hold. There are no console errors. `npm run check` passes.
 - Validation: Pinned `npm ci`, focused editor, solve and viewer tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/editor/rigEdits.ts`, `src/editor/model.ts`, `src/app/BoneSetup.tsx`, `src/app/ModePanel.tsx`, `src/app/useCanvasDrags.ts`, `src/viewer/RigCanvas.tsx`, `src/viewer/Hierarchy.tsx`, `src/viewer/WeaponMarkers.tsx`, `src/solve/weaponDrags.ts`, `src/format/weapon.ts`, `src/format/hold.ts`, RL-041's save path, `README.md`, `docs/ARCHITECTURE.md`, and the owner's direction and answers on 2026-10-13.
+- Authorities: `src/editor/rigEdits.ts`, `src/editor/model.ts`, `src/app/BoneSetup.tsx`, `src/app/ModePanel.tsx`, `src/app/useCanvasDrags.ts`, `src/viewer/RigCanvas.tsx`, `src/viewer/Hierarchy.tsx`, `src/viewer/WeaponMarkers.tsx`, `src/solve/weaponDrags.ts`, `src/format/weapon.ts`, `src/format/hold.ts`, the library save path (`src/library/save.ts`), `README.md`, `docs/ARCHITECTURE.md`, and the owner's direction and answers on 2026-10-13.
 
 ### RL-044 — [FEAT] Merge Pose and Animation into one Animate mode
 

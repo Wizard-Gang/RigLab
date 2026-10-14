@@ -9,7 +9,7 @@ import { handleSave, MAX_SAVE_BYTES, saveRequestRefusal } from "../../src/librar
 import type { SaveRequest } from "../../src/library/endpoint";
 import { riglabLibrary } from "../../src/library/plugin";
 import { SAVE_ROUTE, SAVED_EVENT } from "../../src/library/save";
-import { PLACEHOLDER } from "./placeholder";
+import { PLACEHOLDER, placeholderFiles, savedWeapons } from "./placeholder";
 
 let scratch: string[] = [];
 afterEach(() => {
@@ -28,6 +28,7 @@ const placeholderJson = (path: string) => JSON.parse(readFileSync(join(PLACEHOLD
 /** The placeholder's rig and animations, with each animation `moves` names moved to that class: the daggers need no change to their keys. */
 const save = (moves: Record<string, string> = {}) => ({
   rig: placeholderJson("rigs/chibi.rig.json"),
+  weapons: savedWeapons(placeholderFiles()),
   animations: NAMES.map((name) => {
     const animation = placeholderJson(`animations/${name}.anim.json`);
     const moved = moves[name];
@@ -79,6 +80,26 @@ describe("handling a save", () => {
     expect(broken.body.errors).toEqual(expect.arrayContaining([expect.stringMatching(/is named 'imp'/)]));
     expect((await handleSave(request(), { dir: PLACEHOLDER, label: "placeholder library" }, true)).status).toBe(409);
     expect(readFileSync(join(dir, "config.txt"), "utf8")).toBe(readFileSync(join(PLACEHOLDER, "config.txt"), "utf8"));
+  });
+
+  it("writes an edited weapon and hold, backing up the previous weapon.json and hold.json", async () => {
+    const dir = copy();
+    const body = save();
+    const [sword] = body.weapons;
+    const weapon = sword!.weapon as { bodies: { grips: { at: number[] }[] }[] };
+    const grips = weapon.bodies[0]!.grips;
+    const edited = { ...sword!.weapon, bodies: [{ ...weapon.bodies[0], grips: [grips[0], { ...grips[1], at: [0, 13] }] }] };
+    const hold = { ...sword!.hold, bodies: [{ body: "sword", x: 12, y: -36, rotation: 60 }] };
+    const outcome = await handleSave(request({ body: JSON.stringify({ ...body, weapons: [{ weapon: edited, hold }, ...body.weapons.slice(1)] }) }), { dir, label: "~/lib" }, false);
+    expect(outcome.status).toBe(200);
+    expect(outcome.body.written).toEqual(["weapons/sword/weapon.json", "weapons/sword/hold.json"]);
+    const backup = String(outcome.body.backup);
+    for (const file of ["weapon.json", "hold.json"]) {
+      expect(readFileSync(join(dir, backup, "weapons/sword", file), "utf8")).toBe(readFileSync(join(PLACEHOLDER, "weapons/sword", file), "utf8"));
+    }
+    expect(JSON.parse(readFileSync(join(dir, "weapons/sword/hold.json"), "utf8"))).toEqual({ format: "riglab.hold", version: 1, ...hold });
+    expect(JSON.parse(readFileSync(join(dir, "weapons/sword/weapon.json"), "utf8")).bodies[0].grips[1].at).toEqual([0, 13]);
+    expect(readFileSync(join(dir, "weapons/sword/sword.svg"), "utf8")).toBe(readFileSync(join(PLACEHOLDER, "weapons/sword/sword.svg"), "utf8"));
   });
 });
 

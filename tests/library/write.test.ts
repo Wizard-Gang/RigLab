@@ -6,7 +6,7 @@ import { readLibraryFolder } from "../../src/library/folder";
 import { loadLibrary } from "../../src/library/load";
 import { planLibrarySave } from "../../src/library/save";
 import { backupStamp, RecentWrites, TEMP_MARK, writeLibrarySave } from "../../src/library/write";
-import { PLACEHOLDER } from "./placeholder";
+import { PLACEHOLDER, savedWeapons } from "./placeholder";
 
 let scratch: string[] = [];
 afterEach(() => {
@@ -34,6 +34,7 @@ function moveWalk(dir: string) {
   const animation = (name: string) => JSON.parse(files[`animations/${name}.anim.json`]!);
   const save = {
     rig: JSON.parse(files["rigs/chibi.rig.json"]!),
+    weapons: savedWeapons(files),
     animations: NAMES.map((name) => (name === "unarmed-walk" ? { ...animation(name), class: "daggers", name: "daggers-walk" } : animation(name))),
   };
   const plan = planLibrarySave(files, save);
