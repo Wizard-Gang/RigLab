@@ -1,9 +1,10 @@
 // Starting state, recording edits, and keeping the editor pointed at things the model still has.
 import { LIBRARY } from "../library/active";
+import { fillClasses } from "./classes";
 import { record, startHistory } from "./history";
 import { libraryModel } from "./model";
 import type { LibraryModel } from "./model";
-import { modelOf } from "./types";
+import { error, info, modelOf } from "./types";
 import type { EditorState } from "./types";
 import { fitView } from "./view";
 
@@ -39,6 +40,19 @@ export function initialState(model: LibraryModel = libraryModel(LIBRARY)): Edito
     art: false,
     status: null,
   });
+}
+
+/**
+ * The editor as it opens on the library: every class and kind the library lacks is started, as unsaved changes that
+ * Save writes, and the status says how many.
+ */
+export function openState(loaded: LibraryModel = libraryModel(LIBRARY)): EditorState {
+  const state = initialState(loaded);
+  const filled = fillClasses(loaded);
+  const count = filled.started.length;
+  if (!count) return state;
+  const text = [`Started ${count} missing ${count === 1 ? "animation" : "animations"}, one of each class and kind; Save writes them`, ...filled.misses].join("; ");
+  return reconcile({ ...state, history: startHistory(filled.model), status: filled.misses.length ? error(text) : info(text) });
 }
 
 /** Commit a model edit to history, then point the editor at the result. */

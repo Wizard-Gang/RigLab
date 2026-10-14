@@ -8,7 +8,7 @@ import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
 import { weaponRigs } from "../editor/model";
 import { UNARMED } from "../format/classes";
-import { activeAnimationOf, editorReducer, initialState, isDirty, modelOf } from "../editor/state";
+import { activeAnimationOf, editorReducer, isDirty, modelOf, openState } from "../editor/state";
 import { fitView, zoomAbout } from "../editor/view";
 import { LIBRARY, LIBRARY_LABEL } from "../library/active";
 import { partsBySlot } from "../library/parts";
@@ -34,7 +34,7 @@ const RIGHT_TITLES = { setup: "Rig setup", pose: "Pose", animate: "Inspector", e
 const PARTS = partsBySlot(LIBRARY);
 
 export function App() {
-  const [state, dispatch] = useReducer(editorReducer, undefined, () => initialState());
+  const [state, dispatch] = useReducer(editorReducer, undefined, () => openState());
   const [cursor, setCursor] = useState<Point | null>(null);
   const [panels, togglePanel] = usePanels();
   const model = modelOf(state);

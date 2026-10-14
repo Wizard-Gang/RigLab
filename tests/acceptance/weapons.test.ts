@@ -4,6 +4,7 @@
 // and Hexframe must play the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
+import { startClassAnimation } from "../../src/editor/classes";
 import { libraryModel, weaponRigs } from "../../src/editor/model";
 import type { LibraryModel } from "../../src/editor/model";
 import { activeAnimationOf, editorReducer, initialState, modelOf } from "../../src/editor/state";
@@ -15,7 +16,6 @@ import { constraintsAt, dragInPose, engineOf, gripCenter, place, playAt, rotate,
 import type { DragHandle } from "../../src/solve";
 import { LIBRARY } from "../../src/library/active";
 import { written } from "../export/written";
-import { heldAnimation } from "../format/weapon-fixtures";
 
 const TOLERANCE = 1e-5;
 /** Hexframe interpolates joint angles between its 13 poses, not grips, so a free body's grips may drift this far there. */
@@ -77,10 +77,12 @@ const SWINGS: Record<string, readonly (Swing | Hands)[]> = {
 };
 
 function author(name: string): LibraryModel {
-  // The class's attack starts hand-built: every key at rest, holding the weapon at its hold.
+  // The class's attack starts from the unarmed attack, with the weapon at its hold and both hands on it.
   const { weapon, hold } = LIBRARY.weapons.find((item) => item.name === name)!;
   const model = libraryModel(LIBRARY);
-  let state = run(initialState({ ...model, animations: [...model.animations, heldAnimation(LIBRARY.rig, weapon, hold, "attack")] }));
+  const started = startClassAnimation(LIBRARY.rig, { weapon, hold }, "attack", model.animations.find((animation) => animation.name === "unarmed-attack"));
+  expect(started.misses).toEqual([]);
+  let state = run(initialState({ ...model, animations: [...model.animations, started.animation] }));
   state = run(state, { type: "activateAnimation", name: `${name}-attack` }, { type: "setMode", mode: "pose" });
   for (const [index, frame] of [0, 8, 16, 24].entries()) {
     state = run(state, { type: "setFrame", frame });

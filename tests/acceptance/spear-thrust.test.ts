@@ -4,6 +4,7 @@
 // lengths, grips and playback, and that Hexframe plays the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
+import { startClassAnimation } from "../../src/editor/classes";
 import { libraryModel, weaponRigs } from "../../src/editor/model";
 import type { LibraryModel } from "../../src/editor/model";
 import { activeAnimationOf, editorReducer, initialState, modelOf } from "../../src/editor/state";
@@ -14,7 +15,6 @@ import { toHexframeClip } from "../../src/hexframe/adapter";
 import { LIBRARY } from "../../src/library/active";
 import { constraintsAt, dragInPose, engineOf, place, playAt, rotate, samplePose, togglePin } from "../../src/solve";
 import { written } from "../export/written";
-import { heldAnimation } from "../format/weapon-fixtures";
 
 const run = (state: EditorState, ...actions: Action[]): EditorState => {
   const next = actions.reduce(editorReducer, state);
@@ -45,10 +45,11 @@ function thrust(state: EditorState, target: { x: number; y: number }): EditorSta
 }
 
 function author(): LibraryModel {
-  // The spear class's attack starts hand-built: every key at rest, holding the spear at its hold.
+  // The spear class's attack starts from the unarmed attack, with the spear at its hold and both hands on it.
   const spear = LIBRARY.weapons.find((item) => item.name === "spear")!;
   const model = libraryModel(LIBRARY);
-  let state = run(initialState({ ...model, animations: [...model.animations, heldAnimation(LIBRARY.rig, spear.weapon, spear.hold, "attack")] }), { type: "setMode", mode: "setup" });
+  const started = startClassAnimation(LIBRARY.rig, spear, "attack", model.animations.find((animation) => animation.name === "unarmed-attack")).animation;
+  let state = run(initialState({ ...model, animations: [...model.animations, started] }), { type: "setMode", mode: "setup" });
   // Rig setup: lengthen both forearms from 11 to 14 units.
   state = run(state,
     { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-front", tip: [0, 14] } },

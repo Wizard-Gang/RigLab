@@ -6,7 +6,7 @@ import { activeAnimationOf, info } from "./types";
 import type { Action, EditorState } from "./types";
 import { GRID_SPACINGS, ROTATION_SNAPS } from "./view";
 
-export { initialState } from "./core";
+export { initialState, openState } from "./core";
 export { activeAnimationOf, isDirty, modelOf, MODES } from "./types";
 export type { Action, EditorState, Mode, Selection, Status } from "./types";
 
