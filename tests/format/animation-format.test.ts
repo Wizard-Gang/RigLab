@@ -3,6 +3,7 @@ import { POSE_INTERVALS } from "../../vendor/hexframe/src/rig";
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { LIBRARY } from "../../src/library/active";
 import { ANIMATION_KINDS, ENGINE_FPS, keyFrames, KINDS, poseFrames, sampleAnimation, validateAnimation } from "../../src/format";
+import { weaponRigs, libraryModel } from "../../src/editor/model";
 import type { AnimationKind, Key, RigLabAnimation } from "../../src/format";
 
 type Mutable = Record<string, any>;
@@ -15,14 +16,17 @@ function pose(rotation: number, y = 0): Pose {
   ]));
 }
 
-/** A kind's keys, rotated key by key, all with one interpolation. */
+const WEAPONS = weaponRigs(libraryModel(LIBRARY));
+
+/** A kind's unarmed keys, rotated key by key, all with one interpolation. */
 function animation(kind: AnimationKind, rotations: readonly number[], interpolation: Key["interpolation"] = "hold"): RigLabAnimation {
   const { length, loop } = KINDS[kind];
   return {
     format: "riglab.anim",
-    version: 2,
-    name: "test",
+    version: 3,
+    name: `unarmed-${kind}`,
     rig: "chibi",
+    class: "unarmed",
     kind,
     fps: ENGINE_FPS,
     length,
@@ -31,12 +35,19 @@ function animation(kind: AnimationKind, rotations: readonly number[], interpolat
   };
 }
 
+/** The attack of a class: each key places the class weapon's free bodies at its library hold. */
+function classed(animationClass: string): RigLabAnimation {
+  const base = animation("attack", [0, 40, 20, 0], "linear");
+  const hold = LIBRARY.weapons.find((item) => item.name === animationClass)?.hold.bodies ?? [];
+  return { ...base, name: `${animationClass}-attack`, class: animationClass, keys: base.keys.map((key) => (hold.length ? { ...key, bodies: hold } : key)) };
+}
+
 const rotationAt = (value: RigLabAnimation, frame: number): number => sampleAnimation(value, frame)["arm-front"]!.rotation!;
 
-function errorsOf(change: (value: Mutable) => void): string {
-  const value = structuredClone(animation("attack", [0, 40, 20, 0], "linear")) as Mutable;
+function errorsOf(change: (value: Mutable) => void, base: RigLabAnimation = animation("attack", [0, 40, 20, 0], "linear")): string {
+  const value = structuredClone(base) as Mutable;
   change(value);
-  const result = validateAnimation(value, LIBRARY.rig);
+  const result = validateAnimation(value, LIBRARY.rig, WEAPONS);
   expect(result.ok).toBe(false);
   return result.ok ? "" : result.errors.join("\n");
 }
@@ -76,7 +87,7 @@ describe("riglab.anim validation", () => {
 
   it("refuses a bad header, rig, rate or kind", () => {
     expect(errorsOf((value) => { value.format = "riglab.rig"; })).toMatch(/\$\.format/);
-    expect(errorsOf((value) => { value.version = 1; })).toMatch(/\$\.version: must be 2/);
+    expect(errorsOf((value) => { value.version = 2; })).toMatch(/\$\.version: must be 3/);
     expect(errorsOf((value) => { value.rig = "quadruped"; })).toMatch(/\$\.rig: must name rig 'chibi'/);
     expect(errorsOf((value) => { value.fps = 14; })).toMatch(/\$\.fps: must be 60, Hexframe's clock/);
     expect(errorsOf((value) => { value.kind = "dance"; })).toMatch(/\$\.kind: must be 'idle', 'walk', 'jump', 'attack', 'hit'/);
@@ -101,9 +112,54 @@ describe("riglab.anim validation", () => {
     expect(errorsOf((value) => { value.keys[1].pose.torso.rotation = Infinity; })).toMatch(/pose\.torso\.rotation: must be a finite number/);
   });
 
-  it("refuses a key that still holds the legacy prop, at the key's path", () => {
+  it("refuses a key that still holds the legacy prop or a version 2 weapon, at the key's path", () => {
     const prop = { name: "prop", x: 9, y: -24, rotation: 180, grips: [{ chain: "arm-front", at: [0, 0] }, { chain: "arm-back", at: [18, 0] }] };
     expect(errorsOf((value) => { value.keys[2].prop = prop; })).toBe("$.keys[2]: has unknown field 'prop'");
+    expect(errorsOf((value) => { value.keys[0].weapon = { name: "sword", bodies: [] }; })).toBe("$.keys[0]: has unknown field 'weapon'");
+  });
+});
+
+describe("animation classes", () => {
+  it("accept a valid animation for each class: unarmed or one of the library's weapons", () => {
+    for (const name of ["unarmed", "sword", "spear", "axe", "daggers"]) {
+      const value = classed(name);
+      expect(validateAnimation(value, LIBRARY.rig, WEAPONS), name).toEqual({ ok: true, value });
+    }
+    expect(classed("sword").keys.every((key) => key.bodies?.length === 1)).toBe(true);
+    expect(classed("daggers").keys.every((key) => key.bodies === undefined)).toBe(true);
+  });
+
+  it("refuse an unknown class, and a name other than its class and kind", () => {
+    expect(errorsOf((value) => { value.class = "flail"; value.name = "flail-attack"; })).toBe("$.class: must be 'unarmed', 'sword', 'spear', 'axe', 'daggers'");
+    expect(errorsOf((value) => { delete value.class; })).toMatch(/\$: is missing 'class'/);
+    expect(errorsOf((value) => { value.name = "attack"; })).toBe("$.name: must be 'unarmed-attack': an animation is named after its class and kind");
+    expect(errorsOf((value) => { value.name = "sword-attack"; })).toBe("$.name: must be 'unarmed-attack': an animation is named after its class and kind");
+    const swordless = validateAnimation(classed("sword"), LIBRARY.rig);
+    expect(swordless.ok ? [] : swordless.errors).toEqual(["$.class: must be 'unarmed'"]);
+  });
+
+  it("place exactly the class weapon's free bodies on every key, and no bodies otherwise", () => {
+    expect(errorsOf((value) => { delete value.keys[1].bodies; }, classed("sword"))).toBe("$.keys[1].bodies: must place free body 'sword'");
+    expect(errorsOf((value) => { value.keys[2].bodies = []; }, classed("spear"))).toBe("$.keys[2].bodies: must place free body 'spear'");
+    expect(errorsOf((value) => {
+      value.keys[0].bodies = [value.keys[0].bodies[0], { ...value.keys[0].bodies[0] }, { body: "haft", x: 0, y: 0, rotation: 0 }];
+    }, classed("axe"))).toBe([
+      "$.keys[0].bodies[1].body: places 'axe' twice",
+      "$.keys[0].bodies[2].body: must name a free body of weapon 'axe'",
+    ].join("\n"));
+    expect(errorsOf((value) => { value.keys[3].bodies = [{ body: "sword", x: 0, y: -30, rotation: 0 }]; })).toBe("$.keys[3].bodies: must be left out: an unarmed key places no bodies");
+    expect(errorsOf((value) => { value.keys[0].bodies = []; }, classed("daggers"))).toBe("$.keys[0].bodies: must be left out: every body of the daggers rides a hand");
+  });
+
+  it("never pin a chain the class weapon grips, though the feet may be pinned", () => {
+    expect(errorsOf((value) => { value.keys[0].pins = [{ chain: "arm-front", x: 9, y: -30 }]; }, classed("sword")))
+      .toBe("$.keys[0].pins[0].chain: 'arm-front' grips the sword, so it cannot be pinned");
+    expect(errorsOf((value) => { value.keys[1].pins = [{ chain: "arm-back", x: 0, y: -30 }]; }, classed("daggers")))
+      .toBe("$.keys[1].pins[0].chain: 'arm-back' grips the daggers, so it cannot be pinned");
+    const planted = classed("sword");
+    const feet = { ...planted, keys: planted.keys.map((key) => ({ ...key, pins: [{ chain: "leg-front", x: 5, y: 0 }, { chain: "leg-back", x: -5, y: 0 }] })) };
+    expect(validateAnimation(feet, LIBRARY.rig, WEAPONS).ok).toBe(true);
+    expect(validateAnimation({ ...animation("idle", [0]), keys: animation("idle", [0]).keys.map((key) => ({ ...key, pins: [{ chain: "arm-front", x: 9, y: -24 }] })) }, LIBRARY.rig, WEAPONS).ok).toBe(true);
   });
 });
 

@@ -2,6 +2,7 @@
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { ANIMATION_FORMAT, ANIMATION_VERSION } from "../format/animation";
 import type { RigLabAnimation } from "../format/animation";
+import { animationName, UNARMED } from "../format/classes";
 import { ENGINE_FPS, keyFrames, KINDS } from "../format/timing";
 import type { AnimationKind } from "../format/timing";
 import type { RigLabRig } from "../format/rig";
@@ -29,14 +30,15 @@ export function isValidName(name: string): boolean {
   return NAME.test(name);
 }
 
-/** A kind's keys, all at the rest pose and easing in and out, on Hexframe's clock. */
-export function blankAnimation(rig: RigLabRig, name: string, kind: AnimationKind): RigLabAnimation {
+/** The unarmed animation of a kind: its keys, all at the rest pose and easing in and out, on Hexframe's clock. */
+export function blankAnimation(rig: RigLabRig, kind: AnimationKind): RigLabAnimation {
   const { length, loop } = KINDS[kind];
   return {
     format: ANIMATION_FORMAT,
     version: ANIMATION_VERSION,
-    name,
+    name: animationName(UNARMED, kind),
     rig: rig.name,
+    class: UNARMED,
     kind,
     fps: ENGINE_FPS,
     length,

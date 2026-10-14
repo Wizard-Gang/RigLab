@@ -94,7 +94,7 @@ export function ExportPanel({ model, active, onStatus }: ExportPanelProps) {
       </p>
       <div className="setup__actions">
         <button type="button" className="tool" onClick={() => {
-          const adapted = toHexframeRig(model.rig);
+          const adapted = toHexframeRig(model.rig, model.animations);
           if (!adapted.ok) return onStatus({ tone: "error", text: adapted.error });
           const name = `${model.rig.name}.rig.json`;
           downloadJson(`${JSON.stringify(adapted.value, null, 2)}\n`, name);

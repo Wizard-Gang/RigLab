@@ -12,8 +12,8 @@ const run = (state: EditorState, ...actions: Action[]): EditorState => actions.r
 function posing(frame: number): EditorState {
   return run(
     initialState(),
-    { type: "activateAnimation", name: "idle" },
-    { type: "activateAnimation", name: "attack" },
+    { type: "activateAnimation", name: "unarmed-idle" },
+    { type: "activateAnimation", name: "unarmed-attack" },
     { type: "setMode", mode: "pose" },
     { type: "setFrame", frame },
   );
@@ -33,30 +33,30 @@ describe("pose edits", () => {
     const animation = activeAnimationOf(posed)!;
     expect(animation.keys.map((key) => key.frame)).toEqual([0, 8, 16, 24]);
     expect(animation.keys[1]!.pose).toEqual(solved.pose);
-    expect(posed.status?.text).toBe("Posed attack at frame 8");
+    expect(posed.status?.text).toBe("Posed unarmed-attack at frame 8");
   });
 
   it("refuse a frame between keys, where the kind has none", () => {
     const state = posing(12);
     const refused = run(state, { type: "setPose", pose: reach(state).pose });
-    expect(refused.status).toEqual({ tone: "error", text: "Frame 12 is between keys: attack poses at frames 0, 8, 16 and 24" });
+    expect(refused.status).toEqual({ tone: "error", text: "Frame 12 is between keys: unarmed-attack poses at frames 0, 8, 16 and 24" });
     expect(modelOf(refused)).toBe(modelOf(state));
   });
 
   it("are one undo step and touch no other animation", () => {
     const state = posing(16);
     const posed = run(state, { type: "setPose", pose: reach(state).pose, warning: "arm-front cannot reach" });
-    expect(posed.status).toEqual({ tone: "error", text: "Posed attack at frame 16; arm-front cannot reach" });
+    expect(posed.status).toEqual({ tone: "error", text: "Posed unarmed-attack at frame 16; arm-front cannot reach" });
     const before = modelOf(state).animations;
     const after = modelOf(posed).animations;
-    expect(after.filter((animation, index) => animation !== before[index]).map((animation) => animation.name)).toEqual(["attack"]);
+    expect(after.filter((animation, index) => animation !== before[index]).map((animation) => animation.name)).toEqual(["unarmed-attack"]);
     expect(modelOf(run(posed, { type: "undo" }))).toBe(modelOf(state));
   });
 
   it("report notes as information and solver warnings as errors", () => {
     const state = posing(8);
     const noted = run(state, { type: "setPose", pose: reach(state).pose, note: "Pinned leg-front at 5, 0" });
-    expect(noted.status).toEqual({ tone: "info", text: "Posed attack at frame 8; Pinned leg-front at 5, 0" });
+    expect(noted.status).toEqual({ tone: "info", text: "Posed unarmed-attack at frame 8; Pinned leg-front at 5, 0" });
   });
 
   it("happen only in Pose mode", () => {

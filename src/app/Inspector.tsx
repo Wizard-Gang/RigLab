@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
 import { POSE_INTERVALS } from "../../vendor/hexframe/src/rig";
 import type { Placed, Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabRig } from "../format/rig";
 import { KINDS } from "../format/timing";
 import type { Selection } from "../editor/state";
+import { classLabel } from "./AnimationsPanel";
 
 interface InspectorProps {
   readonly rig: RigLabRig;
@@ -14,42 +14,20 @@ interface InspectorProps {
   readonly pose: Pose;
   readonly placed: ReadonlyMap<string, Placed>;
   readonly animations: readonly RigLabAnimation[];
-  readonly onRename: (from: string, to: string) => void;
 }
 
 /** Two decimals, without printing a rounded negative zero. */
 export const fixed = (value: number): string => (Math.abs(value) < 0.005 ? 0 : value).toFixed(2);
 
-function AnimationName({ name, onRename }: { readonly name: string; readonly onRename: (from: string, to: string) => void }) {
-  const [draft, setDraft] = useState(name);
-  useEffect(() => setDraft(name), [name]);
-  const commit = (): void => {
-    if (draft !== name) onRename(name, draft);
-  };
-  return (
-    <input
-      className="field"
-      aria-label="Animation name"
-      value={draft}
-      spellCheck={false}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") commit();
-        if (event.key === "Escape") setDraft(name);
-      }}
-    />
-  );
-}
-
-export function Inspector({ rig, selection, active, pose, placed, animations, onRename }: InspectorProps) {
+export function Inspector({ rig, selection, active, pose, placed, animations }: InspectorProps) {
   if (selection?.kind === "animation") {
     const animation = animations.find((candidate) => candidate.name === selection.name);
     if (!animation) return null;
     return (
       <dl className="inspector">
-        <dt>Animation</dt><dd><AnimationName name={animation.name} onRename={onRename} /></dd>
+        <dt>Animation</dt><dd><code>{animation.name}</code></dd>
         <dt>Rig</dt><dd><code>{animation.rig}</code></dd>
+        <dt>Class</dt><dd>{classLabel(animation.class)}</dd>
         <dt>Kind</dt><dd>{KINDS[animation.kind].label}</dd>
         <dt>Frame rate</dt><dd>{animation.fps} fps, Hexframe's clock</dd>
         <dt>Length</dt><dd>{animation.length} frames · {fixed(animation.length / animation.fps)} s</dd>

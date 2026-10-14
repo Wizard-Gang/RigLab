@@ -24,16 +24,17 @@ const copy = (): string => {
   return dir;
 };
 const read = (dir: string, path: string): string => readFileSync(join(dir, path), "utf8");
-const NAMES = ["idle", "walk", "jump", "attack", "hit"];
+const NAMES = ["unarmed-idle", "unarmed-walk", "unarmed-jump", "unarmed-attack", "unarmed-hit"];
 const NOW = new Date("2026-10-13T21:04:05.123Z");
 const allFiles = (dir: string): readonly string[] => readdirSync(dir, { recursive: true }).map(String);
 
-function renameWalk(dir: string) {
+/** Save the placeholder with its unarmed walk moved to the daggers, which need no change to its keys. */
+function moveWalk(dir: string) {
   const files = readLibraryFolder(dir).files;
   const animation = (name: string) => JSON.parse(files[`animations/${name}.anim.json`]!);
   const save = {
     rig: JSON.parse(files["rigs/chibi.rig.json"]!),
-    animations: NAMES.map((name) => (name === "walk" ? { ...animation("walk"), name: "stride" } : animation(name))),
+    animations: NAMES.map((name) => (name === "unarmed-walk" ? { ...animation(name), class: "daggers", name: "daggers-walk" } : animation(name))),
   };
   const plan = planLibrarySave(files, save);
   if (!plan.ok) throw new Error(plan.errors.join("\n"));
@@ -43,29 +44,29 @@ function renameWalk(dir: string) {
 describe("writing a library save", () => {
   it("writes the plan, backs up what it replaces, and leaves no temporary file", () => {
     const dir = copy();
-    const { files, plan } = renameWalk(dir);
+    const { files, plan } = moveWalk(dir);
     const result = writeLibrarySave(dir, plan, NOW);
-    expect(result.written).toEqual(["animations/stride.anim.json", "config.txt"]);
-    expect(result.removed).toEqual(["animations/walk.anim.json"]);
+    expect(result.written).toEqual(["animations/daggers-walk.anim.json", "config.txt"]);
+    expect(result.removed).toEqual(["animations/unarmed-walk.anim.json"]);
     expect(result.backup).toBe("backups/2026-10-13T21-04-05-123Z");
-    expect(read(dir, "animations/stride.anim.json")).toBe(plan.writes["animations/stride.anim.json"]);
+    expect(read(dir, "animations/daggers-walk.anim.json")).toBe(plan.writes["animations/daggers-walk.anim.json"]);
     expect(read(dir, "config.txt")).toBe(plan.writes["config.txt"]);
-    expect(existsSync(join(dir, "animations/walk.anim.json"))).toBe(false);
+    expect(existsSync(join(dir, "animations/unarmed-walk.anim.json"))).toBe(false);
     expect(read(dir, `${result.backup}/config.txt`)).toBe(files["config.txt"]);
-    expect(read(dir, `${result.backup}/animations/walk.anim.json`)).toBe(files["animations/walk.anim.json"]);
-    expect(existsSync(join(dir, `${result.backup}/animations/stride.anim.json`))).toBe(false);
+    expect(read(dir, `${result.backup}/animations/unarmed-walk.anim.json`)).toBe(files["animations/unarmed-walk.anim.json"]);
+    expect(existsSync(join(dir, `${result.backup}/animations/daggers-walk.anim.json`))).toBe(false);
     expect(allFiles(dir).filter((path) => path.includes(TEMP_MARK))).toEqual([]);
     const real = realpathSync(dir);
     expect(result.touched).toEqual(expect.arrayContaining([join(real, "backups"), join(real, result.backup!), join(real, result.backup!, "animations"), join(real, "config.txt")]));
     expect(result.touched).not.toContain(real);
     expect(readLibraryFolder(dir).errors).toEqual([]);
     const reloaded = loadLibrary(readLibraryFolder(dir).files);
-    expect(reloaded.ok && reloaded.value.animations.map((item) => item.name)).toEqual(["idle", "stride", "jump", "attack", "hit"]);
+    expect(reloaded.ok && reloaded.value.animations.map((item) => item.name)).toEqual(["unarmed-idle", "daggers-walk", "unarmed-jump", "unarmed-attack", "unarmed-hit"]);
   });
 
   it("makes no backup when nothing it writes existed before", () => {
     const dir = copy();
-    const { files } = renameWalk(dir);
+    const { files } = moveWalk(dir);
     const result = writeLibrarySave(dir, { writes: { "animations/new.anim.json": "{}\n" }, removes: [], files }, NOW);
     expect(result.backup).toBeNull();
     expect(existsSync(join(dir, "backups"))).toBe(false);
@@ -73,14 +74,14 @@ describe("writing a library save", () => {
 
   it("refuses a path that leaves the folder, through .. or a symlink, before writing anything", () => {
     const dir = copy();
-    const { files, plan } = renameWalk(dir);
+    const { files, plan } = moveWalk(dir);
     expect(() => writeLibrarySave(dir, { writes: { "../escape.txt": "x" }, removes: [], files }, NOW)).toThrow(/resolves outside the library folder/);
     const outside = temp();
     rmSync(join(dir, "animations"), { recursive: true });
     mkdirSync(join(outside, "animations"));
     symlinkSync(join(outside, "animations"), join(dir, "animations"));
     const before = read(dir, "config.txt");
-    expect(() => writeLibrarySave(dir, plan, NOW)).toThrow(/animations\/stride\.anim\.json: resolves outside the library folder/);
+    expect(() => writeLibrarySave(dir, plan, NOW)).toThrow(/animations\/daggers-walk\.anim\.json: resolves outside the library folder/);
     expect(read(dir, "config.txt")).toBe(before);
     expect(readdirSync(join(outside, "animations"))).toEqual([]);
     expect(existsSync(join(dir, "backups"))).toBe(false);

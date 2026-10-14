@@ -1,7 +1,9 @@
-// riglab.anim version 2: one kind's keys on Hexframe's engine grid, each a full pose with the interpolation to the next.
+// riglab.anim version 3: one class's animation of one kind, its keys on Hexframe's engine grid, each a full pose with the
+// interpolation to the next.
 import type { Pose } from "../../vendor/hexframe/src/rig";
+import { animationName, UNARMED } from "./classes";
 import { validateKeyConstraints } from "./constraints";
-import type { HeldWeapon, Pin } from "./constraints";
+import type { BodyPlacement, Pin } from "./constraints";
 import type { RigLabRig } from "./rig";
 import { ANIMATION_KINDS, ENGINE_FPS, frameList, isKind, keyFrames, KINDS } from "./timing";
 import type { AnimationKind } from "./timing";
@@ -10,7 +12,7 @@ import type { Validation } from "./validate";
 import type { RigLabWeapon } from "./weapon";
 
 export const ANIMATION_FORMAT = "riglab.anim";
-export const ANIMATION_VERSION = 2;
+export const ANIMATION_VERSION = 3;
 
 /**
  * How a key's pose moves to the next key's across the Hexframe poses between them: `hold` keeps it until the
@@ -24,17 +26,20 @@ export interface Key {
   readonly interpolation: Interpolation;
   /** A full Hexframe pose: a rotation for every bone, and `x`/`y` on the root only. */
   readonly pose: Pose;
-  /** Chain ends held at world points while this key is in force. */
+  /** Chain ends held at world points while this key is in force; never a chain the class weapon grips. */
   readonly pins?: readonly Pin[];
-  /** A weapon of the library the key's hands hold. */
-  readonly weapon?: HeldWeapon;
+  /** Where the class weapon's free bodies are; only, and always, when it has any. */
+  readonly bodies?: readonly BodyPlacement[];
 }
 
 export interface RigLabAnimation {
   readonly format: typeof ANIMATION_FORMAT;
   readonly version: typeof ANIMATION_VERSION;
+  /** `<class>-<kind>`, so a library holds one animation of each class and kind. */
   readonly name: string;
   readonly rig: string;
+  /** `unarmed`, or the name of the library weapon the animation holds on every key. */
+  readonly class: string;
   /** Fixes the length, looping and key frames; see `KINDS`. */
   readonly kind: AnimationKind;
   /** Always `ENGINE_FPS`, Hexframe's clock. */
@@ -67,18 +72,29 @@ function validatePose(issues: Issues, path: string, value: unknown, rig: RigLabR
   }
 }
 
-/** Validate an animation for its rig; keys may hold only the given weapons, the library's. */
+/** The weapon an animation's class holds: null when unarmed, or when the class names none of `weapons`. */
+export function classWeapon(animation: Pick<RigLabAnimation, "class">, weapons: readonly RigLabWeapon[]): RigLabWeapon | null {
+  return weapons.find((weapon) => weapon.name === animation.class) ?? null;
+}
+
+/** Validate an animation for its rig; its class is `unarmed` or one of the given weapons, the library's. */
 export function validateAnimation(value: unknown, rig: RigLabRig, weapons: readonly RigLabWeapon[] = []): Validation<RigLabAnimation> {
   const issues = new Issues();
-  const fields = ["format", "version", "name", "rig", "kind", "fps", "length", "loop", "keys"];
+  const fields = ["format", "version", "name", "rig", "class", "kind", "fps", "length", "loop", "keys"];
   if (!closedObject(issues, "$", value, fields)) return issues.result(value);
   if (value.format !== ANIMATION_FORMAT) issues.add("$.format", `must be '${ANIMATION_FORMAT}'`);
   if (value.version !== ANIMATION_VERSION) issues.add("$.version", `must be ${ANIMATION_VERSION}`);
-  checkName(issues, "$.name", value.name);
+  const classes = [UNARMED, ...weapons.map((weapon) => weapon.name)];
+  const known = typeof value.class === "string" && classes.includes(value.class);
+  if (!known) issues.add("$.class", `must be ${classes.map((name) => `'${name}'`).join(", ")}`);
+  const weapon = known ? classWeapon({ class: value.class as string }, weapons) : null;
   if (value.rig !== rig.name) issues.add("$.rig", `must name rig '${rig.name}'`);
   if (value.fps !== ENGINE_FPS) issues.add("$.fps", `must be ${ENGINE_FPS}, Hexframe's clock`);
   const kind = isKind(value.kind) ? value.kind : null;
   if (!kind) issues.add("$.kind", `must be ${ANIMATION_KINDS.map((name) => `'${name}'`).join(", ")}`);
+  if (checkName(issues, "$.name", value.name) && known && kind && value.name !== animationName(value.class as string, kind)) {
+    issues.add("$.name", `must be '${animationName(value.class as string, kind)}': an animation is named after its class and kind`);
+  }
   const frames = kind ? keyFrames(kind) : null;
   if (kind) {
     const timing = KINDS[kind];
@@ -93,13 +109,13 @@ export function validateAnimation(value: unknown, rig: RigLabRig, weapons: reado
   if (frames && !anchored) issues.add("$.keys", `must hold ${frames.length} keys: ${kind} keys sit at frames ${frameList(frames)}`);
   value.keys.forEach((key: unknown, index) => {
     const path = `$.keys[${index}]`;
-    if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"], ["pins", "weapon"])) return;
+    if (!closedObject(issues, path, key, ["frame", "interpolation", "pose"], ["pins", "bodies"])) return;
     if (anchored && key.frame !== frames[index]) issues.add(`${path}.frame`, `must be ${frames[index]}: ${kind} keys sit at frames ${frameList(frames)}`);
     if (!INTERPOLATIONS.includes(key.interpolation as Interpolation)) {
       issues.add(`${path}.interpolation`, "must be 'hold', 'linear' or 'smoothstep'");
     }
     validatePose(issues, `${path}.pose`, key.pose, rig);
-    validateKeyConstraints(issues, path, key, rig, weapons);
+    if (known) validateKeyConstraints(issues, path, key, rig, weapon);
   });
   return issues.result(value);
 }

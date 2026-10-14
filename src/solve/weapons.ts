@@ -1,6 +1,6 @@
 // A held weapon: free bodies the key places and both hands solve to, and one-grip bodies that ride their hands.
 import type { Placed, Pose } from "../../vendor/hexframe/src/rig";
-import type { BodyPlacement, HeldWeapon } from "../format/constraints";
+import type { BodyPlacement } from "../format/constraints";
 import type { RigLabRig } from "../format/rig";
 import { isFree } from "../format/weapon";
 import type { RigLabWeapon, WeaponBody, WeaponGrip } from "../format/weapon";
@@ -8,7 +8,7 @@ import { rotate, toVector } from "./angles";
 import type { Vector } from "./angles";
 import { place } from "./pose";
 
-/** A key's weapon resolved against the library's weapons. */
+/** An animation's class weapon, with where a key or hold places its free bodies. */
 export interface Wielded {
   readonly weapon: RigLabWeapon;
   /** Where each free body is; one-grip bodies ride their hands instead. */
@@ -30,15 +30,6 @@ export interface GripTarget {
   /** Names the grip in a report, such as `staff grip 'far'`. */
   readonly label: string;
 }
-
-/** Resolve a key's weapon by name; a name the weapons lack holds nothing. */
-export function wieldedOf(held: HeldWeapon, weapons: readonly RigLabWeapon[]): Wielded | null {
-  const weapon = weapons.find((candidate) => candidate.name === held.name);
-  return weapon ? { weapon, bodies: held.bodies } : null;
-}
-
-/** The key's form of a wielded weapon. */
-export const heldOf = (wielded: Wielded): HeldWeapon => ({ name: wielded.weapon.name, bodies: wielded.bodies });
 
 /** A point in a body's own frame, placed in the world. */
 export function bodyPoint(transform: Omit<BodyTransform, "body">, at: readonly [number, number]): Vector {

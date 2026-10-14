@@ -38,9 +38,9 @@ export function libraryModel(library: Library): LibraryModel {
 /** The weapon rigs keys may hold, in config order. */
 export const weaponRigs = (model: LibraryModel): readonly RigLabWeapon[] => model.weapons.map((item) => item.weapon);
 
-/** The weapons some key holds, in config order: what an export bundle lists. */
+/** The weapons some animation's class holds, in config order: what an export bundle lists. */
 export function heldWeapons(model: LibraryModel): readonly RigLabWeapon[] {
-  const held = new Set(model.animations.flatMap((animation) => animation.keys.flatMap((key) => (key.weapon ? [key.weapon.name] : []))));
+  const held = new Set(model.animations.map((animation) => animation.class));
   return weaponRigs(model).filter((weapon) => held.has(weapon.name));
 }
 
@@ -62,8 +62,7 @@ function validateWeapons(issues: Issues, model: LibraryModel, rig: RigLabRig): r
     }
     if (names.has(weapon.name)) issues.add(`${path}.weapon.name`, `duplicates weapon '${weapon.name}'`);
     names.add(weapon.name);
-    if (hold.name !== weapon.name) issues.add(`${path}.hold.name`, `must be '${weapon.name}'`);
-    else validateHeldWeaponAlone(issues, `${path}.hold`, hold, result.value);
+    validateHeldWeaponAlone(issues, `${path}.hold`, hold, result.value);
     return [result.value];
   });
   return issues.errors.length === before ? weapons : null;
@@ -84,7 +83,7 @@ export function validateModel(model: LibraryModel): Validation<LibraryModel> {
     const path = `$.animations[${index}]`;
     const result = validateAnimation(animation, rig.value, weapons);
     if (!result.ok) nested(issues, path, result.errors);
-    if (names.has(animation.name)) issues.add(`${path}.name`, `duplicates animation '${animation.name}'`);
+    if (names.has(animation.name)) issues.add(`${path}.name`, `duplicates animation '${animation.name}': a library holds one animation of each class and kind`);
     names.add(animation.name);
   });
   return issues.result(model);

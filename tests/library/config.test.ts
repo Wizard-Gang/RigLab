@@ -16,7 +16,7 @@ describe("config.txt", () => {
     expect(names("rig")).toEqual(["chibi"]);
     expect(names("skin")).toEqual(["plain", "block", "pixel"]);
     expect(names("weapon")).toEqual(["sword", "spear", "axe", "daggers"]);
-    expect(names("animation")).toEqual(["idle", "walk", "jump", "attack", "hit"]);
+    expect(names("animation")).toEqual(["unarmed-idle", "unarmed-walk", "unarmed-jump", "unarmed-attack", "unarmed-hit"]);
   });
 
   it("skips blank lines and comments, takes CRLF, and records 1-based lines", () => {

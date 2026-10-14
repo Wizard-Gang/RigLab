@@ -8,7 +8,6 @@ import { BoneSetup } from "./BoneSetup";
 import { ExportPanel } from "./ExportPanel";
 import { Inspector } from "./Inspector";
 import { PoseInspector } from "./PoseInspector";
-import { WeaponPicker } from "./WeaponPicker";
 
 interface ModePanelProps {
   readonly state: EditorState;
@@ -21,7 +20,7 @@ interface ModePanelProps {
   readonly placed: ReadonlyMap<string, Placed>;
 }
 
-/** The right panel for the mode: export, the selected bone's setup, pose with the weapon picker, or the inspector. */
+/** The right panel for the mode: export, the selected bone's setup, its pose, or the inspector. */
 export function ModePanel({ state, dispatch, model, animation, pose, constraints, placed }: ModePanelProps) {
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
   const keyed = animation?.keys.some((key) => key.frame === state.frame) ?? false;
@@ -31,7 +30,7 @@ export function ModePanel({ state, dispatch, model, animation, pose, constraints
   if (state.mode === "setup" && selectedBone) {
     return <BoneSetup rig={model.rig} bone={selectedBone} onEdit={(edit) => dispatch({ type: "rigEdit", edit })} />;
   }
-  const inspector = state.mode === "pose" && selectedBone && animation ? (
+  return state.mode === "pose" && selectedBone && animation ? (
     <PoseInspector
       rig={model.rig}
       bone={selectedBone}
@@ -51,14 +50,6 @@ export function ModePanel({ state, dispatch, model, animation, pose, constraints
       pose={pose}
       placed={placed}
       animations={model.animations}
-      onRename={(from, to) => dispatch({ type: "renameAnimation", from, to })}
     />
-  );
-  if (state.mode !== "pose" || !animation) return inspector;
-  return (
-    <div className="setup">
-      {inspector}
-      <WeaponPicker weapons={model.weapons.map((item) => item.weapon.name)} held={constraints.weapon?.weapon.name ?? null} frame={state.frame} keyed={keyed} onPick={(name) => dispatch({ type: "holdWeapon", name })} />
-    </div>
   );
 }

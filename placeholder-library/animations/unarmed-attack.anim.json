@@ -1,8 +1,9 @@
 {
   "format": "riglab.anim",
-  "version": 2,
-  "name": "attack",
+  "version": 3,
+  "name": "unarmed-attack",
   "rig": "chibi",
+  "class": "unarmed",
   "kind": "attack",
   "fps": 60,
   "length": 24,

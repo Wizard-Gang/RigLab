@@ -1,18 +1,20 @@
 // The RigLab recommendation's first acceptance test, run through the editor's own reducer and export path:
-// start the chibi, lengthen its forearms, author a spear-thrust attack (keys at 0, 8, 16 and 24) with planted feet
-// and both hands on the library's spear, export the bundle, check what it wrote, and prove connectivity, lengths, grips
-// and playback, and that Hexframe plays the exported clip exactly as RigLab baked it.
+// start the chibi, lengthen its forearms, author the spear class's attack as a thrust (keys at 0, 8, 16 and 24) with
+// planted feet and both hands on the library's spear, export the bundle, check what it wrote, and prove connectivity,
+// lengths, grips and playback, and that Hexframe plays the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
-import { weaponRigs } from "../../src/editor/model";
+import { libraryModel, weaponRigs } from "../../src/editor/model";
 import type { LibraryModel } from "../../src/editor/model";
 import { activeAnimationOf, editorReducer, initialState, modelOf } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import type { RigLabBaked, Transform } from "../../src/export/bake";
 import { buildBundle } from "../../src/export/bundle";
 import { toHexframeClip } from "../../src/hexframe/adapter";
+import { LIBRARY } from "../../src/library/active";
 import { constraintsAt, dragInPose, engineOf, place, playAt, rotate, samplePose, togglePin } from "../../src/solve";
 import { written } from "../export/written";
+import { heldAnimation } from "../format/weapon-fixtures";
 
 const run = (state: EditorState, ...actions: Action[]): EditorState => {
   const next = actions.reduce(editorReducer, state);
@@ -43,21 +45,23 @@ function thrust(state: EditorState, target: { x: number; y: number }): EditorSta
 }
 
 function author(): LibraryModel {
-  let state = run(initialState(), { type: "setMode", mode: "setup" });
+  // The spear class's attack starts hand-built: every key at rest, holding the spear at its hold.
+  const spear = LIBRARY.weapons.find((item) => item.name === "spear")!;
+  const model = libraryModel(LIBRARY);
+  let state = run(initialState({ ...model, animations: [...model.animations, heldAnimation(LIBRARY.rig, spear.weapon, spear.hold, "attack")] }), { type: "setMode", mode: "setup" });
   // Rig setup: lengthen both forearms from 11 to 14 units.
   state = run(state,
     { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-front", tip: [0, 14] } },
     { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-back", tip: [0, 14] } });
-  // The seeded attack has four keys, at 0, 8, 16 and 24 on Hexframe's clock.
-  state = run(state, { type: "activateAnimation", name: "attack" }, { type: "renameAnimation", from: "attack", to: "spear-thrust" });
-  state = run(state, { type: "setMode", mode: "pose" });
-  // At each key: plant both feet, take the spear at its ready hold, then drag it, level, by its grips' midpoint, so
-  // the front hand sits 8 units ahead of the target. The keys are a wind-up with the elbows back, a transition with
-  // them centered, an extension with the hands pushed forward, and the recovery.
+  // The attack has four keys, at 0, 8, 16 and 24 on Hexframe's clock, and every one holds the spear.
+  state = run(state, { type: "activateAnimation", name: "spear-attack" }, { type: "setMode", mode: "pose" });
+  // At each key: plant both feet, then drag the spear, level, by its grips' midpoint, so the front hand sits 8 units
+  // ahead of the target. The keys are a wind-up with the elbows back, a transition with them centered, an extension with
+  // the hands pushed forward, and the recovery.
   const windUp = { x: -1.5, y: -35 };
   for (const [frame, target] of [[0, windUp], [8, { x: 12.5, y: -37 }], [16, { x: 21.5, y: -41 }], [24, windUp]] as const) {
     state = pin(pin(run(state, { type: "setFrame", frame }), "leg-front"), "leg-back");
-    state = thrust(run(state, { type: "holdWeapon", name: "spear" }), target);
+    state = thrust(state, target);
   }
   state = run(state, { type: "timeline", edit: { kind: "setInterpolation", frame: 8, interpolation: "linear" } });
   return modelOf(state);
@@ -77,16 +81,16 @@ const pointOf = (baked: RigLabBaked, frame: number, bone: string, local: readonl
 describe("spear-thrust acceptance", () => {
   it("authors and exports a spear thrust with every joint connected, every length kept and both hands on the spear", async () => {
     const model = author();
-    const animation = model.animations.find((candidate) => candidate.name === "spear-thrust")!;
-    expect([animation.kind, animation.fps, animation.length, animation.loop]).toEqual(["attack", 60, 24, false]);
+    const animation = model.animations.find((candidate) => candidate.name === "spear-attack")!;
+    expect([animation.class, animation.kind, animation.fps, animation.length, animation.loop]).toEqual(["spear", "attack", 60, 24, false]);
     expect(animation.keys.map((key) => [key.frame, key.interpolation])).toEqual([[0, "smoothstep"], [8, "linear"], [16, "smoothstep"], [24, "smoothstep"]]);
-    expect(animation.keys.every((key) => key.pins?.length === 2 && key.weapon?.name === "spear")).toBe(true);
+    expect(animation.keys.every((key) => key.pins?.length === 2 && key.bodies?.length === 1)).toBe(true);
 
     // The bundle's files are the model's own, and its baked frames are a fresh bake of them.
     const bundle = await written(await buildBundle(model, { baked: true, generator: "RigLab acceptance" }), model);
     const { rig, weapons } = bundle;
-    const again = bundle.animations.find((candidate) => candidate.name === "spear-thrust")!;
-    const baked: RigLabBaked = bundle.baked.get("spear-thrust")!;
+    const again = bundle.animations.find((candidate) => candidate.name === "spear-attack")!;
+    const baked: RigLabBaked = bundle.baked.get("spear-attack")!;
     expect(rig.bones.find((bone) => bone.name === "forearm-front")!.tip).toEqual([0, 14]);
     expect(baked.frames).toHaveLength(25);
     const clip = toHexframeClip(rig, again, weapons);

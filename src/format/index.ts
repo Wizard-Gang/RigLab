@@ -1,4 +1,5 @@
-export { ANIMATION_FORMAT, ANIMATION_VERSION, INTERPOLATIONS, validateAnimation } from "./animation";
+export { ANIMATION_FORMAT, ANIMATION_VERSION, classWeapon, INTERPOLATIONS, validateAnimation } from "./animation";
+export { animationName, UNARMED } from "./classes";
 export type { Interpolation, Key, RigLabAnimation } from "./animation";
 export { RIG_FORMAT, RIG_VERSION, boneOf, createRigLabRig, validateRig } from "./rig";
 export type { AngleLimits, Chain, RigLabBone, RigLabRig } from "./rig";

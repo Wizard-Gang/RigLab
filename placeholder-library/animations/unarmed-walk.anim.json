@@ -1,8 +1,9 @@
 {
   "format": "riglab.anim",
-  "version": 2,
-  "name": "walk",
+  "version": 3,
+  "name": "unarmed-walk",
   "rig": "chibi",
+  "class": "unarmed",
   "kind": "walk",
   "fps": 60,
   "length": 48,

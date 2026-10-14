@@ -21,7 +21,6 @@ export function validateHold(value: unknown, weapon: RigLabWeapon): Validation<H
   if (value.format !== HOLD_FORMAT) issues.add("$.format", `must be '${HOLD_FORMAT}'`);
   if (value.version !== HOLD_VERSION) issues.add("$.version", `must be ${HOLD_VERSION}`);
   const held = { name: value.name, bodies: value.bodies };
-  if (held.name !== weapon.name) issues.add("$.name", `must be '${weapon.name}'`);
-  else validateHeldWeaponAlone(issues, "$", held, weapon);
+  validateHeldWeaponAlone(issues, "$", held, weapon);
   return issues.result(held);
 }

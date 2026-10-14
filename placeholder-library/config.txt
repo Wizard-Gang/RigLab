@@ -12,8 +12,8 @@ weapon spear = weapons/spear
 weapon axe = weapons/axe
 weapon daggers = weapons/daggers
 
-animation idle = animations/idle.anim.json
-animation walk = animations/walk.anim.json
-animation jump = animations/jump.anim.json
-animation attack = animations/attack.anim.json
-animation hit = animations/hit.anim.json
+animation unarmed-idle = animations/unarmed-idle.anim.json
+animation unarmed-walk = animations/unarmed-walk.anim.json
+animation unarmed-jump = animations/unarmed-jump.anim.json
+animation unarmed-attack = animations/unarmed-attack.anim.json
+animation unarmed-hit = animations/unarmed-hit.anim.json

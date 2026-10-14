@@ -61,7 +61,7 @@ describe("constraints on keys", () => {
   const linear = (animation: RigLabAnimation): RigLabAnimation => ({ ...animation, keys: animation.keys.map((key) => ({ ...key, interpolation: "linear" })) });
 
   it("are stored with the key and validated as part of the animation", () => {
-    const animation = keyed(pinned("leg-front"), 0, blankAnimation(rig, "idle", "idle"));
+    const animation = keyed(pinned("leg-front"), 0, blankAnimation(rig, "idle"));
     expect(animation.keys[0]!.pins).toEqual([{ chain: "leg-front", x: 5, y: 0 }]);
     expect(validateAnimation({ ...animation, keys: [{ ...animation.keys[0]!, pins: [{ chain: "tail", x: 0, y: 0 }] }, ...animation.keys.slice(1)] }, rig).ok).toBe(false);
     const twice = { ...animation.keys[0]!, pins: [...animation.keys[0]!.pins!, { chain: "leg-front", x: 6, y: 0 }] };
@@ -70,7 +70,7 @@ describe("constraints on keys", () => {
   });
 
   it("move between keys with the pose's easing, and hold when only the key in force has them", () => {
-    let animation = keyed({ pins: [{ chain: "leg-front", x: 5, y: 0 }] }, 0, linear(blankAnimation(rig, "lunge", "attack")));
+    let animation = keyed({ pins: [{ chain: "leg-front", x: 5, y: 0 }] }, 0, linear(blankAnimation(rig, "attack")));
     animation = keyed({ pins: [{ chain: "leg-front", x: 13, y: 0 }] }, 8, animation);
     expect(animation.keys.map((key) => [key.frame, key.interpolation])).toEqual([[0, "linear"], [8, "linear"], [16, "linear"], [24, "linear"]]);
     expect(constraintsAt(animation, 4).pins).toEqual([{ chain: "leg-front", x: 9, y: 0 }]);
@@ -78,12 +78,12 @@ describe("constraints on keys", () => {
     expect(constraintsAt(animation, 12).pins).toEqual([{ chain: "leg-front", x: 13, y: 0 }]);
     const unpinned = keyed(NO_CONSTRAINTS, 8, animation);
     expect(constraintsAt(unpinned, 4).pins).toEqual([{ chain: "leg-front", x: 5, y: 0 }]);
-    expect(setKeyPose(rig, animation, 5, sampleAnimation(animation, 5))).toEqual({ ok: false, error: "Frame 5 is between keys: lunge poses at frames 0, 8, 16 and 24" });
+    expect(setKeyPose(rig, animation, 5, sampleAnimation(animation, 5))).toEqual({ ok: false, error: "Frame 5 is between keys: unarmed-attack poses at frames 0, 8, 16 and 24" });
   });
 
   it("keep pinned feet planted on every frame between keys while the pelvis moves", () => {
     const feet = pinned("leg-front", "leg-back");
-    const start = keyed(feet, 0, blankAnimation(rig, "lunge", "attack"));
+    const start = keyed(feet, 0, blankAnimation(rig, "attack"));
     const low = dragInPose(rig, rest, feet, { kind: "joint", bone: "pelvis" }, { x: 4, y: -21 });
     const result = setKeyPose(rig, start, 8, low.pose, low.constraints);
     if (!result.ok) throw new Error(result.error);
@@ -99,7 +99,7 @@ describe("constraints on keys", () => {
   });
 
   it("leave unconstrained animations exactly as sampled", () => {
-    const idle = blankAnimation(rig, "idle", "idle");
+    const idle = blankAnimation(rig, "idle");
     const swaying = { ...idle, keys: idle.keys.map((key, index) => ({ ...key, pose: { ...key.pose, head: { rotation: [0, 8, 0, -8][index]! } } })) };
     for (const frame of [0, 7, 33, 59]) {
       expect(samplePose(rig, swaying, frame)).toEqual({ pose: sampleAnimation(swaying, frame), violations: [] });
