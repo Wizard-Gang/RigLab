@@ -2,24 +2,6 @@
 
 ## Open tasks
 
-### RL-040 — [FEAT] Start every class's five kinds from the unarmed motion
-
-- Dependency: None.
-- Why: On 2026-10-13 the owner chose that every class has one animation of each kind, and that an armed class starts from the unarmed animation of the same kind with its weapon in hand. The libraries now hold only the five unarmed animations, and the editor cannot create any.
-- Scope: A pure `startClassAnimation` in `src/editor/classes.ts` builds `<class>-<kind>` from `unarmed-<kind>`. It keeps every key's frame, interpolation and pose, and the pins on chains the weapon does not grip. For a weapon with free bodies, each key places them at the weapon's hold, carried with the torso as `carryReady` does today, and both arms re-solve to the grips. A grip a hand cannot reach is reported, never stretched. Dagger keys keep the unarmed arms, and the daggers ride the hands. A missing unarmed kind starts at the rest pose, as New did. When the editor opens, it fills every missing class and kind in config and kind order, as unsaved changes. The status says how many it started, and Save writes them. Seed the owner's folder from a worktree dev server before fast-forwarding the owner's checkout. Back the folder up under `backups/` first, then save the 20 armed animations, so it opens clean with all 25. The weapons acceptance test builds its animations with `startClassAnimation` instead of the removed picker. Update README and ARCHITECTURE.
-- Non-goals: Re-deriving an armed animation after its unarmed source changes, class UI beyond the status note (RL-042), and editing holds (RL-043).
-- Acceptance: Unit tests check these points:
-  - Each armed animation's legs, pelvis, torso and head match its unarmed source on every key.
-  - Sword, spear and axe hands sit on their grips at every key and at Hexframe's 13 poses (to 1e-5), or the miss is reported.
-  - The daggers' arms equal the unarmed arms.
-  - Pins on gripping chains are dropped.
-  - Filling is idempotent and never changes an existing animation.
-  - A library of five unarmed animations opens with 20 started and unsaved.
-
-  The owner's folder loads with 25 animations: `check:library` lists them all, and the wardrobe's Motion plays them all. Headless Chrome on a temporary copy plays `sword-walk`, `spear-attack` and `daggers-idle` with no console errors, and with both arms over the torso for the two-handed weapons. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused editor, solve and acceptance tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, `npm run check:library` on the owner's folder, the headless pass, and exact-head CI.
-- Authorities: `carryReady` (in `src/editor/weaponEdits.ts` at a06e007, removed with the Weapon picker), `src/editor/core.ts`, `src/editor/model.ts`, `src/editor/animations.ts`, `src/solve/constraints.ts`, `tests/acceptance/weapons.test.ts`, `~/Documents/RigLab/`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's answers on 2026-10-13.
-
 ### RL-041 — [FEAT] Save weapon rigs and holds into the library folder
 
 - Dependency: None.
@@ -32,7 +14,7 @@
 
 ### RL-042 — [FEAT] Browse animations by class in the editor and the wardrobe
 
-- Dependency: RL-040.
+- Dependency: None.
 - Why: The owner asked for animations grouped by class ("props are classes of animation"). With 25 animations in a fixed grid, a flat list hides that structure. The wardrobe still pairs any weapon with any motion.
 - Scope: The editor's left panel puts a class switcher above the animations: Unarmed, then each weapon in config order. Under it are the active class's five kinds, each with its keys, length and looping. Choosing another class keeps the kind, so `sword-attack` goes to `spear-attack`. The hierarchy section folds, so the classes stay in view. The timeline names the class and kind. In the wardrobe, the Weapon and Motion steppers become Class and Motion. Class cycles Unarmed and each weapon, and Motion cycles Rest and the five kinds. At Rest, an armed class holds its weapon at its hold. Update README and ARCHITECTURE (Editor, Wardrobe).
 - Non-goals: Weapon editing (RL-043), mode changes (RL-044), new kinds, and the wardrobe's skin and part controls.
