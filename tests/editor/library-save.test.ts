@@ -7,13 +7,15 @@ import { SAVE_ROUTE } from "../../src/library/save";
 const reply = (status: number, body: unknown) => vi.fn(async () => new Response(JSON.stringify(body), { status }));
 
 describe("saving to the library folder", () => {
-  it("posts the rig and animations as JSON to the dev server's save route", async () => {
+  it("posts the rig, the weapons with their holds, and the animations as JSON to the dev server's save route", async () => {
     const fetchImpl = reply(200, { ok: true, saveId: "s1", library: "~/Documents/RigLab", written: ["animations/idle.anim.json", "config.txt"], removed: [] });
     const model = libraryModel(LIBRARY);
     expect(await saveToLibrary(model, fetchImpl)).toEqual({ ok: true, saveId: "s1", note: "Saved 2 files to ~/Documents/RigLab" });
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
     expect([url, init.method, (init.headers as Record<string, string>)["Content-Type"]]).toEqual([SAVE_ROUTE, "POST", "application/json"]);
-    expect(JSON.parse(String(init.body))).toEqual({ rig: model.rig, animations: model.animations });
+    const body = JSON.parse(String(init.body));
+    expect(Object.keys(body)).toEqual(["rig", "weapons", "animations"]);
+    expect(body).toEqual({ rig: model.rig, weapons: model.weapons.map((item) => ({ weapon: item.weapon, hold: item.weapon.name === "daggers" ? null : item.hold })), animations: model.animations });
   });
 
   it("says when the folder already holds everything", async () => {

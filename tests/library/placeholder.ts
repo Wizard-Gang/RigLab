@@ -26,3 +26,12 @@ export function withChanges(changes: Readonly<Record<string, string | null>>): L
   }
   return files;
 }
+
+/** The library's weapons as the editor's Save sends them: each `weapon.json`, and its hold without the file header, or null. */
+export function savedWeapons(files: LibraryFiles): { weapon: Record<string, unknown>; hold: Record<string, unknown> | null }[] {
+  return ["sword", "spear", "axe", "daggers"].map((name) => {
+    const hold = files[`weapons/${name}/hold.json`];
+    const { format: _format, version: _version, ...held } = hold === undefined ? {} : JSON.parse(hold);
+    return { weapon: JSON.parse(files[`weapons/${name}/weapon.json`]!), hold: hold === undefined ? null : held };
+  });
+}

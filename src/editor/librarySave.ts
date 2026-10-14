@@ -1,4 +1,5 @@
 // Saving the editor into the library folder through the dev server, and what to do when another save changes it.
+import { freeBodies } from "../format/weapon";
 import { SAVE_ROUTE } from "../library/save";
 import type { LibraryModel } from "./model";
 
@@ -8,14 +9,20 @@ export type SaveAnswer =
 
 const NEEDS_DEV_SERVER = "Save needs npm start: only the dev server can write the library folder";
 
-/** Post the model's rig and animations to the dev server. Every failure becomes one line for the status bar. */
+/** The save body: the rig, each library weapon with its hold (null when every body rides a hand), and the animations. */
+export function saveBody(model: LibraryModel): Readonly<Record<string, unknown>> {
+  const weapons = model.weapons.map(({ weapon, hold }) => ({ weapon, hold: freeBodies(weapon).length ? hold : null }));
+  return { rig: model.rig, weapons, animations: model.animations };
+}
+
+/** Post the model to the dev server. Every failure becomes one line for the status bar. */
 export async function saveToLibrary(model: LibraryModel, fetchImpl: typeof fetch = fetch): Promise<SaveAnswer> {
   let response: Response;
   try {
     response = await fetchImpl(SAVE_ROUTE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rig: model.rig, animations: model.animations }),
+      body: JSON.stringify(saveBody(model)),
     });
   } catch (error) {
     return { ok: false, error: `${NEEDS_DEV_SERVER} (${(error as Error).message})` };

@@ -1,11 +1,13 @@
-// Saving the editor's rig and animations into a library folder: which files change, and the config.txt that maps them.
-// Pure, so the dev server and the tests plan a save the same way; src/library/write.ts puts a plan on disk.
+// Saving the editor's rig, weapons and animations into a library folder: which files change, and the config.txt that
+// maps them. Pure, so the dev server and the tests plan a save the same way; src/library/write.ts puts a plan on disk.
+import { HOLD_FILE, HOLD_FORMAT, HOLD_VERSION } from "../format/hold";
 import { closedObject, isObject, Issues, NAME } from "../format/validate";
 import type { JsonObject, Validation } from "../format/validate";
+import { freeBodies, validateWeapon } from "../format/weapon";
 import { CONFIG_FILE, parseConfig } from "./config";
 import type { ConfigEntry } from "./config";
 import type { LibraryFiles } from "./files";
-import { loadLibrary } from "./load";
+import { loadLibrary, WEAPON_FILE } from "./load";
 
 /** The dev server's save endpoint, and the event it sends every page after writing the folder. */
 export const SAVE_ROUTE = "/__riglab/library";
@@ -32,11 +34,38 @@ export interface SavedEvent {
 const json = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
 const animationPath = (name: string): string => `${ANIMATION_DIR}/${name}.anim.json`;
 
-/** The request body: a rig and a list of named animations. The loader validates everything else once they are merged. */
-function readSave(value: unknown): Validation<{ readonly rig: JsonObject; readonly animations: readonly JsonObject[] }> {
+/** One library weapon in a save: its rig, and its hold when it has free bodies (null when every body rides a hand). */
+interface SavedWeapon {
+  readonly weapon: JsonObject;
+  readonly hold: JsonObject | null;
+}
+
+interface SaveBody {
+  readonly rig: JsonObject;
+  readonly weapons: readonly SavedWeapon[];
+  readonly animations: readonly JsonObject[];
+}
+
+/** The body's weapons: each `{ weapon, hold }`, a weapon object and a hold object or null. */
+function checkWeapons(issues: Issues, value: unknown): void {
+  if (!Array.isArray(value)) {
+    issues.add("$.weapons", "must be an array");
+    return;
+  }
+  value.forEach((item: unknown, index) => {
+    const path = `$.weapons[${index}]`;
+    if (!closedObject(issues, path, item, ["weapon", "hold"])) return;
+    if (!isObject(item.weapon)) issues.add(`${path}.weapon`, "must be an object");
+    if (item.hold !== null && !isObject(item.hold)) issues.add(`${path}.hold`, "must be an object or null");
+  });
+}
+
+/** The request body: a rig, the library's weapons and a list of named animations. The loader validates the rest once they are merged. */
+function readSave(value: unknown): Validation<SaveBody> {
   const issues = new Issues();
-  if (!closedObject(issues, "$", value, ["rig", "animations"], []) || issues.errors.length) return issues.result(value);
+  if (!closedObject(issues, "$", value, ["rig", "weapons", "animations"], []) || issues.errors.length) return issues.result(value);
   if (!isObject(value.rig)) issues.add("$.rig", "must be an object");
+  checkWeapons(issues, value.weapons);
   if (!Array.isArray(value.animations)) {
     issues.add("$.animations", "must be an array");
     return issues.result(value);
@@ -70,9 +99,49 @@ function withAnimationLines(text: string, entries: readonly ConfigEntry[], lines
 }
 
 /**
- * Plan writing `save` ({ rig, animations }) into the library `files`. The rig goes to the path its `rig` line maps; each
- * animation to its own mapped path, or `animations/<name>.anim.json` when new; the `animation` lines follow the save's
- * order; and a removed or renamed animation's old file leaves. A plan whose library would not load is refused.
+ * Each weapon's `weapon.json`, and `hold.json` for one with free bodies, in the directory its line maps. The weapons are
+ * the library's, one per `weapon` line in config order, so a save never adds, renames, moves or removes one.
+ */
+function weaponWrites(weapons: readonly SavedWeapon[], entries: readonly ConfigEntry[], errors: string[]): readonly (readonly [string, string])[] {
+  const lines = entries.filter((entry) => entry.kind === "weapon");
+  const writes = weapons.flatMap((item, index) => {
+    const path = `$.weapons[${index}]`;
+    const name = item.weapon.name;
+    const line = lines[index];
+    if (!line || name !== line.name) {
+      const mapped = lines.find((candidate) => candidate.name === name);
+      if (mapped) errors.push(`${path}.weapon.name: '${String(name)}' is out of config order; ${CONFIG_FILE}:${mapped.line} maps it`);
+      else if (line) errors.push(`${path}.weapon.name: is '${String(name)}', but ${CONFIG_FILE}:${line.line} maps this weapon as '${line.name}'`);
+      else errors.push(`${path}.weapon.name: no 'weapon' line in ${CONFIG_FILE} maps '${String(name)}'`);
+      return [];
+    }
+    const checked = validateWeapon(item.weapon);
+    if (!checked.ok) {
+      errors.push(...checked.errors.map((error) => `${path}.weapon${error.slice(1)}`));
+      return [];
+    }
+    const free = freeBodies(checked.value).length > 0;
+    if (!free && item.hold !== null) {
+      errors.push(`${path}.hold: must be null: every body of the ${name} rides a hand, so it has no hold`);
+      return [];
+    }
+    if (free && item.hold === null) {
+      errors.push(`${path}.hold: must place the ${name}'s free bodies`);
+      return [];
+    }
+    const own = [[`${line.path}/${WEAPON_FILE}`, json(item.weapon)] as const];
+    return item.hold ? [...own, [`${line.path}/${HOLD_FILE}`, json({ format: HOLD_FORMAT, version: HOLD_VERSION, ...item.hold })] as const] : own;
+  });
+  for (const line of lines.slice(weapons.length)) errors.push(`$.weapons: must list every library weapon; '${line.name}' (${CONFIG_FILE}:${line.line}) is missing`);
+  return writes;
+}
+
+/**
+ * Plan writing `save` ({ rig, weapons, animations }) into the library `files`. The rig goes to the path its `rig` line
+ * maps; each weapon's `weapon.json` and `hold.json` to the directory its line maps; each animation to its own mapped
+ * path, or `animations/<name>.anim.json` when new; the `animation` lines follow the save's order; and a removed or
+ * renamed animation's old file leaves. Only files whose text changes are written. A plan whose library would not load
+ * is refused.
  */
 export function planLibrarySave(files: LibraryFiles, save: unknown): Validation<SavePlan> {
   const body = readSave(save);
@@ -99,6 +168,7 @@ export function planLibrarySave(files: LibraryFiles, save: unknown): Validation<
     if (taken) errors.push(`${path}: animation '${name}' cannot be saved over ${taken[1]}`);
     else owners.set(path, `animation '${name}'`);
   }
+  const weapons = weaponWrites(body.value.weapons, entries, errors);
   if (errors.length) return { ok: false, errors };
 
   const writes: Record<string, string> = {};
@@ -106,6 +176,7 @@ export function planLibrarySave(files: LibraryFiles, save: unknown): Validation<
     if (files[path] !== text) writes[path] = text;
   };
   write(rigEntry.path, json(body.value.rig));
+  for (const [path, text] of weapons) write(path, text);
   for (const { path, text } of targets) write(path, text);
   const lines = targets.map(({ name, path }) => `animation ${name} = ${path}`);
   write(CONFIG_FILE, withAnimationLines(configText, entries, lines));
