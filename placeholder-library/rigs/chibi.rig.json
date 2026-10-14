@@ -261,7 +261,11 @@
         }
       }
     },
-    "byClip": {},
+    "byClip": {
+      "sword": "both-front",
+      "spear": "both-front",
+      "axe": "both-front"
+    },
     "default": "anatomical"
   }
 }
