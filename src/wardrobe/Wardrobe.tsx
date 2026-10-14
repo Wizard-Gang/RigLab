@@ -2,7 +2,9 @@ import { useEffect, useReducer } from "react";
 import { LIBRARY, LIBRARY_LABEL } from "../library/active";
 import { slotStem } from "../library/files";
 import { Figure } from "./Figure";
-import { heldWeapon, initialWardrobe, shownMotion, wardrobeReducer, wornParts } from "./state";
+import { classLabel } from "../app/labels";
+import { KINDS } from "../format/timing";
+import { heldWeapon, initialWardrobe, shownClass, shownKind, shownMotion, wardrobeReducer, wornParts } from "./state";
 import type { Step, WardrobeAction } from "./state";
 import { useLoop } from "./useLoop";
 
@@ -32,7 +34,7 @@ function Stepper({ label, value, onStep }: StepperProps) {
   );
 }
 
-/** Steps through the library's skins, each slot's parts, the weapons and the animations, on one read-only figure. */
+/** Steps through the library's skins, each slot's parts, the classes and their motions, on one read-only figure. */
 export function Wardrobe() {
   const [state, dispatch] = useReducer(
     (current: ReturnType<typeof initialWardrobe>, action: WardrobeAction) => wardrobeReducer(LIBRARY, current, action),
@@ -40,8 +42,10 @@ export function Wardrobe() {
     initialWardrobe,
   );
   const weapon = heldWeapon(LIBRARY, state);
+  const kind = shownKind(state);
   const motion = shownMotion(LIBRARY, state);
   const frame = useLoop(motion);
+  const motionValue = !kind ? "Rest" : motion ? `${KINDS[kind].label} · ${frame}/${motion.length}` : `${KINDS[kind].label} · not in the library`;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -67,8 +71,8 @@ export function Wardrobe() {
       </main>
       <aside className="wardrobe__panel" aria-label="Outfit">
         <Stepper label="Skin" value={LIBRARY.skins[state.skin]!.name} onStep={(step) => dispatch({ type: "skin", step })} />
-        <Stepper label="Weapon" value={weapon?.name ?? "None"} onStep={(step) => dispatch({ type: "weapon", step })} />
-        <Stepper label="Motion" value={motion ? `${motion.name} · ${frame}/${motion.length}` : "Rest"} onStep={(step) => dispatch({ type: "motion", step })} />
+        <Stepper label="Class" value={classLabel(shownClass(LIBRARY, state))} onStep={(step) => dispatch({ type: "class", step })} />
+        <Stepper label="Motion" value={motionValue} onStep={(step) => dispatch({ type: "motion", step })} />
         <button type="button" className="tool" onClick={() => dispatch({ type: "reset" })}>Reset to {LIBRARY.skins[state.skin]!.name}</button>
         <h2 className="panel__title">Parts</h2>
         <ul className="wardrobe__slots" aria-label="Parts">

@@ -131,13 +131,27 @@ export function App() {
         onToggle={() => togglePanel("left")}
       >
         <section className="panel__section" aria-labelledby="hierarchy-title">
-          <Hierarchy rig={rig} selected={selectedBone} onSelect={(name) => dispatch({ type: "select", selection: { kind: "bone", name } })} />
+          <button
+            type="button"
+            className="panel__fold"
+            aria-expanded={!panels.hierarchy}
+            aria-controls="hierarchy-bones"
+            onClick={() => togglePanel("hierarchy")}
+          >
+            <span className="panel__fold-chevron" aria-hidden="true">{panels.hierarchy ? "▸" : "▾"}</span>
+            {panels.hierarchy ? `Show the ${model.rig.bones.length} bones` : `Fold the ${model.rig.bones.length} bones`}
+          </button>
+          <div id="hierarchy-bones" hidden={panels.hierarchy}>
+            <Hierarchy rig={rig} selected={selectedBone} onSelect={(name) => dispatch({ type: "select", selection: { kind: "bone", name } })} />
+          </div>
         </section>
         <AnimationsPanel
           animations={model.animations}
           classes={classes}
+          activeClass={animation?.class ?? UNARMED}
           active={state.activeAnimation}
           selected={state.selection?.kind === "animation" ? state.selection.name : null}
+          onClass={(animationClass) => dispatch({ type: "setClass", animationClass })}
           onSelect={(name) => dispatch({ type: "select", selection: { kind: "animation", name } })}
         />
       </SidePanel>

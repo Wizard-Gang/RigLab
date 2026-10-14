@@ -69,7 +69,7 @@ a.tool { display: inline-block; color: inherit; text-decoration: none; }
 .tool--menu { padding-inline: 0.45rem; }
 .mode[aria-selected="true"] { background: var(--acid-wash); border-color: var(--acid-dim); color: var(--acid); }
 .tool:focus-visible, .mode:focus-visible, .list__item:focus-visible, .hierarchy__bone:focus-visible, .field:focus-visible,
-.panel__toggle:focus-visible, .panel__rail:focus-visible {
+.panel__toggle:focus-visible, .panel__rail:focus-visible, .panel__fold:focus-visible {
   outline: 2px solid var(--acid);
   outline-offset: 1px;
 }

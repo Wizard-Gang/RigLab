@@ -67,6 +67,8 @@ export type Action =
   }
   | { readonly type: "select"; readonly selection: Selection }
   | { readonly type: "activateAnimation"; readonly name: string }
+  /** Switch to the class's animation of the active kind. */
+  | { readonly type: "setClass"; readonly animationClass: string }
   | { readonly type: "setMode"; readonly mode: Mode }
   | { readonly type: "setFrame"; readonly frame: number }
   | { readonly type: "stepKey"; readonly direction: -1 | 1 }

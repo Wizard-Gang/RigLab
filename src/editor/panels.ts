@@ -1,14 +1,19 @@
-// Which side panels are collapsed: a per-viewer convenience kept in browser storage, never in the model or history.
+// Which side panels are collapsed, and whether the bone hierarchy is folded: per-viewer conveniences kept in browser
+// storage, never in the model or history.
 
 export type PanelSide = "left" | "right";
+/** A side panel, or the hierarchy section that folds inside the left one. */
+export type PanelPart = PanelSide | "hierarchy";
 
 export interface Panels {
   readonly left: boolean;
   readonly right: boolean;
+  /** The bone hierarchy is folded, so the animations sit at the top of the left panel. */
+  readonly hierarchy: boolean;
 }
 
 export const PANELS_KEY = "riglab.panels";
-export const OPEN_PANELS: Panels = Object.freeze({ left: false, right: false });
+export const OPEN_PANELS: Panels = Object.freeze({ left: false, right: false, hierarchy: false });
 
 /** The part of `Storage` panels use; either call may throw where storage is blocked. */
 export type PanelStorage = Pick<Storage, "getItem" | "setItem">;
@@ -18,8 +23,8 @@ export function readPanels(storage: PanelStorage | null): Panels {
   try {
     const value: unknown = JSON.parse(storage?.getItem(PANELS_KEY) ?? "null");
     if (typeof value !== "object" || value === null) return OPEN_PANELS;
-    const { left, right } = value as Record<string, unknown>;
-    return { left: left === true, right: right === true };
+    const { left, right, hierarchy } = value as Record<string, unknown>;
+    return { left: left === true, right: right === true, hierarchy: hierarchy === true };
   } catch {
     return OPEN_PANELS;
   }
@@ -28,10 +33,10 @@ export function readPanels(storage: PanelStorage | null): Panels {
 /** Remember the collapsed panels where storage allows; a failure only means they are not remembered. */
 export function writePanels(storage: PanelStorage | null, panels: Panels): void {
   try {
-    storage?.setItem(PANELS_KEY, JSON.stringify({ left: panels.left, right: panels.right }));
+    storage?.setItem(PANELS_KEY, JSON.stringify({ left: panels.left, right: panels.right, hierarchy: panels.hierarchy }));
   } catch {
     // Private windows and blocked site data refuse writes; the panels still toggle for this visit.
   }
 }
 
-export const togglePanel = (panels: Panels, side: PanelSide): Panels => ({ ...panels, [side]: !panels[side] });
+export const togglePanel = (panels: Panels, part: PanelPart): Panels => ({ ...panels, [part]: !panels[part] });

@@ -2,19 +2,9 @@
 
 ## Open tasks
 
-### RL-042 — [FEAT] Browse animations by class in the editor and the wardrobe
-
-- Dependency: None.
-- Why: The owner asked for animations grouped by class ("props are classes of animation"). With 25 animations in a fixed grid, a flat list hides that structure. The wardrobe still pairs any weapon with any motion.
-- Scope: The editor's left panel puts a class switcher above the animations: Unarmed, then each weapon in config order. Under it are the active class's five kinds, each with its keys, length and looping. Choosing another class keeps the kind, so `sword-attack` goes to `spear-attack`. The hierarchy section folds, so the classes stay in view. The timeline names the class and kind. In the wardrobe, the Weapon and Motion steppers become Class and Motion. Class cycles Unarmed and each weapon, and Motion cycles Rest and the five kinds. At Rest, an armed class holds its weapon at its hold. Update README and ARCHITECTURE (Editor, Wardrobe).
-- Non-goals: Weapon editing (RL-043), mode changes (RL-044), new kinds, and the wardrobe's skin and part controls.
-- Acceptance: Reducer tests switch class, keep the kind, and reconcile the selection and frame. Wardrobe state tests step and wrap Class and Motion. Headless Chrome at 1440 and 860 px wide steps through every class and kind in the editor and the wardrobe, with no overflow and no console errors. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused editor and wardrobe tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/app/AnimationsPanel.tsx`, `src/app/App.tsx`, `src/app/Timeline.tsx`, `src/app/panels.css`, `src/editor/state.ts`, `src/viewer/Hierarchy.tsx`, `src/wardrobe/`, `tests/editor/`, `tests/wardrobe/`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's answers on 2026-10-13.
-
 ### RL-043 — [FEAT] Edit the active class's weapon rig and hold in Rig setup
 
-- Dependency: RL-042.
+- Dependency: None.
 - Why: The owner said on 2026-10-13: "we need to be able to make the animations and adjust the props as well". They chose Spine-style modes, with Rig setup editing the chibi and the active class's weapon rig and hold at rest. Today a weapon's grips, axis and hold change only by hand-editing the library's JSON.
 - Scope: With an armed class active, Rig setup draws the chibi at rest holding the class weapon at its hold. It shows the weapon's art, axis, grip points and handles, with the hands solved to the grips. The hierarchy lists the weapon's bodies and their grips after the bones. Selecting one opens an inspector with numeric fields for:
   - the hold (`x`, `y`, `rotation`)

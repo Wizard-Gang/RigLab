@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { fillClasses } from "../../src/editor/classes";
 import { HISTORY_LIMIT } from "../../src/editor/history";
+import { libraryModel } from "../../src/editor/model";
 import { activeAnimationOf, editorReducer, initialState, isDirty, modelOf } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import type { Interpolation } from "../../src/format";
+import { LIBRARY } from "../../src/library/active";
 
 const run = (state: EditorState, ...actions: Action[]): EditorState => actions.reduce(editorReducer, state);
 const names = (state: EditorState): string[] => modelOf(state).animations.map((animation) => animation.name);
@@ -66,5 +69,31 @@ describe("editor state", () => {
     expect(run(state, { type: "setGrid", spacing: 10 }).grid).toBe(10);
     expect(run(state, { type: "setGrid", spacing: 3 }).grid).toBe(5);
     expect(run(state, { type: "setSnap", snap: false }).snap).toBe(false);
+  });
+});
+
+describe("switching class", () => {
+  const full = () => initialState(fillClasses(libraryModel(LIBRARY)).model);
+
+  it("keeps the kind, the frame and a selected key, so sword-attack goes to spear-attack", () => {
+    let state = run(full(), { type: "select", selection: { kind: "animation", name: "sword-attack" } }, { type: "select", selection: { kind: "key", frame: 16 } });
+    expect([state.activeAnimation, state.frame]).toEqual(["sword-attack", 16]);
+    state = run(state, { type: "setClass", animationClass: "spear" });
+    expect([state.activeAnimation, state.frame, state.selection]).toEqual(["spear-attack", 16, { kind: "key", frame: 16 }]);
+    expect(run(state, { type: "setClass", animationClass: "unarmed" }).activeAnimation).toBe("unarmed-attack");
+  });
+
+  it("moves a selected animation to the new class, and keeps a selected bone", () => {
+    const walk = run(full(), { type: "select", selection: { kind: "animation", name: "unarmed-walk" } }, { type: "setFrame", frame: 40 }, { type: "setClass", animationClass: "daggers" });
+    expect([walk.activeAnimation, walk.selection, walk.frame]).toEqual(["daggers-walk", { kind: "animation", name: "daggers-walk" }, 40]);
+    const bone = run(full(), { type: "select", selection: { kind: "bone", name: "head" } }, { type: "setClass", animationClass: "axe" });
+    expect([bone.activeAnimation, bone.selection]).toEqual(["axe-idle", { kind: "bone", name: "head" }]);
+  });
+
+  it("stays put on its own class, and refuses a class the library lacks the kind for", () => {
+    const state = full();
+    expect(run(state, { type: "setClass", animationClass: "unarmed" })).toBe(state);
+    const bare = run(initialState(), { type: "setClass", animationClass: "sword" });
+    expect([bare.activeAnimation, bare.status]).toEqual(["unarmed-idle", { tone: "error", text: "The library has no sword-idle" }]);
   });
 });
