@@ -109,10 +109,10 @@ describe("the library model", () => {
   it("starts the editor on the library's chibi, its rest-pose animation per kind and all four weapons, saved", () => {
     const model = libraryModel(LIBRARY);
     expect(validateModel(model).ok).toBe(true);
-    expect([model.rig, model.animations]).toEqual([chibi, ANIMATION_KINDS.map((kind) => blankAnimation(chibi, kind, kind))]);
+    expect([model.rig, model.animations]).toEqual([chibi, ANIMATION_KINDS.map((kind) => blankAnimation(chibi, kind))]);
     expect(model.weapons.map((item) => item.weapon.name)).toEqual(["sword", "spear", "axe", "daggers"]);
     const state = initialState();
     expect(modelOf(state)).toEqual(model);
-    expect([state.activeAnimation, isDirty(state)]).toEqual(["idle", false]);
+    expect([state.activeAnimation, isDirty(state)]).toEqual(["unarmed-idle", false]);
   });
 });

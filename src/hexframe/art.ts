@@ -18,12 +18,12 @@ export interface ArtPlacement {
 
 /**
  * Paint order: Hexframe's depth profile for facing right when it fits the rig, otherwise the bone list order. Hexframe's
- * `depthProfileName` picks the profile: the animation's `byClip` entry, else the held weapon's, else the default.
+ * `depthProfileName` picks the profile: the animation's `byClip` entry, else its class's, else the default.
  */
-export function paintOrder(rig: RigLabRig, runtime: Rig, animation: string | null, weapon: string | null): readonly string[] {
+export function paintOrder(rig: RigLabRig, runtime: Rig, animation: string | null, animationClass: string | null): readonly string[] {
   if (rig.depthProfiles) {
     try {
-      return visualPaintOrder(runtime, 1, depthProfileName(runtime, animation ?? "", weapon));
+      return visualPaintOrder(runtime, 1, depthProfileName(runtime, animation ?? "", animationClass));
     } catch {
       // A depth profile that no longer names every bone (after rig setup edits) falls back to bone order.
     }
@@ -31,15 +31,16 @@ export function paintOrder(rig: RigLabRig, runtime: Rig, animation: string | nul
   return rig.bones.map((bone) => bone.name);
 }
 
-/** The bones' art in the unarmed paint order; `withWeaponArt` re-sorts a frame that holds a weapon. */
+/** The bones' art in the animation's paint order, by its name and class; `withWeaponArt` adds a held weapon. */
 export function artPlacements(
   rig: RigLabRig,
   runtime: Rig,
   placed: ReadonlyMap<string, Placed>,
   parts: Readonly<Record<string, Part>>,
   animation: string | null,
+  animationClass: string | null = null,
 ): ArtPlacement[] {
-  return paintOrder(rig, runtime, animation, null).flatMap((name) => {
+  return paintOrder(rig, runtime, animation, animationClass).flatMap((name) => {
     const bone = rig.bones.find((candidate) => candidate.name === name);
     const at = placed.get(name);
     const part = bone ? parts[bone.slot] : undefined;
@@ -48,9 +49,9 @@ export function artPlacements(
 }
 
 /**
- * Interleave a held weapon's art with the rig's, in the paint order for the animation and that weapon: each body paints
- * just under the last-painted lower bone of the chains that grip it, so the hand that holds it covers its grip and
- * anything painted before that hand stays under it.
+ * Interleave a held weapon's art with the rig's, in the paint order for the animation and that weapon's class: each body
+ * paints just under the last-painted lower bone of the chains that grip it, so the hand that holds it covers its grip
+ * and anything painted before that hand stays under it.
  */
 export function withWeaponArt(
   rig: RigLabRig,

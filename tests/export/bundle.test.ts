@@ -14,7 +14,7 @@ import { written } from "./written";
 const rig = LIBRARY.rig;
 const GENERATOR = "RigLab test";
 
-/** A blank idle and walk, plus a looping crouch whose first two keys pin both feet while the pelvis drops. */
+/** A looping crouch, the unarmed idle, whose first two keys pin both feet while the pelvis drops, then a blank walk and hit. */
 function authored(): LibraryModel {
   const rest = restPose(rig);
   let feet = NO_CONSTRAINTS;
@@ -23,13 +23,13 @@ function authored(): LibraryModel {
     if (!result.ok) throw new Error(result.error);
     feet = result.constraints;
   }
-  const planted = setKeyPose(rig, blankAnimation(rig, "crouch", "idle"), 0, rest, feet);
+  const planted = setKeyPose(rig, blankAnimation(rig, "idle"), 0, rest, feet);
   if (!planted.ok) throw new Error(planted.error);
   const low = dragInPose(rig, rest, feet, { kind: "joint", bone: "pelvis" }, { x: 3, y: -20 });
   if (low.status !== "ok") throw new Error(low.message ?? low.status);
   const keyed = setKeyPose(rig, planted.animation, 15, low.pose, low.constraints);
   if (!keyed.ok) throw new Error(keyed.error);
-  return { ...libraryModel(LIBRARY), animations: [blankAnimation(rig, "idle", "idle"), blankAnimation(rig, "walk", "walk"), keyed.animation] };
+  return { ...libraryModel(LIBRARY), animations: [keyed.animation, blankAnimation(rig, "walk"), blankAnimation(rig, "hit")] };
 }
 
 const text = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
@@ -53,14 +53,14 @@ describe("riglab-export bundles", () => {
     const files = await buildBundle(authored(), { baked: true, generator: GENERATOR });
     expect([...files.keys()]).toEqual([
       "manifest.json", "chibi.rig.json",
-      "animations/idle.anim.json", "animations/walk.anim.json", "animations/crouch.anim.json",
-      "baked/idle.baked.json", "baked/walk.baked.json", "baked/crouch.baked.json",
+      "animations/unarmed-idle.anim.json", "animations/unarmed-walk.anim.json", "animations/unarmed-hit.anim.json",
+      "baked/unarmed-idle.baked.json", "baked/unarmed-walk.baked.json", "baked/unarmed-hit.baked.json",
     ]);
     const manifest = JSON.parse(text(files.get("manifest.json")!));
     expect(manifest).toMatchObject({ format: "riglab.export", version: 1, generator: GENERATOR, rig: { name: "chibi", file: "chibi.rig.json" } });
     expect(manifest.animations.map((entry: { sha256: string }) => entry.sha256)).toHaveLength(3);
-    expect(JSON.parse(text(files.get("animations/crouch.anim.json")!))).toMatchObject({ version: 2, kind: "idle", fps: 60, length: 60, loop: true });
-    expect((await buildBundle(authored(), { baked: false, generator: GENERATOR })).has("baked/idle.baked.json")).toBe(false);
+    expect(JSON.parse(text(files.get("animations/unarmed-idle.anim.json")!))).toMatchObject({ version: 3, class: "unarmed", kind: "idle", fps: 60, length: 60, loop: true });
+    expect((await buildBundle(authored(), { baked: false, generator: GENERATOR })).has("baked/unarmed-idle.baked.json")).toBe(false);
   });
 
   it("pin every file by SHA-256, write the model's own rig and animations, and bake each one fresh", async () => {
@@ -72,7 +72,7 @@ describe("riglab-export bundles", () => {
   });
 
   it("bake every Hexframe tick as the engine plays it, through Hexframe's FK", () => {
-    const animation = authored().animations[2]!;
+    const animation = authored().animations[0]!;
     const baked = bakeAnimation(rig, animation);
     expect([baked.fps, baked.loop, baked.frames.length]).toEqual([60, true, 60]);
     expect(frameCount({ ...animation, loop: false })).toBe(61);

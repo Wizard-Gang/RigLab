@@ -1,8 +1,7 @@
-// Model edits by mode: anatomy in Rig setup, poses in Pose, interpolation on the timeline, and the animation list.
+// Model edits by mode: anatomy in Rig setup, poses in Pose, and interpolation on the timeline.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import type { Constraints } from "../solve/constraints";
-import { blankAnimation, isValidName, uniqueName } from "./animations";
 import { edit } from "./core";
 import { weaponRigs } from "./model";
 import type { LibraryModel } from "./model";
@@ -13,7 +12,7 @@ import { applyTimelineEdit } from "./timeline";
 import type { TimelineEdit } from "./timeline";
 import { KINDS } from "../format/timing";
 import { activeAnimationOf, error, info, modelOf } from "./types";
-import type { Action, EditorState } from "./types";
+import type { EditorState } from "./types";
 
 function replacing(model: LibraryModel, previous: RigLabAnimation, next: RigLabAnimation): LibraryModel {
   return { ...model, animations: model.animations.map((animation) => (animation === previous ? next : animation)) };
@@ -51,56 +50,14 @@ export function timelineEdit(state: EditorState, change: TimelineEdit): EditorSt
   return edit(state, replacing(model, animation, result.animation), { status: info(result.message) });
 }
 
-export function animationEdit(state: EditorState, action: Action): EditorState {
-  const model = modelOf(state);
-  const animations = model.animations;
-  const names = animations.map((animation) => animation.name);
-  switch (action.type) {
-    case "addAnimation": {
-      const added = blankAnimation(model.rig, uniqueName(action.kind, names), action.kind);
-      const { length, keys } = KINDS[action.kind];
-      return edit(state, { ...model, animations: [...animations, added] }, {
-        activeAnimation: added.name,
-        selection: { kind: "animation", name: added.name },
-        frame: 0,
-        status: info(`Added ${added.name}: ${keys} keys over ${length} frames`),
-      });
-    }
-    case "duplicateAnimation": {
-      const index = names.indexOf(action.name);
-      if (index < 0) return state;
-      const copy = { ...animations[index]!, name: uniqueName(`${action.name}-copy`, names) };
-      return edit(state, { ...model, animations: [...animations.slice(0, index + 1), copy, ...animations.slice(index + 1)] }, {
-        activeAnimation: copy.name, selection: { kind: "animation", name: copy.name }, status: info(`Duplicated ${action.name} as ${copy.name}`),
-      });
-    }
-    case "renameAnimation": {
-      if (action.to === action.from || !names.includes(action.from)) return state;
-      if (!isValidName(action.to)) return { ...state, status: error(`'${action.to}' is not a valid name: use 1-64 letters, digits, '_' or '-', starting with a letter`) };
-      if (names.includes(action.to)) return { ...state, status: error(`An animation named '${action.to}' already exists`) };
-      const next = animations.map((animation) => (animation.name === action.from ? { ...animation, name: action.to } : animation));
-      return edit(state, { ...model, animations: next }, {
-        activeAnimation: state.activeAnimation === action.from ? action.to : state.activeAnimation,
-        selection: state.selection?.kind === "animation" && state.selection.name === action.from ? { kind: "animation", name: action.to } : state.selection,
-        status: info(`Renamed ${action.from} to ${action.to}`),
-      });
-    }
-    case "deleteSelection": {
-      const selection = state.selection;
-      if (selection?.kind === "bone") return state.mode === "setup" ? rigEdit(state, { kind: "deleteBone", bone: selection.name }) : state;
-      if (selection?.kind === "key") {
-        const kind = activeAnimationOf(state)?.kind;
-        return { ...state, status: error(kind ? `Keys stay: every ${kind} animation keeps all ${KINDS[kind].keys} of its keys` : "Keys stay where they are") };
-      }
-      if (selection?.kind !== "animation") return state;
-      const index = names.indexOf(selection.name);
-      if (index < 0) return state;
-      const next = animations.filter((_, at) => at !== index);
-      return edit(state, { ...model, animations: next }, {
-        activeAnimation: next[Math.min(index, next.length - 1)]?.name ?? null, selection: null, frame: 0, status: info(`Deleted ${selection.name}`),
-      });
-    }
-    default:
-      return state;
+/** Delete removes the selected joint, with its subtree, in Rig setup. The library keeps every animation and key. */
+export function deleteEdit(state: EditorState): EditorState {
+  const selection = state.selection;
+  if (selection?.kind === "bone") return state.mode === "setup" ? rigEdit(state, { kind: "deleteBone", bone: selection.name }) : state;
+  if (selection?.kind === "key") {
+    const kind = activeAnimationOf(state)?.kind;
+    return { ...state, status: error(kind ? `Keys stay: every ${kind} animation keeps all ${KINDS[kind].keys} of its keys` : "Keys stay where they are") };
   }
+  if (selection?.kind === "animation") return { ...state, status: error("Animations stay: the library holds one animation of each class and kind") };
+  return state;
 }

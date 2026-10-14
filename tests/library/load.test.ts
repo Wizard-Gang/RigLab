@@ -14,7 +14,7 @@ const original = placeholderFiles();
 const edited = (path: string, edit: (value: Record<string, unknown>) => unknown): string => json(edit(JSON.parse(original[path]!)));
 
 describe("library loading", () => {
-  it("loads the placeholder: today's chibi rig and weapons, three skins, holds and one animation per kind", () => {
+  it("loads the placeholder: today's chibi rig and weapons, three skins, holds and one unarmed animation per kind", () => {
     const result = loadLibrary(original);
     expect(result.ok ? [] : result.errors).toEqual([]);
     if (!result.ok) return;
@@ -29,7 +29,7 @@ describe("library loading", () => {
       for (const bone of rig.bones) expect(skin.parts[bone.slot]).toMatchObject({ bone: bone.name, set: skin.name });
     }
     expect(Object.keys(weapons.find((item) => item.name === "daggers")!.parts)).toEqual(["weapon_dagger"]);
-    expect(animations.map((animation) => animation.kind)).toEqual(ANIMATION_KINDS);
+    expect(animations.map((animation) => [animation.version, animation.class, animation.kind, animation.name])).toEqual(ANIMATION_KINDS.map((kind) => [3, "unarmed", kind, `unarmed-${kind}`]));
   });
 
   it("needs a config.txt and at least one skin", () => {
@@ -67,10 +67,18 @@ describe("library loading", () => {
     expect(errorsOf(withChanges({ [axe]: clash, "weapons/axe/axe.svg": null, "weapons/axe/sword.svg": original["weapons/sword/sword.svg"]! }))).toEqual(["weapons/axe/sword.svg: slot 'weapon_sword' is already drawn by weapon 'sword'"]);
   });
 
-  it("refuses an animation for another rig or under another name", () => {
-    const path = "animations/walk.anim.json";
+  it("refuses an animation for another rig, under another name or of another version", () => {
+    const path = "animations/unarmed-walk.anim.json";
     expect(errorsOf(withChanges({ [path]: edited(path, (value) => ({ ...value, rig: "fighter" })) }))).toEqual([`${path}: $.rig: must name rig 'chibi'`]);
-    expect(errorsOf(withChanges({ [path]: edited(path, (value) => ({ ...value, name: "stroll" })) }))).toEqual([`${path}: is named 'stroll', but config.txt:16 maps it as 'walk'`]);
+    expect(errorsOf(withChanges({ [path]: edited(path, (value) => ({ ...value, name: "stroll" })) }))).toEqual([`${path}: $.name: must be 'unarmed-walk': an animation is named after its class and kind`]);
+    expect(errorsOf(withChanges({ [path]: edited(path, (value) => ({ ...value, class: "daggers", name: "daggers-walk" })) }))).toEqual([`${path}: is named 'daggers-walk', but config.txt:16 maps it as 'unarmed-walk'`]);
+    expect(errorsOf(withChanges({ [path]: edited(path, (value) => ({ ...value, version: 2 })) }))).toEqual([`${path}: $.version: must be 3`]);
+  });
+
+  it("holds one animation of each class and kind", () => {
+    const config = `${original["config.txt"]!}animation unarmed-walk = animations/unarmed-walk-2.anim.json\n`;
+    const second = withChanges({ "config.txt": config, "animations/unarmed-walk-2.anim.json": original["animations/unarmed-walk.anim.json"]! });
+    expect(errorsOf(second)).toEqual(["config.txt:20: animation 'unarmed-walk' is already mapped on line 16"]);
   });
 
   it("names a rig file that is missing or not a rig", () => {

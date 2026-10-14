@@ -1,4 +1,5 @@
 // riglab.weapon version 1: a weapon's rigid bodies, and the fixed grips the rig's hands hold them by.
+import { UNARMED } from "./classes";
 import type { RigLabRig } from "./rig";
 import { checkName, closedObject, isFiniteNumber, isPoint, Issues } from "./validate";
 import type { Validation } from "./validate";
@@ -82,7 +83,7 @@ export function validateWeapon(value: unknown, rig?: RigLabRig): Validation<RigL
   if (!closedObject(issues, "$", value, ["format", "version", "name", "bodies"])) return issues.result(value);
   if (value.format !== WEAPON_FORMAT) issues.add("$.format", `must be '${WEAPON_FORMAT}'`);
   if (value.version !== WEAPON_VERSION) issues.add("$.version", `must be ${WEAPON_VERSION}`);
-  checkName(issues, "$.name", value.name);
+  if (checkName(issues, "$.name", value.name) && value.name === UNARMED) issues.add("$.name", `must not be '${UNARMED}', the class that holds no weapon`);
   if (!Array.isArray(value.bodies) || value.bodies.length === 0) {
     issues.add("$.bodies", "must be a non-empty array");
     return issues.result(value);

@@ -2,6 +2,7 @@
 import { createRig } from "../../vendor/hexframe/src/rig";
 import type { Clip, RigContract } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
+import { UNARMED } from "../format/classes";
 import type { RigLabRig } from "../format/rig";
 import type { RigLabWeapon } from "../format/weapon";
 import { engineOf } from "../solve/engine";
@@ -16,16 +17,28 @@ export interface HexframeClipFile extends Clip {
   readonly note: string;
 }
 
-/** Hexframe's rig file shape: no format header, limits or chains, and depth profiles required. */
-export function toHexframeRig(rig: RigLabRig): Adapted<RigContract> {
+/**
+ * Each animation's clip key mapped to its class's depth profile, where the rig names one for the class and none for the
+ * clip, so Hexframe, which looks a clip up by its key alone, paints it as RigLab does.
+ */
+function classProfiles(byClip: Readonly<Record<string, string>>, animations: readonly RigLabAnimation[]): Record<string, string> {
+  return Object.fromEntries(animations.flatMap((animation) => {
+    const profile = byClip[animation.class];
+    return profile !== undefined && byClip[animation.name] === undefined ? [[animation.name, profile]] : [];
+  }));
+}
+
+/** Hexframe's rig file shape: no format header, limits or chains, and depth profiles required, with `animations`' clip keys mapped. */
+export function toHexframeRig(rig: RigLabRig, animations: readonly RigLabAnimation[] = []): Adapted<RigContract> {
   if (!rig.depthProfiles) return { ok: false, error: `Hexframe paints a rig by depth profile, and '${rig.name}' has none` };
+  const mapped = classProfiles(rig.depthProfiles.byClip, animations);
   const contract: RigContract = {
     space: { ...rig.space, viewBox: [...rig.space.viewBox] },
     root: rig.root,
     bones: rig.bones.map((bone) => ({
       name: bone.name, parent: bone.parent, offset: [...bone.offset], tip: bone.tip && [...bone.tip], slot: bone.slot, artHeight: bone.artHeight, hand: bone.hand,
     })),
-    depthProfiles: structuredClone(rig.depthProfiles),
+    depthProfiles: { ...structuredClone(rig.depthProfiles), byClip: { ...rig.depthProfiles.byClip, ...mapped } },
   };
   try {
     createRig(contract);
@@ -34,6 +47,8 @@ export function toHexframeRig(rig: RigLabRig): Adapted<RigContract> {
   }
   const limited = rig.bones.filter((bone) => bone.limits).length;
   const notes = limited || rig.chains.length ? [`Hexframe has no angle limits or IK chains: ${limited} limits and ${rig.chains.length} chains are left out`] : [];
+  const count = Object.keys(mapped).length;
+  if (count) notes.push(`${count} ${count === 1 ? "clip paints" : "clips paint"} with ${count === 1 ? "its" : "their"} class's depth profile`);
   return { ok: true, value: contract, notes };
 }
 
@@ -54,8 +69,7 @@ export function toHexframeClip(rig: RigLabRig, animation: RigLabAnimation, weapo
   };
 }
 
-/** What a Hexframe clip of the animation leaves out: its weapons' transforms, which Hexframe's clip has no channel for. */
+/** What a Hexframe clip of the animation leaves out: its weapon's transforms, which Hexframe's clip has no channel for. */
 export function clipNotes(animation: RigLabAnimation): string[] {
-  const held = [...new Set(animation.keys.flatMap((key) => (key.weapon ? [key.weapon.name] : [])))];
-  return held.length ? [`Hexframe's clip has no weapon channel, so the ${held.join(" and ")} transforms are left out; the baked frames carry them`] : [];
+  return animation.class === UNARMED ? [] : [`Hexframe's clip has no weapon channel, so the ${animation.class} transforms are left out; the baked frames carry them`];
 }

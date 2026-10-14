@@ -7,6 +7,7 @@ import { artPlacements, withWeaponArt } from "../hexframe/art";
 import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
 import { weaponRigs } from "../editor/model";
+import { UNARMED } from "../format/classes";
 import { activeAnimationOf, editorReducer, initialState, isDirty, modelOf } from "../editor/state";
 import { fitView, zoomAbout } from "../editor/view";
 import { LIBRARY, LIBRARY_LABEL } from "../library/active";
@@ -38,6 +39,7 @@ export function App() {
   const [panels, togglePanel] = usePanels();
   const model = modelOf(state);
   const weapons = useMemo(() => weaponRigs(model), [model.weapons]);
+  const classes = useMemo(() => [UNARMED, ...weapons.map((weapon) => weapon.name)], [weapons]);
   const animation = activeAnimationOf(state);
   const dirty = isDirty(state);
   const save = useLibrarySave(state, dispatch);
@@ -69,11 +71,11 @@ export function App() {
   );
   const art = useMemo(() => {
     if (!state.art) return null;
-    const placements = artPlacements(drags.rig, rig, skeleton.placed, PARTS, state.activeAnimation);
+    const placements = artPlacements(drags.rig, rig, skeleton.placed, PARTS, state.activeAnimation, posed ? animation.class : null);
     const wielded = posed ? drags.constraints.weapon : null;
     if (!wielded) return placements;
     return withWeaponArt(drags.rig, rig, placements, bodyTransforms(drags.rig, pose, wielded), wielded.weapon, PARTS, state.activeAnimation);
-  }, [state.art, posed, drags.rig, drags.constraints, rig, pose, skeleton.placed, state.activeAnimation]);
+  }, [state.art, posed, animation, drags.rig, drags.constraints, rig, pose, skeleton.placed, state.activeAnimation]);
   const ghosts = useMemo(() => {
     if (!engine || !animation || !state.onion || playback.playing) return undefined;
     const previous = animation.keys.filter((key) => key.frame < state.frame).at(-1);
@@ -133,12 +135,10 @@ export function App() {
         </section>
         <AnimationsPanel
           animations={model.animations}
+          classes={classes}
           active={state.activeAnimation}
           selected={state.selection?.kind === "animation" ? state.selection.name : null}
           onSelect={(name) => dispatch({ type: "select", selection: { kind: "animation", name } })}
-          onAdd={(kind) => dispatch({ type: "addAnimation", kind })}
-          onDuplicate={(name) => dispatch({ type: "duplicateAnimation", name })}
-          onDelete={() => dispatch({ type: "deleteSelection" })}
         />
       </SidePanel>
 

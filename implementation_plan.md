@@ -2,26 +2,10 @@
 
 ## Open tasks
 
-### RL-039 — [FEAT] Give every animation a class
-
-- Dependency: None.
-- Why: The owner said on 2026-10-13 that weapons are classes of animation: unarmed, 2h sword, 2h spear, 2h axe and daggers, with the spear kept as the fifth class. "Kind" already means idle, walk, jump, attack or hit. A class holds its weapon on every key, where today any key can pick or drop any weapon. The owner chose one animation of each kind per class, a fixed grid named `<class>-<kind>`.
-- Scope: The change has four parts.
-  - Format. `riglab.anim` version 3 adds `class`, which is `unarmed` or the name of a library weapon. Each key's `weapon` gives way to `bodies`, which place the class weapon's free bodies with `body`, `x`, `y` and `rotation`. Every key of a sword, spear or axe animation places its body. Unarmed and dagger keys place none. A pin may not hold a chain the class weapon grips. The name must be `<class>-<kind>`, so a library holds at most one animation per class and kind. No weapon may be named `unarmed`.
-  - Playback and export. The solver, engine, bake, bundle and Hexframe clip take the weapon from the class. Paint order looks up the class instead of the held weapon, and the chibi rig's `byClip` entries for `sword`, `spear` and `axe` already use those names. The Hexframe rig export also maps each animation's clip key to its class's profile, so Hexframe paints exported clips the same way.
-  - Editor. The class replaces the per-key Weapon picker: its keys always hold its weapon, and Pose mode still moves and turns free bodies per key. The Animations panel lists each animation by class and kind. The grid fixes the animations, so the panel's New, Duplicate and Delete controls and the inspector's rename field go away. The Delete key deletes only joints.
-  - Migration. Both libraries' five animations become version 3 `unarmed-<kind>` files at `animations/unarmed-<kind>.anim.json`, with matching `config.txt` lines. Right after the merge, back up the owner's folder under `backups/`, migrate it, and run `check:library`.
-
-  The acceptance tests hold their weapons through hand-built class animations. Update README and ARCHITECTURE (formats, editor, library).
-- Non-goals: Making the armed classes' animations (RL-040), saving weapons (RL-041), the class switcher and the wardrobe's classes (RL-042), and reading version 2 files. Both libraries are migrated instead.
-- Acceptance: Format tests accept a valid animation for each class. They refuse an unknown class, a missing or extra body placement, a pin on a gripping chain, a name other than `<class>-<kind>`, a second animation for one class and kind, and a weapon named `unarmed`. Engine, bake, bundle and Hexframe tests hold the sword through a hand-built `sword-attack` as a per-key sword did, and paint it with `both-front`. The Hexframe rig export maps its clip key. Both libraries load at version 3 with five unarmed animations, and the owner's backup holds the version 2 files. Headless Chrome on a worktree dev server over a copy of the migrated folder poses and saves `unarmed-idle` with no console errors. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused format, library, solve, export, Hexframe and editor tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, `npm run check:library` on both libraries, the headless pass, and exact-head CI.
-- Authorities: `src/format/animation.ts`, `src/format/constraints.ts`, `src/library/load.ts`, `src/solve/constraints.ts`, `src/solve/engine.ts`, `src/export/bake.ts`, `src/export/bundle.ts`, `src/hexframe/adapter.ts`, `src/hexframe/art.ts`, `src/editor/`, `src/app/AnimationsPanel.tsx`, `src/app/Inspector.tsx`, `src/app/ModePanel.tsx`, `src/app/WeaponPicker.tsx`, `placeholder-library/`, `~/Documents/RigLab/`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's direction and answers on 2026-10-13.
-
 ### RL-040 — [FEAT] Start every class's five kinds from the unarmed motion
 
-- Dependency: RL-039.
-- Why: On 2026-10-13 the owner chose that every class has one animation of each kind, and that an armed class starts from the unarmed animation of the same kind with its weapon in hand. After RL-039 the libraries hold only the five unarmed animations, and the editor cannot create any.
+- Dependency: None.
+- Why: On 2026-10-13 the owner chose that every class has one animation of each kind, and that an armed class starts from the unarmed animation of the same kind with its weapon in hand. The libraries now hold only the five unarmed animations, and the editor cannot create any.
 - Scope: A pure `startClassAnimation` in `src/editor/classes.ts` builds `<class>-<kind>` from `unarmed-<kind>`. It keeps every key's frame, interpolation and pose, and the pins on chains the weapon does not grip. For a weapon with free bodies, each key places them at the weapon's hold, carried with the torso as `carryReady` does today, and both arms re-solve to the grips. A grip a hand cannot reach is reported, never stretched. Dagger keys keep the unarmed arms, and the daggers ride the hands. A missing unarmed kind starts at the rest pose, as New did. When the editor opens, it fills every missing class and kind in config and kind order, as unsaved changes. The status says how many it started, and Save writes them. Seed the owner's folder from a worktree dev server before fast-forwarding the owner's checkout. Back the folder up under `backups/` first, then save the 20 armed animations, so it opens clean with all 25. The weapons acceptance test builds its animations with `startClassAnimation` instead of the removed picker. Update README and ARCHITECTURE.
 - Non-goals: Re-deriving an armed animation after its unarmed source changes, class UI beyond the status note (RL-042), and editing holds (RL-043).
 - Acceptance: Unit tests check these points:
@@ -34,7 +18,7 @@
 
   The owner's folder loads with 25 animations: `check:library` lists them all, and the wardrobe's Motion plays them all. Headless Chrome on a temporary copy plays `sword-walk`, `spear-attack` and `daggers-idle` with no console errors, and with both arms over the torso for the two-handed weapons. `npm run check` passes.
 - Validation: Pinned `npm ci`, focused editor, solve and acceptance tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, `npm run check:library` on the owner's folder, the headless pass, and exact-head CI.
-- Authorities: `carryReady` (in `src/editor/weaponEdits.ts` on main), `src/editor/core.ts`, `src/editor/model.ts`, `src/editor/animations.ts`, `src/solve/constraints.ts`, `tests/acceptance/weapons.test.ts`, `~/Documents/RigLab/`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's answers on 2026-10-13.
+- Authorities: `carryReady` (in `src/editor/weaponEdits.ts` at a06e007, removed with the Weapon picker), `src/editor/core.ts`, `src/editor/model.ts`, `src/editor/animations.ts`, `src/solve/constraints.ts`, `tests/acceptance/weapons.test.ts`, `~/Documents/RigLab/`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's answers on 2026-10-13.
 
 ### RL-041 — [FEAT] Save weapon rigs and holds into the library folder
 

@@ -12,13 +12,13 @@ const rig = LIBRARY.rig;
 const rotated = (degrees: number) => setRotation(rig, restPose(rig), "arm-front", degrees).pose;
 
 /** A kind's keys with the front arm at `rotations`, moving to the next key as `interpolations` say. */
-function keyed(name: string, kind: "hit" | "walk", rotations: readonly number[], interpolations: readonly Interpolation[]): RigLabAnimation {
-  const blank = blankAnimation(rig, name, kind);
+function keyed(kind: "hit" | "walk", rotations: readonly number[], interpolations: readonly Interpolation[]): RigLabAnimation {
+  const blank = blankAnimation(rig, kind);
   return { ...blank, keys: blank.keys.map((key, index) => ({ ...key, interpolation: interpolations[index]!, pose: rotated(rotations[index]!) })) };
 }
 
 /** A hit (keys at 0, 12 and 24): it holds, moves linearly, then eases. */
-const animation = keyed("thrust", "hit", [0, -30, -90], ["hold", "linear", "smoothstep"]);
+const animation = keyed("hit", [0, -30, -90], ["hold", "linear", "smoothstep"]);
 
 function refused(edit: TimelineEdit, from: RigLabAnimation = animation): string {
   const result = applyTimelineEdit(rig, from, edit);
@@ -46,7 +46,7 @@ describe("timeline edits", () => {
   });
 
   it("run a looping kind's last key back to key 0 at the length", () => {
-    const walk = keyed("walk", "walk", [0, -40, 0, -40], ["linear", "linear", "linear", "smoothstep"]);
+    const walk = keyed("walk", [0, -40, 0, -40], ["linear", "linear", "linear", "smoothstep"]);
     // Walk poses fall every 4 frames: the eased run from 36 back to 0 is symmetric, so frame 42 is halfway.
     expect([12, 24, 36, 42, 48].map((frame) => armAt(walk, frame))).toEqual([-40, 0, -40, -20, 0]);
   });

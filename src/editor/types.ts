@@ -1,7 +1,6 @@
 // The editor's state, actions and the small accessors every part of the editor shares.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
-import type { AnimationKind } from "../format/timing";
 import type { Constraints } from "../solve/constraints";
 import type { History } from "./history";
 import type { LibraryModel } from "./model";
@@ -54,14 +53,9 @@ export type Action =
   | { readonly type: "status"; readonly status: Status | null }
   | { readonly type: "undo" }
   | { readonly type: "redo" }
-  | { readonly type: "addAnimation"; readonly kind: AnimationKind }
-  | { readonly type: "duplicateAnimation"; readonly name: string }
-  | { readonly type: "renameAnimation"; readonly from: string; readonly to: string }
   | { readonly type: "deleteSelection" }
   | { readonly type: "rigEdit"; readonly edit: RigEdit }
   | { readonly type: "timeline"; readonly edit: TimelineEdit }
-  /** Hold a weapon by name on the key at the current frame, or let go of it with null. */
-  | { readonly type: "holdWeapon"; readonly name: string | null }
   | {
     readonly type: "setPose";
     readonly pose: Pose;

@@ -26,7 +26,7 @@ export function togglePin(rig: RigLabRig, pose: Pose, constraints: Constraints, 
     return { ok: true, constraints: { ...constraints, pins: constraints.pins.filter((pin) => pin.chain !== chainName) }, message: `Released ${chainName}` };
   }
   const wielding = weaponGripping(constraints, chainName);
-  if (wielding) return { ok: false, error: `${chainName} holds the ${wielding}; let go of the weapon to pin it` };
+  if (wielding) return { ok: false, error: `${chainName} holds the ${wielding}, so it cannot be pinned` };
   const end = tidyPoint(chainEnd(rig, pose, chain));
   return {
     ok: true,

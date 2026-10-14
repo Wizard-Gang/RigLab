@@ -1,12 +1,13 @@
 {
   "format": "riglab.anim",
-  "version": 2,
-  "name": "hit",
+  "version": 3,
+  "name": "unarmed-idle",
   "rig": "chibi",
-  "kind": "hit",
+  "class": "unarmed",
+  "kind": "idle",
   "fps": 60,
-  "length": 24,
-  "loop": false,
+  "length": 60,
+  "loop": true,
   "keys": [
     {
       "frame": 0,
@@ -50,7 +51,7 @@
       }
     },
     {
-      "frame": 12,
+      "frame": 15,
       "interpolation": "smoothstep",
       "pose": {
         "pelvis": {
@@ -91,7 +92,48 @@
       }
     },
     {
-      "frame": 24,
+      "frame": 30,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 0
+        },
+        "arm-front": {
+          "rotation": 0
+        },
+        "forearm-front": {
+          "rotation": 0
+        },
+        "arm-back": {
+          "rotation": 0
+        },
+        "forearm-back": {
+          "rotation": 0
+        },
+        "head": {
+          "rotation": 0
+        }
+      }
+    },
+    {
+      "frame": 45,
       "interpolation": "smoothstep",
       "pose": {
         "pelvis": {

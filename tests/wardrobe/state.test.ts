@@ -54,6 +54,6 @@ describe("the wardrobe", () => {
     expect(Object.keys(wornParts(LIBRARY, held))).toEqual([...slots, ...Object.keys(LIBRARY.weapons[0]!.parts)]);
     const motions = Array.from({ length: LIBRARY.animations.length + 2 }, (_, index) => shownMotion(LIBRARY, run(start, ...Array.from({ length: index }, (): WardrobeAction => ({ type: "motion", step: 1 }))))?.name ?? null);
     expect(motions).toEqual([null, ...LIBRARY.animations.map((animation) => animation.name), null]);
-    expect(shownMotion(LIBRARY, run(start, { type: "motion", step: -1 }))?.name).toBe("hit");
+    expect(shownMotion(LIBRARY, run(start, { type: "motion", step: -1 }))?.name).toBe("unarmed-hit");
   });
 });

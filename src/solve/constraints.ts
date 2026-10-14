@@ -1,5 +1,6 @@
-// Pins and a held weapon, interpolated between keys and enforced by re-solving the chains that hold them.
+// Pins and the class weapon, interpolated between keys and enforced by re-solving the chains that hold them.
 import type { Pose } from "../../vendor/hexframe/src/rig";
+import { classWeapon } from "../format/animation";
 import type { Key, RigLabAnimation } from "../format/animation";
 import type { Pin } from "../format/constraints";
 import type { Chain, RigLabRig } from "../format/rig";
@@ -9,22 +10,21 @@ import { rotate, toVector } from "./angles";
 import type { Vector } from "./angles";
 import { solveChain } from "./ik";
 import { place } from "./pose";
-import { blendWielded, gripTargets, wieldedOf } from "./weapons";
+import { blendWielded, gripTargets } from "./weapons";
 import type { Wielded } from "./weapons";
 
 export interface Constraints {
   readonly pins: readonly Pin[];
-  /** The weapon the key holds, resolved against the library's weapons; absent or null when none. */
+  /** The class weapon and where the key places its free bodies; absent or null when unarmed. */
   readonly weapon?: Wielded | null;
 }
 
 export const NO_CONSTRAINTS: Constraints = Object.freeze({ pins: [] });
 
-/** A key's constraints; its weapon is resolved against the library's `weapons`. */
-export function constraintsOf(key: Key, weapons: readonly RigLabWeapon[] = []): Constraints {
-  const weapon = key.weapon ? wieldedOf(key.weapon, weapons) : null;
+/** A key's constraints in an animation whose class holds `weapon` (null when unarmed). */
+export function constraintsOf(key: Key, weapon: RigLabWeapon | null = null): Constraints {
   if (!key.pins && !weapon) return NO_CONSTRAINTS;
-  return { pins: key.pins ?? [], ...(weapon ? { weapon } : {}) };
+  return { pins: key.pins ?? [], ...(weapon ? { weapon: { weapon, bodies: key.bodies ?? [] } } : {}) };
 }
 
 export const isEmpty = (constraints: Constraints): boolean => constraints.pins.length === 0 && !constraints.weapon;
@@ -49,11 +49,12 @@ export function blendConstraints(start: Constraints, end: Constraints, progress:
   return { pins, ...(start.weapon ? { weapon: blendWielded(start.weapon, end.weapon, progress) } : {}) };
 }
 
-/** Constraints in force at a frame, eased like the pose between the key in force and the next. */
+/** Constraints in force at a frame, eased like the pose between the key in force and the next; the class weapon is one of `weapons`. */
 export function constraintsAt(animation: RigLabAnimation, frame: number, weapons: readonly RigLabWeapon[] = []): Constraints {
   const { from, to, progress } = segmentAt(animation, frame);
-  const start = constraintsOf(from, weapons);
-  return to ? blendConstraints(start, constraintsOf(to, weapons), progress) : start;
+  const weapon = classWeapon(animation, weapons);
+  const start = constraintsOf(from, weapon);
+  return to ? blendConstraints(start, constraintsOf(to, weapon), progress) : start;
 }
 
 export interface Held {

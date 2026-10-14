@@ -11,7 +11,7 @@ import {
 } from "../../src/solve";
 import type { Constraints, Wielded } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
-import { STAFF, TWIN } from "../format/weapon-fixtures";
+import { heldAnimation, HOLDS, STAFF, TWIN } from "../format/weapon-fixtures";
 
 const rig = LIBRARY.rig;
 const rest = restPose(rig);
@@ -76,39 +76,39 @@ describe("bodies that ride a hand", () => {
   });
 });
 
-describe("weapons between keys", () => {
+describe("a class weapon between keys", () => {
   const keyed = (animation: RigLabAnimation, frame: number, constraints: Constraints): RigLabAnimation => {
     const result = setKeyPose(rig, animation, frame, rest, constraints, weapons);
     if (!result.ok) throw new Error(result.error);
     return result.animation;
   };
   const linear = (animation: RigLabAnimation): RigLabAnimation => ({ ...animation, keys: animation.keys.map((key) => ({ ...key, interpolation: "linear" })) });
+  const staffAttack = (): RigLabAnimation => linear(heldAnimation(rig, STAFF, HOLDS.staff!, "attack"));
 
-  it("are stored on the key, move a free body with the pose's easing and hold when the next key lets go", () => {
-    let animation = keyed(linear(blankAnimation(rig, "swing", "attack")), 0, staffAt(-6, -30));
-    animation = keyed(animation, 8, staffAt(-2, -34, 20));
-    expect(animation.keys[0]!.weapon).toEqual({ name: "staff", bodies: [{ body: "staff", x: -6, y: -30, rotation: 0 }] });
-    expect(constraintsOf(animation.keys[0]!, weapons)).toEqual(staffAt(-6, -30));
+  it("is placed by each key and moves a free body with the pose's easing", () => {
+    const animation = keyed(staffAttack(), 8, staffAt(-2, -34, 20));
+    expect(animation.keys[1]!.bodies).toEqual([{ body: "staff", x: -2, y: -34, rotation: 20 }]);
+    expect(constraintsOf(animation.keys[0]!, STAFF)).toEqual(staffAt(-6, -30));
     expect(constraintsAt(animation, 4, weapons).weapon!.bodies).toEqual([{ body: "staff", x: -4, y: -32, rotation: 10 }]);
-    expect(constraintsAt(animation, 12, weapons).weapon!.bodies).toEqual([{ body: "staff", x: -2, y: -34, rotation: 20 }]);
-    expect(constraintsAt(animation, 20, weapons).weapon).toBeUndefined();
+    expect(constraintsAt(animation, 12, weapons).weapon!.bodies).toEqual([{ body: "staff", x: -4, y: -32, rotation: 10 }]);
+    expect(constraintsAt(blankAnimation(rig, "attack"), 4, weapons).weapon).toBeUndefined();
   });
 
-  it("play on Hexframe's engine with both hands on the staff at every pose", () => {
-    let animation = keyed(linear(blankAnimation(rig, "swing", "attack")), 0, staffAt(-6, -30));
-    animation = keyed(animation, 8, staffAt(-2, -34, 20));
+  it("plays on Hexframe's engine with both hands on the staff at every pose", () => {
+    let animation = keyed(staffAttack(), 8, staffAt(-2, -34, 20));
     animation = keyed(animation, 16, staffAt(-4, -28, -10));
     const engine = engineOf(rig, animation, weapons);
-    for (let frame = 0; frame <= 16; frame += 2) {
+    for (let frame = 0; frame <= 24; frame += 2) {
       const played = playAt(engine, frame);
       expect(played.violations).toEqual([]);
       expect(Math.max(...misses(rig, played.pose, played.constraints.weapon!))).toBeLessThan(1e-5);
     }
+    // Without its class weapon among the given weapons, the animation plays unarmed.
     expect(engineOf(rig, animation).poses[0]!.constraints.weapon).toBeUndefined();
   });
 
-  it("refuse a pin on a hand that holds the weapon, and keep the weapon when a foot is pinned", () => {
-    expect(togglePin(rig, rest, staffAt(-6, -30), "arm-back")).toEqual({ ok: false, error: "arm-back holds the staff; let go of the weapon to pin it" });
+  it("refuses a pin on a hand that holds it, and keeps it when a foot is pinned", () => {
+    expect(togglePin(rig, rest, staffAt(-6, -30), "arm-back")).toEqual({ ok: false, error: "arm-back holds the staff, so it cannot be pinned" });
     const foot = togglePin(rig, rest, staffAt(-6, -30), "leg-front");
     expect(foot.ok && foot.constraints).toEqual({ pins: [{ chain: "leg-front", x: 5, y: 0 }], weapon: staffAt(-6, -30).weapon });
   });

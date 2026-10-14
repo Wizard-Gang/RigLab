@@ -1,12 +1,13 @@
 {
   "format": "riglab.anim",
-  "version": 2,
-  "name": "idle",
+  "version": 3,
+  "name": "unarmed-jump",
   "rig": "chibi",
-  "kind": "idle",
+  "class": "unarmed",
+  "kind": "jump",
   "fps": 60,
-  "length": 60,
-  "loop": true,
+  "length": 36,
+  "loop": false,
   "keys": [
     {
       "frame": 0,
@@ -50,7 +51,7 @@
       }
     },
     {
-      "frame": 15,
+      "frame": 12,
       "interpolation": "smoothstep",
       "pose": {
         "pelvis": {
@@ -91,7 +92,7 @@
       }
     },
     {
-      "frame": 30,
+      "frame": 24,
       "interpolation": "smoothstep",
       "pose": {
         "pelvis": {
@@ -132,7 +133,7 @@
       }
     },
     {
-      "frame": 45,
+      "frame": 36,
       "interpolation": "smoothstep",
       "pose": {
         "pelvis": {

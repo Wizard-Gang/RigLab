@@ -44,7 +44,7 @@ describe("the chibi on Hexframe's rig engine", () => {
   it("keeps every limb at its rest length on every frame the engine plays, moving only the root", () => {
     const rest = new Map(skeletonFor(rig, {}).segments.map((segment) => [`${segment.bone}:${segment.kind}`, segmentLength(segment)]));
     for (const kind of ANIMATION_KINDS) {
-      const blank = blankAnimation(LIBRARY.rig, kind, kind);
+      const blank = blankAnimation(LIBRARY.rig, kind);
       const animation = {
         ...blank,
         keys: blank.keys.map((key, index) => ({

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { visualPaintOrder } from "../../vendor/hexframe/src/rig";
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
 import { LIBRARY } from "../../src/library/active";
@@ -7,7 +8,9 @@ import { setKeyPose } from "../../src/editor/poseEdits";
 import { ANIMATION_KINDS, poseFrames } from "../../src/format";
 import type { AnimationKind, Interpolation, RigLabAnimation } from "../../src/format";
 import { toHexframeClip } from "../../src/hexframe/adapter";
-import { chainEnd, constraintsAt, dragInPose, engineOf, NO_CONSTRAINTS, playAt, samplePose, togglePin } from "../../src/solve";
+import { paintOrder } from "../../src/hexframe/art";
+import { chainEnd, constraintsAt, dragInPose, engineOf, gripTargets, NO_CONSTRAINTS, playAt, runtimeRig, samplePose, togglePin } from "../../src/solve";
+import { heldAnimation } from "../format/weapon-fixtures";
 
 const rig = LIBRARY.rig;
 const INTERPOLATIONS: readonly Interpolation[] = ["smoothstep", "linear", "hold"];
@@ -22,7 +25,7 @@ function difference(a: Pose, b: Pose): number {
 
 /** A kind's keys posed apart, with the root moving, cycling through every interpolation unless one is given. */
 function posed(kind: AnimationKind, interpolation?: Interpolation): RigLabAnimation {
-  const blank = blankAnimation(rig, kind, kind);
+  const blank = blankAnimation(rig, kind);
   return {
     ...blank,
     keys: blank.keys.map((key, index) => ({
@@ -78,7 +81,7 @@ describe("engine playback", () => {
   it("holds pins on each of Hexframe's poses, and moves pins linearly between them", () => {
     const pinned = togglePin(rig, restPose(rig), NO_CONSTRAINTS, "leg-front");
     if (!pinned.ok) throw new Error(pinned.error);
-    const blank = blankAnimation(rig, "step", "attack");
+    const blank = blankAnimation(rig, "attack");
     const first = setKeyPose(rig, blank, 0, restPose(rig), pinned.constraints);
     if (!first.ok) throw new Error(first.error);
     const stepped = dragInPose(rig, restPose(rig), pinned.constraints, { kind: "tip", bone: "shin-front" }, { x: 12, y: -3 });
@@ -98,6 +101,25 @@ describe("engine playback", () => {
     const [before, after, between] = [0, 2, 1].map((frame) => playAt(engine, frame).constraints.pins[0]!);
     expect(between.x).toBeCloseTo((before!.x + after!.x) / 2, 12);
     expect(between.y).toBeCloseTo((before!.y + after!.y) / 2, 12);
+  });
+
+  it("holds the sword through a hand-built sword attack, on every frame, and paints it with both-front", () => {
+    const sword = LIBRARY.weapons.find((item) => item.name === "sword")!;
+    const attack = heldAnimation(rig, sword.weapon, sword.hold, "attack");
+    const engine = engineOf(rig, attack, [sword.weapon]);
+    const clip = toHexframeClip(rig, attack, [sword.weapon]);
+    for (let frame = 0; frame <= attack.length; frame += 1) {
+      const played = playAt(engine, frame);
+      expect(played.constraints.weapon?.weapon, `frame ${frame}`).toBe(sword.weapon);
+      expect(difference(played.pose, sampleClip(clip, frame)), `frame ${frame}`).toBeLessThan(1e-9);
+      if (!poseFrames(attack.length).includes(frame)) continue;
+      expect(played.violations, `frame ${frame}`).toEqual([]);
+      for (const grip of gripTargets(played.constraints.weapon!)) {
+        const hand = chainEnd(rig, played.pose, rig.chains.find((chain) => chain.name === grip.chain)!);
+        expect(Math.hypot(hand.x - grip.target.x, hand.y - grip.target.y), `${grip.label} at ${frame}`).toBeLessThan(1e-6);
+      }
+    }
+    expect(paintOrder(rig, runtimeRig(rig), attack.name, attack.class)).toEqual(visualPaintOrder(runtimeRig(rig), 1, "both-front"));
   });
 
   it("wraps a loop back to its first pose at the length, and holds a one-shot's last pose after it", () => {

@@ -1,20 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { blankAnimation } from "../../src/editor/animations";
 import { libraryModel, validateModel } from "../../src/editor/model";
 import type { LibraryModel } from "../../src/editor/model";
 import { LIBRARY } from "../../src/library/active";
-import { HOLDS, STAFF, TWIN } from "./weapon-fixtures";
+import { heldAnimation, HOLDS, STAFF, TWIN } from "./weapon-fixtures";
 
 type Mutable = Record<string, any>;
 
-/** The chibi holding the staff on its idle's first key and the twin blades on its second. */
+/** A library whose only weapons are the staff and the twin blades, with a staff idle and a twin walk. */
 function armed(): LibraryModel {
-  const idle = blankAnimation(LIBRARY.rig, "idle", "idle");
-  const keys = idle.keys.map((key, index) => (
-    index === 0 ? { ...key, weapon: { name: "staff", bodies: [{ body: "staff", x: -6, y: -30, rotation: 0 }] } }
-      : index === 1 ? { ...key, weapon: { name: "twin", bodies: [] } } : key
-  ));
-  return { ...libraryModel(LIBRARY), animations: [{ ...idle, keys }], weapons: [{ weapon: STAFF, hold: HOLDS.staff! }, { weapon: TWIN, hold: HOLDS.twin! }] };
+  return {
+    ...libraryModel(LIBRARY),
+    weapons: [{ weapon: STAFF, hold: HOLDS.staff! }, { weapon: TWIN, hold: HOLDS.twin! }],
+    animations: [heldAnimation(LIBRARY.rig, STAFF, HOLDS.staff!, "idle"), heldAnimation(LIBRARY.rig, TWIN, HOLDS.twin!, "walk")],
+  };
 }
 
 function errorsOf(change: (value: Mutable) => void): string {
@@ -27,50 +25,52 @@ function errorsOf(change: (value: Mutable) => void): string {
 
 const KEY = "$.animations[0].keys[0]";
 
-describe("keys that hold weapons", () => {
+describe("keys of an armed class", () => {
   it("validate with the library's weapons", () => {
-    const result = validateModel(armed());
+    const model = armed();
+    const result = validateModel(model);
     expect(result.ok ? [] : result.errors).toEqual([]);
+    expect(model.animations.map((animation) => [animation.name, animation.class])).toEqual([["staff-idle", "staff"], ["twin-walk", "twin"]]);
   });
 
-  it("need no weapon when no key holds one", () => {
+  it("need no weapon when every animation is unarmed", () => {
     const plain = libraryModel(LIBRARY);
     expect(validateModel({ ...plain, weapons: [] }).ok).toBe(true);
   });
 
-  it("must name one of the library's weapons", () => {
+  it("belong to a class the library has", () => {
     expect(errorsOf((value) => {
       value.weapons = [value.weapons[1]];
-    })).toBe(`${KEY}.weapon.name: must name one of the library's weapons`);
+    })).toBe("$.animations[0].class: must be 'unarmed', 'twin'");
   });
 
-  it("place exactly the weapon's free bodies", () => {
+  it("place exactly the class weapon's free bodies", () => {
     expect(errorsOf((value) => {
-      value.animations[0].keys[0].weapon.bodies = [];
-    })).toBe(`${KEY}.weapon.bodies: must place free body 'staff'`);
+      value.animations[0].keys[0].bodies = [];
+    })).toBe(`${KEY}.bodies: must place free body 'staff'`);
     expect(errorsOf((value) => {
-      const placement = value.animations[0].keys[0].weapon.bodies[0];
-      value.animations[0].keys[0].weapon.bodies = [placement, { ...placement }, { body: "hilt", x: 0, y: 0, rotation: "up" }];
+      const placement = value.animations[0].keys[0].bodies[0];
+      value.animations[0].keys[0].bodies = [placement, { ...placement }, { body: "hilt", x: 0, y: 0, rotation: "up" }];
     })).toBe([
-      `${KEY}.weapon.bodies[1].body: places 'staff' twice`,
-      `${KEY}.weapon.bodies[2].body: must name a free body of weapon 'staff'`,
-      `${KEY}.weapon.bodies[2].rotation: must be a finite number`,
+      `${KEY}.bodies[1].body: places 'staff' twice`,
+      `${KEY}.bodies[2].body: must name a free body of weapon 'staff'`,
+      `${KEY}.bodies[2].rotation: must be a finite number`,
     ].join("\n"));
     expect(errorsOf((value) => {
-      value.animations[0].keys[1].weapon.bodies = [{ body: "front", x: 0, y: 0, rotation: 0 }];
-    })).toBe("$.animations[0].keys[1].weapon.bodies[0].body: 'front' rides its hand and takes no placement");
+      value.animations[1].keys[1].bodies = [{ body: "front", x: 0, y: 0, rotation: 0 }];
+    })).toBe("$.animations[1].keys[1].bodies: must be left out: every body of the twin rides a hand");
   });
 
-  it("refuse the legacy prop beside a weapon, and never pin a chain the weapon grips", () => {
+  it("refuse the legacy prop, and never pin a chain the class weapon grips", () => {
     expect(errorsOf((value) => {
       value.animations[0].keys[0].prop = { name: "prop", x: 0, y: 0, rotation: 0, grips: [{ chain: "leg-front", at: [0, 0] }] };
     })).toBe(`${KEY}: has unknown field 'prop'`);
     expect(errorsOf((value) => {
       value.animations[0].keys[0].pins = [{ chain: "arm-back", x: 0, y: 0 }];
-    })).toBe(`${KEY}.weapon.name: grips chain 'arm-back', which the key already holds`);
+    })).toBe(`${KEY}.pins[0].chain: 'arm-back' grips the staff, so it cannot be pinned`);
     expect(errorsOf((value) => {
-      value.animations[0].keys[0].weapon.grip = "near";
-    })).toBe(`${KEY}.weapon: has unknown field 'grip'`);
+      value.animations[0].keys[0].bodies[0].grip = "near";
+    })).toBe(`${KEY}.bodies[0]: has unknown field 'grip'`);
   });
 
   it("refuse an invalid or duplicated library weapon at its own path", () => {

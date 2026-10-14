@@ -1,10 +1,10 @@
-// One acceptance run per weapon, through the editor's own reducer and export path: the chibi plants both feet, picks
-// the weapon at each of an attack's four keys and swings it, then the bundle is exported with baked frames and what it
-// wrote is checked. Every frame must keep the skeleton connected, the feet planted and the weapon in hand, and Hexframe
-// must play the exported clip exactly as RigLab baked it.
+// One acceptance run per weapon, through the editor's own reducer and export path: in the weapon's class attack, the
+// chibi plants both feet at each of its four keys and swings the weapon, then the bundle is exported with baked frames
+// and what it wrote is checked. Every frame must keep the skeleton connected, the feet planted and the weapon in hand,
+// and Hexframe must play the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
-import { weaponRigs } from "../../src/editor/model";
+import { libraryModel, weaponRigs } from "../../src/editor/model";
 import type { LibraryModel } from "../../src/editor/model";
 import { activeAnimationOf, editorReducer, initialState, modelOf } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
@@ -15,6 +15,7 @@ import { constraintsAt, dragInPose, engineOf, gripCenter, place, playAt, rotate,
 import type { DragHandle } from "../../src/solve";
 import { LIBRARY } from "../../src/library/active";
 import { written } from "../export/written";
+import { heldAnimation } from "../format/weapon-fixtures";
 
 const TOLERANCE = 1e-5;
 /** Hexframe interpolates joint angles between its 13 poses, not grips, so a free body's grips may drift this far there. */
@@ -76,12 +77,14 @@ const SWINGS: Record<string, readonly (Swing | Hands)[]> = {
 };
 
 function author(name: string): LibraryModel {
-  let state = run(initialState(), { type: "activateAnimation", name: "attack" }, { type: "renameAnimation", from: "attack", to: `${name}-attack` }, { type: "setMode", mode: "pose" });
-  const weapon = LIBRARY.weapons.find((item) => item.name === name)!.weapon;
+  // The class's attack starts hand-built: every key at rest, holding the weapon at its hold.
+  const { weapon, hold } = LIBRARY.weapons.find((item) => item.name === name)!;
+  const model = libraryModel(LIBRARY);
+  let state = run(initialState({ ...model, animations: [...model.animations, heldAnimation(LIBRARY.rig, weapon, hold, "attack")] }));
+  state = run(state, { type: "activateAnimation", name: `${name}-attack` }, { type: "setMode", mode: "pose" });
   for (const [index, frame] of [0, 8, 16, 24].entries()) {
     state = run(state, { type: "setFrame", frame });
     state = pin(pin(state, "leg-front"), "leg-back");
-    state = run(state, { type: "holdWeapon", name });
     const swing = SWINGS[name]![index]!;
     if ("front" in swing) {
       state = drag(state, { kind: "tip", bone: "forearm-front" }, swing.front);
@@ -94,7 +97,7 @@ function author(name: string): LibraryModel {
     const center = gripCenter(body);
     const toward = rotate({ x: body.axis[1][0] - center[0], y: body.axis[1][1] - center[1] }, swing.rotation);
     state = holds(drag(state, { kind: "weapon-turn", body: body.name }, { x: swing.at.x + toward.x, y: swing.at.y + toward.y }));
-    expect(activeAnimationOf(state)!.keys.find((key) => key.frame === frame)!.weapon!.bodies[0]!.rotation).toBeCloseTo(swing.rotation, 5);
+    expect(activeAnimationOf(state)!.keys.find((key) => key.frame === frame)!.bodies![0]!.rotation).toBeCloseTo(swing.rotation, 5);
   }
   state = run(state, { type: "timeline", edit: { kind: "setInterpolation", frame: 8, interpolation: "linear" } });
   return modelOf(state);
@@ -113,7 +116,7 @@ describe("weapon acceptance", () => {
       const model = author(name);
       const named = (animations: LibraryModel["animations"]) => animations.find((item) => item.name === `${name}-attack`)!;
       const animation = named(model.animations);
-      expect(animation.keys.map((key) => [key.frame, key.weapon?.name, key.pins?.length])).toEqual([0, 8, 16, 24].map((frame) => [frame, name, 2]));
+      expect([animation.class, ...animation.keys.map((key) => [key.frame, key.bodies?.length ?? 0, key.pins?.length])]).toEqual([name, ...[0, 8, 16, 24].map((frame) => [frame, name === "daggers" ? 0 : 1, 2])]);
       // The bundle's files are the model's own, and its baked frames are a fresh bake of them.
       const bundle = await written(await buildBundle(model, { baked: true, generator: "RigLab acceptance" }), model);
       const { rig, weapons } = bundle;

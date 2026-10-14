@@ -4,11 +4,12 @@ import { blankAnimation, restPose, uniqueName } from "../../src/editor/animation
 import { heldWeapons, libraryModel, validateModel, weaponRigs } from "../../src/editor/model";
 import type { LibraryModel } from "../../src/editor/model";
 import { LIBRARY } from "../../src/library/active";
+import { heldAnimation } from "../format/weapon-fixtures";
 
 type Mutable = Record<string, any>;
 
 /** The library with one blank animation of each kind. */
-const moves = (): LibraryModel => ({ ...libraryModel(LIBRARY), animations: ANIMATION_KINDS.map((kind) => blankAnimation(LIBRARY.rig, kind, kind)) });
+const moves = (): LibraryModel => ({ ...libraryModel(LIBRARY), animations: ANIMATION_KINDS.map((kind) => blankAnimation(LIBRARY.rig, kind)) });
 
 function errorsOf(change: (value: Mutable) => void): string {
   const value = structuredClone(moves()) as Mutable;
@@ -22,20 +23,22 @@ describe("the editor's model", () => {
   it("is the library's chibi, every weapon with its hold, and its animations, in config order", () => {
     const model = libraryModel(LIBRARY);
     expect(validateModel(model).ok).toBe(true);
-    expect([model.rig.name, model.animations.map((animation) => animation.name)]).toEqual(["chibi", ["idle", "walk", "jump", "attack", "hit"]]);
+    expect([model.rig.name, model.animations.map((animation) => animation.name)]).toEqual(["chibi", ["unarmed-idle", "unarmed-walk", "unarmed-jump", "unarmed-attack", "unarmed-hit"]]);
     expect(model.weapons).toEqual(LIBRARY.weapons.map((item) => ({ weapon: item.weapon, hold: item.hold })));
     expect(weaponRigs(model).map((weapon) => weapon.name)).toEqual(["sword", "spear", "axe", "daggers"]);
     expect(model.weapons[3]!.hold).toEqual({ name: "daggers", bodies: [] });
   });
 
-  it("lists only the weapons some key holds, in config order", () => {
+  it("lists only the weapons some animation's class holds, in config order", () => {
     const model = moves();
     expect(heldWeapons(model)).toEqual([]);
-    const hold = (name: string) => model.weapons.find((item) => item.weapon.name === name)!.hold;
-    const animations = model.animations.map((animation, index) => (index === 3 ? {
-      ...animation,
-      keys: animation.keys.map((key, at) => (at === 0 ? { ...key, weapon: hold("axe") } : at === 1 ? { ...key, weapon: hold("sword") } : key)),
-    } : animation));
+    const held = (name: string) => model.weapons.find((item) => item.weapon.name === name)!;
+    const animations = [
+      ...model.animations,
+      heldAnimation(LIBRARY.rig, held("axe").weapon, held("axe").hold, "attack"),
+      heldAnimation(LIBRARY.rig, held("sword").weapon, held("sword").hold, "walk"),
+    ];
+    expect(validateModel({ ...model, animations }).ok).toBe(true);
     expect(heldWeapons({ ...model, animations }).map((weapon) => weapon.name)).toEqual(["sword", "axe"]);
   });
 
@@ -50,8 +53,8 @@ describe("the editor's model", () => {
       value.animations[0].fps = 14;
     })).toBe("$.animations[0].fps: must be 60, Hexframe's clock");
     expect(errorsOf((value) => {
-      value.animations[1].name = value.animations[0].name;
-    })).toMatch(/\$\.animations\[1\]\.name: duplicates animation/);
+      value.animations[1] = value.animations[0];
+    })).toBe("$.animations[1].name: duplicates animation 'unarmed-idle': a library holds one animation of each class and kind");
   });
 
   it("refuses a weapon or hold at its own path", () => {
@@ -74,10 +77,10 @@ describe("the editor's model", () => {
 });
 
 describe("animation helpers", () => {
-  it("starts each kind with its rest-pose keys, easing in and out, on Hexframe's clock", () => {
+  it("starts each kind's unarmed animation with its rest-pose keys, easing in and out, on Hexframe's clock", () => {
     for (const kind of ANIMATION_KINDS) {
-      const animation = blankAnimation(LIBRARY.rig, "moves", kind);
-      expect([animation.kind, animation.fps, animation.length, animation.loop]).toEqual([kind, 60, KINDS[kind].length, KINDS[kind].loop]);
+      const animation = blankAnimation(LIBRARY.rig, kind);
+      expect([animation.name, animation.class, animation.kind, animation.fps, animation.length, animation.loop]).toEqual([`unarmed-${kind}`, "unarmed", kind, 60, KINDS[kind].length, KINDS[kind].loop]);
       expect(animation.keys.map((key) => key.frame)).toEqual(keyFrames(kind));
       for (const key of animation.keys) expect(key).toEqual({ frame: key.frame, interpolation: "smoothstep", pose: restPose(LIBRARY.rig) });
       expect(validateAnimation(animation, LIBRARY.rig).ok).toBe(true);

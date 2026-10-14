@@ -13,7 +13,7 @@ import type { Action, EditorState } from "../../src/editor/state";
 const base: LibraryModel = {
   ...libraryModel(LIBRARY),
   animations: ANIMATION_KINDS.map((kind) => {
-    const blank = blankAnimation(LIBRARY.rig, kind, kind);
+    const blank = blankAnimation(LIBRARY.rig, kind);
     return {
       ...blank,
       keys: blank.keys.map((key, index) => ({

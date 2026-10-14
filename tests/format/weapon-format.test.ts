@@ -25,6 +25,10 @@ describe("riglab.weapon", () => {
     expect(weaponChains(TWIN)).toEqual(["arm-front", "arm-back"]);
   });
 
+  it("refuses the name 'unarmed', the class that holds no weapon", () => {
+    expect(errorsOf(STAFF, (value) => { value.name = "unarmed"; })).toBe("$.name: must not be 'unarmed', the class that holds no weapon");
+  });
+
   it("refuses unknown fields and a wrong header, each with its path", () => {
     expect(errorsOf(STAFF, (value) => {
       value.extra = 1;

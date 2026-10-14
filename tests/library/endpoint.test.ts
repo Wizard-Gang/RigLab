@@ -23,11 +23,16 @@ const copy = (): string => {
   cpSync(PLACEHOLDER, dir, { recursive: true });
   return dir;
 };
-const NAMES = ["idle", "walk", "jump", "attack", "hit"];
+const NAMES = ["unarmed-idle", "unarmed-walk", "unarmed-jump", "unarmed-attack", "unarmed-hit"];
 const placeholderJson = (path: string) => JSON.parse(readFileSync(join(PLACEHOLDER, path), "utf8"));
-const save = (rename: Record<string, string> = {}) => ({
+/** The placeholder's rig and animations, with each animation `moves` names moved to that class: the daggers need no change to their keys. */
+const save = (moves: Record<string, string> = {}) => ({
   rig: placeholderJson("rigs/chibi.rig.json"),
-  animations: NAMES.map((name) => ({ ...placeholderJson(`animations/${name}.anim.json`), name: rename[name] ?? name })),
+  animations: NAMES.map((name) => {
+    const animation = placeholderJson(`animations/${name}.anim.json`);
+    const moved = moves[name];
+    return moved ? { ...animation, class: moved, name: `${moved}-${animation.kind}` } : animation;
+  }),
 });
 
 const HEADERS = { host: "localhost:5180", origin: "http://localhost:5180", "content-type": "application/json", "sec-fetch-site": "same-origin" };
@@ -57,10 +62,10 @@ describe("who may save", () => {
 describe("handling a save", () => {
   it("writes a real folder and answers with what changed", async () => {
     const dir = copy();
-    const outcome = await handleSave(request({ body: JSON.stringify(save({ walk: "stride" })) }), { dir, label: "~/lib" }, false);
+    const outcome = await handleSave(request({ body: JSON.stringify(save({ "unarmed-walk": "daggers" })) }), { dir, label: "~/lib" }, false);
     expect(outcome.status).toBe(200);
-    expect(outcome.body).toMatchObject({ ok: true, library: "~/lib", written: ["animations/stride.anim.json", "config.txt"], removed: ["animations/walk.anim.json"] });
-    expect(readFileSync(join(dir, "config.txt"), "utf8")).toContain("animation stride = animations/stride.anim.json");
+    expect(outcome.body).toMatchObject({ ok: true, library: "~/lib", written: ["animations/daggers-walk.anim.json", "config.txt"], removed: ["animations/unarmed-walk.anim.json"] });
+    expect(readFileSync(join(dir, "config.txt"), "utf8")).toContain("animation daggers-walk = animations/daggers-walk.anim.json");
     expect(outcome.result?.saveId).toMatch(/^[0-9a-f-]{36}$/);
   });
 
@@ -101,11 +106,11 @@ describe("the dev server's save route", () => {
   it("tells every page about its own save, and still reloads them for an outside edit", async () => {
     const dir = copy();
     const { watcher, send, post } = devServer(dir);
-    const answer = await post(save({ walk: "stride" }));
+    const answer = await post(save({ "unarmed-walk": "daggers" }));
     expect(answer.status).toBe(200);
     expect(send).toHaveBeenCalledWith({ type: "custom", event: SAVED_EVENT, data: { saveId: answer.body.saveId, written: answer.body.written, removed: answer.body.removed } });
     send.mockClear();
-    for (const path of ["config.txt", "animations/stride.anim.json", "animations/walk.anim.json", `${answer.body.backup}/config.txt`]) {
+    for (const path of ["config.txt", "animations/daggers-walk.anim.json", "animations/unarmed-walk.anim.json", `${answer.body.backup}/config.txt`]) {
       watcher.emit("all", "change", join(dir, path));
     }
     for (const path of ["backups", String(answer.body.backup), `${answer.body.backup}/animations`]) watcher.emit("all", "addDir", join(dir, path));
