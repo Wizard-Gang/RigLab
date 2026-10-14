@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-035 — [BUILD] Restart the dev server when the library plugin's code changes
-
-- Dependency: None.
-- Why: The owner asked on 2026-10-13 to streamline development. The library plugin runs inside Vite's config, because `scripts/library-plugin.mjs` imports `src/library/plugin.ts` through `runnerImport`. Vite does not restart for those sources, so a change under `src/library/` or `src/format/` reaches the dev server's plugin only after the owner restarts `npm start`. Most tasks below change those files.
-- Scope: `riglabLibrary` hands the plugin the `dependencies` that `runnerImport` returns. On the dev server, the plugin watches those files. A change logs the file and calls `server.restart()`, debounced so that a burst of changes restarts once. The restarted server imports the plugin afresh. If the new code fails to load, Vite keeps the running server and logs the error, and the next good change restarts it. Builds and Vitest are unchanged. Update the README's run section and ARCHITECTURE (Library folders).
-- Non-goals: Restarting on client-only changes, which HMR already covers, launcher changes, and the library folder's own reloads.
-- Acceptance: A unit test drives the plugin's `configureServer` with a fake server and watcher. A change to a dependency restarts once, a burst restarts once, and a change to a library file or another source does not restart. The live check runs a worktree dev server with `RIGLAB_PORT=5190 RIGLAB_NO_OPEN=1`. Touching `src/library/load.ts` restarts it with a log line, and the page keeps working. A syntax error there is logged while the old server keeps serving, and fixing it restarts the server. `npm run check` passes.
-- Validation: Pinned `npm ci`, the focused plugin test, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the live worktree check, and exact-head CI. After the merge, the owner restarts `npm start` once to load the new plugin. Later plugin changes restart the server on their own.
-- Authorities: `scripts/library-plugin.mjs`, `src/library/plugin.ts`, `vite.config.ts`, Vite 8.3.1's `runnerImport` and `server.restart`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's direction on 2026-10-13.
-
 ### RL-036 — [REFACTOR] Remove the legacy prop
 
 - Dependency: None.
