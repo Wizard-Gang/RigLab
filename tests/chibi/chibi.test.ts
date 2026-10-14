@@ -49,6 +49,11 @@ describe("chibi rig", () => {
     expect(createRig(chibi as unknown as RigContract).bones).toHaveLength(11);
   });
 
+  it("paints both arms in front while a two-handed weapon is held, and the far arm behind otherwise", () => {
+    expect(chibi.depthProfiles?.byClip).toEqual({ sword: "both-front", spear: "both-front", axe: "both-front" });
+    expect(chibi.depthProfiles?.default).toBe("anatomical");
+  });
+
   it("stands on the ground about two heads tall", () => {
     expect(tipOf(chibi, "shin-front").y).toBe(0);
     expect(tipOf(chibi, "shin-back").y).toBe(0);

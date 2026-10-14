@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-034 — [FIX] Paint both arms in front of the torso while a two-handed weapon is held
-
-- Dependency: None.
-- Why: The owner reported on 2026-10-13 that "the second arm disappears when using the axe / sword". The chibi rig's `depthProfiles.byClip` is empty, so every frame paints with the default `anatomical` profile, which puts the far arm (`arm-front` when facing right) behind the torso. A two-grip weapon puts that hand on a grip in front of the body, so the torso hides the arm and its hand. The sword, spear and axe are affected. Each dagger rides one hand, and the far one rightly stays behind the body. On main at d39a5f3, headless Chrome shows the far arm hidden behind the torso while the sword is held, in the editor (Pose, Art on) and in the wardrobe, and `tests/weapons/weapon-art.test.ts` asserts that wrong order.
-- Scope: Map `sword`, `spear` and `axe` in the chibi rig's `byClip` to its existing `both-front` profile. The daggers keep the default. `paintOrder` and `withWeaponArt` (`src/hexframe/art.ts`) take the held weapon's name and resolve the profile with Hexframe's own `depthProfileName(rig, animation, weapon)`. An entry for the animation wins, then one for the weapon, then the default. The editor's art layer passes the weapon held at the shown frame. The wardrobe's figure passes the weapon it shows, at rest or in motion. Change `placeholder-library/rigs/chibi.rig.json` in the commit. Right after the merge, change the owner's `~/Documents/RigLab/rigs/chibi.rig.json` the same way, after copying it to `backups/<UTC stamp>-rl-034/`. Correct the weapon-art test, and update ARCHITECTURE (art paint order).
-- Non-goals: A depth-profile editor, facing left, art changes, and the class model. RL-039 looks up the same entries by class.
-- Acceptance: Unit tests on the placeholder rig: a frame holding the sword, spear or axe paints `torso` before `arm-front` and `forearm-front`, and the weapon just under `forearm-back`. The daggers and an unarmed frame keep the `anatomical` order, and an animation's own `byClip` entry still wins over its weapon's. The chibi test pins the three entries. Run headless Chrome against a worktree dev server on a temporary copy of the owner's folder. With the sword, spear and axe, both arms and hands show over the torso in the editor and the wardrobe, and the daggers look as they do now. After the owner's rig is changed, `check:library` passes on the owner's folder, and the backup holds the previous rig. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused art, weapon and chibi tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, `npm run check:library` on the owner's folder, the headless Chrome screenshots, and exact-head CI.
-- Authorities: `src/hexframe/art.ts`, `src/app/App.tsx`, `src/wardrobe/Figure.tsx`, `vendor/hexframe/src/rig/depth.ts`, `vendor/hexframe/src/rig/paint-order.ts`, `placeholder-library/rigs/chibi.rig.json`, `~/Documents/RigLab/rigs/chibi.rig.json`, `tests/weapons/weapon-art.test.ts`, `tests/chibi/chibi.test.ts`, `docs/ARCHITECTURE.md`, and the owner's report on 2026-10-13.
-
 ### RL-035 — [BUILD] Restart the dev server when the library plugin's code changes
 
 - Dependency: None.
@@ -61,11 +51,11 @@
 
 ### RL-039 — [FEAT] Give every animation a class
 
-- Dependency: RL-034, RL-036 and RL-038.
+- Dependency: RL-036 and RL-038.
 - Why: The owner said on 2026-10-13 that weapons are classes of animation: unarmed, 2h sword, 2h spear, 2h axe and daggers, with the spear kept as the fifth class. "Kind" already means idle, walk, jump, attack or hit. A class holds its weapon on every key, where today any key can pick or drop any weapon. The owner chose one animation of each kind per class, a fixed grid named `<class>-<kind>`.
 - Scope: The change has four parts.
   - Format. `riglab.anim` version 3 adds `class`, which is `unarmed` or the name of a library weapon. Each key's `weapon` gives way to `bodies`, which place the class weapon's free bodies with `body`, `x`, `y` and `rotation`. Every key of a sword, spear or axe animation places its body. Unarmed and dagger keys place none. A pin may not hold a chain the class weapon grips. The name must be `<class>-<kind>`, so a library holds at most one animation per class and kind. No weapon may be named `unarmed`.
-  - Playback and export. The solver, engine, bake, bundle and Hexframe clip take the weapon from the class. Paint order looks up the class instead of the held weapon, and RL-034's `byClip` entries already use those names. The Hexframe rig export also maps each animation's clip key to its class's profile, so Hexframe paints exported clips the same way.
+  - Playback and export. The solver, engine, bake, bundle and Hexframe clip take the weapon from the class. Paint order looks up the class instead of the held weapon, and the chibi rig's `byClip` entries for `sword`, `spear` and `axe` already use those names. The Hexframe rig export also maps each animation's clip key to its class's profile, so Hexframe paints exported clips the same way.
   - Editor. The class replaces the per-key Weapon picker: its keys always hold its weapon, and Pose mode still moves and turns free bodies per key. The Animations panel lists each animation by class and kind. The grid fixes the animations, so the panel's New, Duplicate and Delete controls and the inspector's rename field go away. The Delete key deletes only joints.
   - Migration. Both libraries' five animations become version 3 `unarmed-<kind>` files at `animations/unarmed-<kind>.anim.json`, with matching `config.txt` lines. Right after the merge, back up the owner's folder under `backups/`, migrate it, and run `check:library`.
 
