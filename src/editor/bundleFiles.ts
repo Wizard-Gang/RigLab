@@ -1,6 +1,6 @@
-// Browser access for export bundles: a folder through the File System Access API, or a zip download and upload.
+// Browser access for export bundles: write a folder through the File System Access API, or download a zip.
 import { EXPORT_ROOT } from "../export/bundle";
-import { unzip, zip } from "../export/zip";
+import { zip } from "../export/zip";
 import type { Files } from "../export/zip";
 
 interface Writable {
@@ -9,21 +9,16 @@ interface Writable {
 }
 
 interface FileEntryHandle {
-  readonly kind: "file";
-  readonly name: string;
-  getFile(): Promise<File>;
   createWritable(): Promise<Writable>;
 }
 
 interface FolderHandle {
-  readonly kind: "directory";
   readonly name: string;
   getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<FolderHandle>;
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileEntryHandle>;
-  values(): AsyncIterable<FolderHandle | FileEntryHandle>;
 }
 
-type FolderPicker = (options?: { mode?: "read" | "readwrite" }) => Promise<FolderHandle>;
+type FolderPicker = (options?: { mode?: "readwrite" }) => Promise<FolderHandle>;
 
 const folderPicker = (): FolderPicker | undefined => (window as unknown as { showDirectoryPicker?: FolderPicker }).showDirectoryPicker;
 const cancelled = (error: unknown): boolean => error instanceof DOMException && error.name === "AbortError";
@@ -73,42 +68,4 @@ export function downloadZip(files: Files): string {
 /** Download one JSON file, such as the Hexframe rig or clip. */
 export function downloadJson(text: string, name: string): void {
   downloadBlob(new Blob([text], { type: "application/json" }), name);
-}
-
-async function readAll(folder: FolderHandle, prefix: string, into: Map<string, Uint8Array>): Promise<void> {
-  for await (const entry of folder.values()) {
-    if (entry.kind === "directory") await readAll(entry, `${prefix}${entry.name}/`, into);
-    else into.set(`${prefix}${entry.name}`, new Uint8Array(await (await entry.getFile()).arrayBuffer()));
-  }
-}
-
-/** Read every file under a folder the author picks; null when cancelled. */
-export async function readFolder(): Promise<{ readonly files: Map<string, Uint8Array>; readonly name: string } | null> {
-  const pick = folderPicker();
-  if (!pick) throw new Error("This browser cannot read folders; import a zip instead");
-  try {
-    const folder = await pick.call(window, { mode: "read" });
-    const files = new Map<string, Uint8Array>();
-    await readAll(folder, "", files);
-    return { files, name: folder.name };
-  } catch (error) {
-    if (cancelled(error)) return null;
-    throw error;
-  }
-}
-
-/** Read a zipped bundle the author picks; null when cancelled. */
-export function readZip(): Promise<{ readonly files: Map<string, Uint8Array>; readonly name: string } | null> {
-  return new Promise((resolve, reject) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".zip,application/zip";
-    input.addEventListener("cancel", () => resolve(null), { once: true });
-    input.addEventListener("change", () => {
-      const file = input.files?.[0];
-      if (!file) return resolve(null);
-      file.arrayBuffer().then((buffer) => unzip(new Uint8Array(buffer))).then((files) => resolve({ files, name: file.name }), reject);
-    }, { once: true });
-    input.click();
-  });
 }

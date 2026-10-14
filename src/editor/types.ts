@@ -51,7 +51,6 @@ export interface EditorState {
 export type Action =
   /** The library folder now holds `document`; `note` says what was written. */
   | { readonly type: "saved"; readonly document: RigLabDocument; readonly note: string }
-  | { readonly type: "imported"; readonly document: RigLabDocument; readonly source: string }
   | { readonly type: "status"; readonly status: Status | null }
   | { readonly type: "undo" }
   | { readonly type: "redo" }

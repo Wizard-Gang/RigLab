@@ -1,5 +1,4 @@
-// A dependency-free ZIP writer (stored entries, fixed timestamps, so the same files make the same bytes)
-// and a reader for stored or deflated entries.
+// A dependency-free ZIP writer: stored entries and fixed timestamps, so the same files make the same bytes.
 
 export type Files = ReadonlyMap<string, Uint8Array>;
 
@@ -77,46 +76,4 @@ export function zip(files: Files): Uint8Array {
     at += part.length;
   }
   return out;
-}
-
-async function inflate(data: Uint8Array): Promise<Uint8Array> {
-  const stream = new Blob([data as BlobPart]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
-}
-
-/** Read every file entry of a ZIP. Stored and deflated entries are supported; anything else is refused. */
-export async function unzip(bytes: Uint8Array): Promise<Map<string, Uint8Array>> {
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  let end = -1;
-  for (let at = bytes.length - 22; at >= Math.max(0, bytes.length - 22 - 0xffff); at -= 1) {
-    if (view.getUint32(at, true) === 0x06054b50) {
-      end = at;
-      break;
-    }
-  }
-  if (end < 0) throw new Error("not a ZIP file: no end of central directory");
-  const count = view.getUint16(end + 10, true);
-  let at = view.getUint32(end + 16, true);
-  const decoder = new TextDecoder("utf-8", { fatal: true });
-  const files = new Map<string, Uint8Array>();
-  for (let index = 0; index < count; index += 1) {
-    if (view.getUint32(at, true) !== 0x02014b50) throw new Error("corrupt ZIP central directory");
-    const method = view.getUint16(at + 10, true);
-    const crc = view.getUint32(at + 16, true);
-    const compressed = view.getUint32(at + 20, true);
-    const nameLength = view.getUint16(at + 28, true);
-    const extraLength = view.getUint16(at + 30, true);
-    const commentLength = view.getUint16(at + 32, true);
-    const localAt = view.getUint32(at + 42, true);
-    const name = decoder.decode(bytes.subarray(at + 46, at + 46 + nameLength));
-    at += 46 + nameLength + extraLength + commentLength;
-    if (name.endsWith("/")) continue;
-    const dataAt = localAt + 30 + view.getUint16(localAt + 26, true) + view.getUint16(localAt + 28, true);
-    const raw = bytes.subarray(dataAt, dataAt + compressed);
-    if (method !== 0 && method !== 8) throw new Error(`${name}: unsupported ZIP compression method ${method}`);
-    const data = method === 0 ? raw.slice() : await inflate(raw);
-    if (crc32(data) !== crc) throw new Error(`${name}: ZIP checksum mismatch`);
-    files.set(name, data);
-  }
-  return files;
 }

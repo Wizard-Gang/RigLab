@@ -93,14 +93,6 @@ describe("editor state", () => {
     expect(isDirty(run(saved, { type: "addAnimation", kind: "walk" }))).toBe(true);
   });
 
-  it("replaces the document on import, unsaved until Save writes it, keeping the editor's mode", () => {
-    const document = { ...moves(), animations: moves().animations.slice(0, 3) };
-    const imported = run(initialState(), { type: "setMode", mode: "export" }, { type: "addAnimation", kind: "walk" }, { type: "imported", document, source: "riglab-export.zip" });
-    expect([names(imported).length, isDirty(imported), imported.mode]).toEqual([3, true, "export"]);
-    expect(imported.status?.text).toBe("Imported riglab-export.zip; Save writes it to the library");
-    expect(imported.history.past).toHaveLength(0);
-  });
-
   it("switches animation and frame together, and accepts only known grid spacings", () => {
     const state = run(initialState(moves()), { type: "setFrame", frame: 30 }, { type: "select", selection: { kind: "animation", name: "jump" } });
     expect([state.activeAnimation, state.frame]).toEqual(["jump", 0]);

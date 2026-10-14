@@ -1,8 +1,6 @@
 // riglab.baked version 1: every frame's solved world transforms, for consumers that only draw.
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabRig } from "../format/rig";
-import { checkInteger, checkName, closedObject, isFiniteNumber, isObject, Issues } from "../format/validate";
-import type { Validation } from "../format/validate";
 import type { RigLabWeapon } from "../format/weapon";
 import { bodyTransforms, engineOf, place, playAt } from "../solve";
 
@@ -69,48 +67,4 @@ export function bakeAnimation(rig: RigLabRig, animation: RigLabAnimation, weapon
     frames,
     ...(held.some((weapon) => weapon !== null) ? { weapons: held } : {}),
   };
-}
-
-const isTransform = (value: unknown): boolean => Array.isArray(value) && value.length === 3 && value.every(isFiniteNumber);
-
-function validateBakedWeapons(issues: Issues, value: unknown, count: number, weapons: readonly RigLabWeapon[]): void {
-  if (!Array.isArray(value) || value.length !== count) {
-    issues.add("$.weapons", "must hold one entry per frame");
-    return;
-  }
-  value.forEach((entry: unknown, index) => {
-    if (entry === null) return;
-    const at = `$.weapons[${index}]`;
-    if (!closedObject(issues, at, entry, ["name", "bodies"]) || !checkName(issues, `${at}.name`, entry.name)) return;
-    const weapon = weapons.find((candidate) => candidate.name === entry.name);
-    if (!weapon) issues.add(`${at}.name`, "must name one of the bundle's weapons");
-    else if (!isObject(entry.bodies) || Object.keys(entry.bodies).join("\n") !== weapon.bodies.map((body) => body.name).join("\n")) {
-      issues.add(`${at}.bodies`, `must give each body of '${weapon.name}' in order`);
-    } else if (!Object.values(entry.bodies).every(isTransform)) issues.add(`${at}.bodies`, "must hold one [x, y, rotation] per body");
-  });
-}
-
-/** Closed structural validation against the rig, the weapons and the animation it claims to bake. */
-export function validateBaked(value: unknown, rig: RigLabRig, animation: RigLabAnimation, weapons: readonly RigLabWeapon[] = []): Validation<RigLabBaked> {
-  const issues = new Issues();
-  const fields = ["format", "version", "rig", "animation", "fps", "loop", "bones", "frames"];
-  if (!closedObject(issues, "$", value, fields, ["weapons"])) return issues.result(value);
-  if (value.format !== BAKED_FORMAT) issues.add("$.format", `must be '${BAKED_FORMAT}'`);
-  if (value.version !== BAKED_VERSION) issues.add("$.version", `must be ${BAKED_VERSION}`);
-  if (value.rig !== rig.name) issues.add("$.rig", `must name rig '${rig.name}'`);
-  if (value.animation !== animation.name) issues.add("$.animation", `must name animation '${animation.name}'`);
-  checkInteger(issues, "$.fps", value.fps, 1, 720);
-  if (value.fps !== animation.fps || value.loop !== animation.loop) issues.add("$", "must match the animation's rate and looping");
-  const bones = rig.bones.map((bone) => bone.name);
-  if (!Array.isArray(value.bones) || value.bones.join("\n") !== bones.join("\n")) issues.add("$.bones", "must list the rig's bones in order");
-  const frames = value.frames;
-  if (!Array.isArray(frames) || frames.length !== frameCount(animation)) {
-    issues.add("$.frames", `must hold ${frameCount(animation)} frames`);
-  } else {
-    frames.forEach((frame: unknown, index) => {
-      if (!Array.isArray(frame) || frame.length !== bones.length || !frame.every(isTransform)) issues.add(`$.frames[${index}]`, "must hold one [x, y, rotation] per bone");
-    });
-  }
-  if (value.weapons !== undefined) validateBakedWeapons(issues, value.weapons, frameCount(animation), weapons);
-  return issues.result(value);
 }

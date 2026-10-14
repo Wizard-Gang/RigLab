@@ -15,7 +15,6 @@ interface ModePanelProps {
   readonly dispatch: Dispatch<Action>;
   readonly document: RigLabDocument;
   readonly animation: RigLabAnimation | null;
-  readonly dirty: boolean;
   /** The pose and constraints as shown, including a drag in progress. */
   readonly pose: Pose;
   readonly constraints: Constraints;
@@ -23,19 +22,11 @@ interface ModePanelProps {
 }
 
 /** The right panel for the mode: export, the selected bone's setup, pose with the weapon picker, or the inspector. */
-export function ModePanel({ state, dispatch, document, animation, dirty, pose, constraints, placed }: ModePanelProps) {
+export function ModePanel({ state, dispatch, document, animation, pose, constraints, placed }: ModePanelProps) {
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
   const keyed = animation?.keys.some((key) => key.frame === state.frame) ?? false;
   if (state.mode === "export") {
-    return (
-      <ExportPanel
-        document={document}
-        active={animation}
-        dirty={dirty}
-        onImported={(imported, source) => dispatch({ type: "imported", document: imported, source })}
-        onStatus={(status) => dispatch({ type: "status", status })}
-      />
-    );
+    return <ExportPanel document={document} active={animation} onStatus={(status) => dispatch({ type: "status", status })} />;
   }
   if (state.mode === "setup" && selectedBone) {
     return <BoneSetup rig={document.rig} bone={selectedBone} onEdit={(edit) => dispatch({ type: "rigEdit", edit })} />;

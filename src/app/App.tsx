@@ -170,7 +170,6 @@ export function App() {
           dispatch={dispatch}
           document={document}
           animation={animation}
-          dirty={dirty}
           pose={pose}
           constraints={drags.constraints}
           placed={skeleton.placed}

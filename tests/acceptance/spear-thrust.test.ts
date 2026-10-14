@@ -1,18 +1,17 @@
 // The RigLab recommendation's first acceptance test, run through the editor's own reducer and export path:
 // start the chibi, lengthen its forearms, author a spear-thrust attack (keys at 0, 8, 16 and 24) with planted feet
-// and both hands on the library's spear, export the bundle, reload it, and prove connectivity, lengths, grips and
-// playback, and that Hexframe plays the exported clip exactly as RigLab baked it.
+// and both hands on the library's spear, export the bundle, check what it wrote, and prove connectivity, lengths, grips
+// and playback, and that Hexframe plays the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
 import { activeAnimationOf, documentOf, editorReducer, initialState } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
-import { bakeAnimation } from "../../src/export/bake";
 import type { RigLabBaked, Transform } from "../../src/export/bake";
-import { buildBundle, EXPORT_ROOT, readBundle } from "../../src/export/bundle";
-import { unzip, zip } from "../../src/export/zip";
+import { buildBundle } from "../../src/export/bundle";
 import type { RigLabDocument } from "../../src/format";
 import { toHexframeClip } from "../../src/hexframe/adapter";
 import { constraintsAt, dragInPose, engineOf, place, playAt, rotate, samplePose, togglePin } from "../../src/solve";
+import { written } from "../export/written";
 
 const run = (state: EditorState, ...actions: Action[]): EditorState => {
   const next = actions.reduce(editorReducer, state);
@@ -73,29 +72,24 @@ function pointIn([x, y, rotation]: Transform, local: readonly [number, number]) 
 const pointOf = (baked: RigLabBaked, frame: number, bone: string, local: readonly [number, number]) => pointIn(baked.frames[frame]![baked.bones.indexOf(bone)]!, local);
 
 describe("spear-thrust acceptance", () => {
-  it("authors, exports and reloads a spear thrust with every joint connected, every length kept and both hands on the spear", async () => {
+  it("authors and exports a spear thrust with every joint connected, every length kept and both hands on the spear", async () => {
     const document = author();
     const animation = document.animations.find((candidate) => candidate.name === "spear-thrust")!;
     expect([animation.kind, animation.fps, animation.length, animation.loop]).toEqual(["attack", 60, 24, false]);
     expect(animation.keys.map((key) => [key.frame, key.interpolation])).toEqual([[0, "smoothstep"], [8, "linear"], [16, "smoothstep"], [24, "smoothstep"]]);
     expect(animation.keys.every((key) => key.pins?.length === 2 && key.weapon?.name === "spear")).toBe(true);
 
-    const files = await buildBundle(document, { baked: true, generator: "RigLab acceptance" });
-    const archive = zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])));
-    const reloaded = await readBundle(await unzip(archive));
-    if (!reloaded.ok) throw new Error(reloaded.errors.join("\n"));
-    expect(reloaded.value).toEqual(document);
-
-    const { rig, weapons } = reloaded.value;
-    const again = reloaded.value.animations.find((candidate) => candidate.name === "spear-thrust")!;
-    const baked: RigLabBaked = JSON.parse(new TextDecoder().decode(files.get("baked/spear-thrust.baked.json")!));
-    expect(bakeAnimation(rig, again, weapons)).toEqual(baked);
+    // The bundle's files are the document's own, and its baked frames are a fresh bake of them.
+    const bundle = await written(await buildBundle(document, { baked: true, generator: "RigLab acceptance" }), document);
+    const { rig, weapons } = bundle;
+    const again = bundle.animations.find((candidate) => candidate.name === "spear-thrust")!;
+    const baked: RigLabBaked = bundle.baked.get("spear-thrust")!;
     expect(rig.bones.find((bone) => bone.name === "forearm-front")!.tip).toEqual([0, 14]);
     expect(baked.frames).toHaveLength(25);
     const clip = toHexframeClip(rig, again, weapons);
     expect([clip.duration, clip.poses.length]).toEqual([24, 13]);
     const [engine, original] = [engineOf(rig, again, weapons), engineOf(document.rig, animation, document.weapons)];
-    const spear = weapons!.find((weapon) => weapon.name === "spear")!.bodies[0]!;
+    const spear = weapons.find((weapon) => weapon.name === "spear")!.bodies[0]!;
 
     for (let frame = 0; frame < baked.frames.length; frame += 1) {
       expect(playAt(engine, frame)).toEqual(playAt(original, frame));

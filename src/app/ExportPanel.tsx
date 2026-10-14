@@ -3,16 +3,14 @@ import { version } from "../../package.json";
 import type { RigLabAnimation } from "../format/animation";
 import type { RigLabDocument } from "../format/document";
 import { clipNotes, toHexframeClip, toHexframeRig } from "../hexframe/adapter";
-import { buildBundle, EXPORT_ROOT, readBundle } from "../export/bundle";
-import { canUseFolders, downloadJson, downloadZip, readFolder, readZip, writeFolder } from "../editor/bundleFiles";
+import { buildBundle, EXPORT_ROOT } from "../export/bundle";
+import { canUseFolders, downloadJson, downloadZip, writeFolder } from "../editor/bundleFiles";
 import type { Status } from "../editor/state";
 
 interface ExportPanelProps {
   readonly document: RigLabDocument;
   /** The active animation, which the Hexframe clip export converts. */
   readonly active: RigLabAnimation | null;
-  readonly dirty: boolean;
-  readonly onImported: (document: RigLabDocument, source: string) => void;
   readonly onStatus: (status: Status) => void;
 }
 
@@ -35,8 +33,8 @@ function BundlePath({ path }: { readonly path: string }) {
   );
 }
 
-/** Export mode: what the bundle will hold, where to write it, and verified import of a bundle. */
-export function ExportPanel({ document, active, dirty, onImported, onStatus }: ExportPanelProps) {
+/** Export mode: what the bundle will hold and where to write it. Export only writes; motion comes in through the library folder. */
+export function ExportPanel({ document, active, onStatus }: ExportPanelProps) {
   const [baked, setBaked] = useState(true);
   const [files, setFiles] = useState<ReadonlyMap<string, Uint8Array> | null>(null);
   const folders = canUseFolders();
@@ -60,19 +58,6 @@ export function ExportPanel({ document, active, dirty, onImported, onStatus }: E
       onStatus({ tone: "error", text: `${what} failed: ${(error as Error).message}` });
     }
   };
-
-  const importFrom = (read: typeof readZip) => run("Import", async () => {
-    if (dirty && !window.confirm("Replace the unsaved changes in the editor with this bundle?")) return null;
-    const source = await read();
-    if (!source) return null;
-    const result = await readBundle(source.files);
-    if (!result.ok) {
-      const more = result.errors.length > 1 ? ` (and ${result.errors.length - 1} more)` : "";
-      throw new Error(`${source.name}: ${result.errors[0]}${more}`);
-    }
-    onImported(result.value, source.name);
-    return null;
-  });
 
   return (
     <div className="setup">
@@ -101,10 +86,6 @@ export function ExportPanel({ document, active, dirty, onImported, onStatus }: E
         <button type="button" className="tool" disabled={!files} onClick={() => files && run("Export", async () => `Downloaded ${downloadZip(files)}`)}>
           Download zip
         </button>
-      </div>
-      <div className="setup__actions">
-        {folders ? <button type="button" className="tool" onClick={() => importFrom(readFolder)}>Import folder…</button> : null}
-        <button type="button" className="tool" onClick={() => importFrom(readZip)}>Import zip…</button>
       </div>
       <h3 className="panel__title panel__title--section">Hexframe</h3>
       <p className="panel__note">
