@@ -1,7 +1,7 @@
 import type { Dispatch } from "react";
 import type { Placed, Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
-import type { RigLabDocument } from "../format/document";
+import type { LibraryModel } from "../editor/model";
 import type { Action, EditorState } from "../editor/state";
 import type { Constraints } from "../solve";
 import { BoneSetup } from "./BoneSetup";
@@ -13,7 +13,7 @@ import { WeaponPicker } from "./WeaponPicker";
 interface ModePanelProps {
   readonly state: EditorState;
   readonly dispatch: Dispatch<Action>;
-  readonly document: RigLabDocument;
+  readonly model: LibraryModel;
   readonly animation: RigLabAnimation | null;
   /** The pose and constraints as shown, including a drag in progress. */
   readonly pose: Pose;
@@ -22,18 +22,18 @@ interface ModePanelProps {
 }
 
 /** The right panel for the mode: export, the selected bone's setup, pose with the weapon picker, or the inspector. */
-export function ModePanel({ state, dispatch, document, animation, pose, constraints, placed }: ModePanelProps) {
+export function ModePanel({ state, dispatch, model, animation, pose, constraints, placed }: ModePanelProps) {
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
   const keyed = animation?.keys.some((key) => key.frame === state.frame) ?? false;
   if (state.mode === "export") {
-    return <ExportPanel document={document} active={animation} onStatus={(status) => dispatch({ type: "status", status })} />;
+    return <ExportPanel model={model} active={animation} onStatus={(status) => dispatch({ type: "status", status })} />;
   }
   if (state.mode === "setup" && selectedBone) {
-    return <BoneSetup rig={document.rig} bone={selectedBone} onEdit={(edit) => dispatch({ type: "rigEdit", edit })} />;
+    return <BoneSetup rig={model.rig} bone={selectedBone} onEdit={(edit) => dispatch({ type: "rigEdit", edit })} />;
   }
   const inspector = state.mode === "pose" && selectedBone && animation ? (
     <PoseInspector
-      rig={document.rig}
+      rig={model.rig}
       bone={selectedBone}
       pose={pose}
       constraints={constraints}
@@ -45,12 +45,12 @@ export function ModePanel({ state, dispatch, document, animation, pose, constrai
     />
   ) : (
     <Inspector
-      rig={document.rig}
+      rig={model.rig}
       selection={state.selection}
       active={animation}
       pose={pose}
       placed={placed}
-      animations={document.animations}
+      animations={model.animations}
       onRename={(from, to) => dispatch({ type: "renameAnimation", from, to })}
     />
   );
@@ -58,7 +58,7 @@ export function ModePanel({ state, dispatch, document, animation, pose, constrai
   return (
     <div className="setup">
       {inspector}
-      <WeaponPicker held={constraints.weapon?.weapon.name ?? null} frame={state.frame} keyed={keyed} onPick={(name) => dispatch({ type: "holdWeapon", name })} />
+      <WeaponPicker weapons={model.weapons.map((item) => item.weapon.name)} held={constraints.weapon?.weapon.name ?? null} frame={state.frame} keyed={keyed} onPick={(name) => dispatch({ type: "holdWeapon", name })} />
     </div>
   );
 }

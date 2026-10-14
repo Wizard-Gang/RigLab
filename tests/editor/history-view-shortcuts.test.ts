@@ -3,7 +3,7 @@ import { record, redo, startHistory, undo } from "../../src/editor/history";
 import { commandFor, platformOf, SHORTCUTS, shortcutLabel } from "../../src/editor/shortcuts";
 import type { KeyInput } from "../../src/editor/shortcuts";
 import { fitView, MAX_ZOOM, MIN_ZOOM, panBy, snapToGrid, VIEW_MARGIN, viewBoxFor, zoomAbout, zoomAt } from "../../src/editor/view";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 
 describe("undo history", () => {
   it("records, undoes and redoes whole snapshots", () => {
@@ -29,7 +29,7 @@ describe("undo history", () => {
 });
 
 describe("canvas view", () => {
-  const space = CHIBI_RIG.space;
+  const space = LIBRARY.rig.space;
 
   it("fits the rig's viewBox plus a margin at zoom 1", () => {
     const view = fitView(space);

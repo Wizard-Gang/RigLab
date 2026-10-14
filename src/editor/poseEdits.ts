@@ -16,7 +16,7 @@ export type PoseEditResult =
 /**
  * Replace the pose of the key at `frame`. The kind fixes where keys are, so a frame between keys has none to pose.
  * Without new constraints the key keeps its own. The result must still be a valid animation for the rig and the
- * document's weapons.
+ * library's weapons.
  */
 export function setKeyPose(
   rig: RigLabRig,

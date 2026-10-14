@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { freeBodies, parseWeapon, serializeWeapon, validateWeapon, weaponChains } from "../../src/format/weapon";
 import { STAFF, TWIN } from "./weapon-fixtures";
 
@@ -8,7 +8,7 @@ type Mutable = Record<string, any>;
 function errorsOf(base: unknown, change: (value: Mutable) => void): string {
   const value = structuredClone(base) as Mutable;
   change(value);
-  const result = validateWeapon(value, CHIBI_RIG);
+  const result = validateWeapon(value, LIBRARY.rig);
   expect(result.ok).toBe(false);
   return result.ok ? "" : result.errors.join("\n");
 }
@@ -16,9 +16,9 @@ function errorsOf(base: unknown, change: (value: Mutable) => void): string {
 describe("riglab.weapon", () => {
   it("accepts a free two-grip body and one-grip bodies that ride their hands", () => {
     for (const weapon of [STAFF, TWIN]) {
-      const result = validateWeapon(weapon, CHIBI_RIG);
+      const result = validateWeapon(weapon, LIBRARY.rig);
       expect(result.ok ? [] : result.errors).toEqual([]);
-      expect(parseWeapon(serializeWeapon(weapon), CHIBI_RIG)).toEqual({ ok: true, value: weapon });
+      expect(parseWeapon(serializeWeapon(weapon), LIBRARY.rig)).toEqual({ ok: true, value: weapon });
     }
     expect(freeBodies(STAFF).map((body) => body.name)).toEqual(["staff"]);
     expect(freeBodies(TWIN)).toEqual([]);

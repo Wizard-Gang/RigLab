@@ -1,11 +1,13 @@
 // What export writes, checked directly: the manifest lists every other file and pins each by SHA-256, the rig,
-// animation and weapon files parse back to the document's own, and each baked file equals a fresh bake of them.
+// animation and weapon files parse back to the model's own, and each baked file equals a fresh bake of them.
 import { expect } from "vitest";
 import { bakeAnimation } from "../../src/export/bake";
 import type { RigLabBaked } from "../../src/export/bake";
 import { MANIFEST, sha256 } from "../../src/export/bundle";
 import type { Manifest } from "../../src/export/bundle";
-import type { RigLabAnimation, RigLabDocument, RigLabRig, RigLabWeapon } from "../../src/format";
+import { heldWeapons } from "../../src/editor/model";
+import type { LibraryModel } from "../../src/editor/model";
+import type { RigLabAnimation, RigLabRig, RigLabWeapon } from "../../src/format";
 
 /** A bundle's files as written, parsed. */
 export interface Written {
@@ -19,8 +21,8 @@ export interface Written {
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
-/** Check the files `buildBundle` wrote for `document`, and return them parsed. */
-export async function written(files: ReadonlyMap<string, Uint8Array>, document: RigLabDocument): Promise<Written> {
+/** Check the files `buildBundle` wrote for `model`, and return them parsed: only the weapons its keys hold are written. */
+export async function written(files: ReadonlyMap<string, Uint8Array>, model: LibraryModel): Promise<Written> {
   const parsed = <T>(file: string): T => JSON.parse(decoder.decode(files.get(file)!)) as T;
   const manifest = parsed<Manifest>(MANIFEST);
   const entries = [manifest.rig, ...manifest.animations, ...(manifest.weapons ?? []), ...(manifest.baked ?? [])];
@@ -29,7 +31,7 @@ export async function written(files: ReadonlyMap<string, Uint8Array>, document: 
   const rig = parsed<RigLabRig>(manifest.rig.file);
   const animations = manifest.animations.map((entry) => parsed<RigLabAnimation>(entry.file));
   const weapons = (manifest.weapons ?? []).map((entry) => parsed<RigLabWeapon>(entry.file));
-  expect({ rig, animations, weapons }).toEqual({ rig: document.rig, animations: document.animations, weapons: document.weapons ?? [] });
+  expect({ rig, animations, weapons }).toEqual({ rig: model.rig, animations: model.animations, weapons: heldWeapons(model) });
   const baked = new Map((manifest.baked ?? []).map((entry) => [entry.animation, parsed<RigLabBaked>(entry.file)]));
   expect([...baked.keys()]).toEqual(manifest.baked ? animations.map((animation) => animation.name) : []);
   for (const [name, bake] of baked) {

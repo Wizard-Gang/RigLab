@@ -8,7 +8,7 @@ import { rotate, toVector } from "./angles";
 import type { Vector } from "./angles";
 import { place } from "./pose";
 
-/** A key's weapon resolved against the document's weapons. */
+/** A key's weapon resolved against the library's weapons. */
 export interface Wielded {
   readonly weapon: RigLabWeapon;
   /** Where each free body is; one-grip bodies ride their hands instead. */
@@ -31,7 +31,7 @@ export interface GripTarget {
   readonly label: string;
 }
 
-/** Resolve a key's weapon by name; a name the document lacks holds nothing. */
+/** Resolve a key's weapon by name; a name the weapons lack holds nothing. */
 export function wieldedOf(held: HeldWeapon, weapons: readonly RigLabWeapon[]): Wielded | null {
   const weapon = weapons.find((candidate) => candidate.name === held.name);
   return weapon ? { weapon, bodies: held.bodies } : null;

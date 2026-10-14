@@ -1,4 +1,4 @@
-// A bounded, immutable undo/redo history over whole document snapshots.
+// A bounded, immutable undo/redo history over whole model snapshots.
 
 export const HISTORY_LIMIT = 100;
 

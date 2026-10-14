@@ -1,7 +1,5 @@
 export { ANIMATION_FORMAT, ANIMATION_VERSION, INTERPOLATIONS, validateAnimation } from "./animation";
 export type { Interpolation, Key, RigLabAnimation } from "./animation";
-export { DOCUMENT_FORMAT, DOCUMENT_VERSION, parseDocument, serializeDocument, validateDocument } from "./document";
-export type { RigLabDocument } from "./document";
 export { RIG_FORMAT, RIG_VERSION, boneOf, createRigLabRig, validateRig } from "./rig";
 export type { AngleLimits, Chain, RigLabBone, RigLabRig } from "./rig";
 export type { BodyPlacement, HeldWeapon, Pin } from "./constraints";

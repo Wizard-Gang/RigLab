@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { Dispatch } from "react";
 import { reactToSave, saveToLibrary } from "../editor/librarySave";
-import { documentOf, isDirty } from "../editor/state";
+import { isDirty, modelOf } from "../editor/state";
 import type { Action, EditorState } from "../editor/state";
 import { LIBRARY_LABEL } from "../library/active";
 import { SAVED_EVENT } from "../library/save";
@@ -42,11 +42,11 @@ export function useLibrarySave(state: EditorState, dispatch: Dispatch<Action>): 
   return useCallback(async () => {
     if (saving.current) return;
     saving.current = true;
-    const document = documentOf(latest.current);
-    const answer = await saveToLibrary(document);
+    const model = modelOf(latest.current);
+    const answer = await saveToLibrary(model);
     if (answer.ok) {
       own.current.add(answer.saveId);
-      dispatch({ type: "saved", document, note: answer.note });
+      dispatch({ type: "saved", model, note: answer.note });
     } else {
       dispatch({ type: "status", status: { tone: "error", text: answer.error } });
     }

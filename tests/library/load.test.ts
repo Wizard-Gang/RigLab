@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { ANIMATION_KINDS } from "../../src/format/timing";
 import { loadLibrary } from "../../src/library/load";
 import type { LibraryFiles } from "../../src/library/files";
-import { readyHold, WEAPONS } from "../../src/weapons/weapons";
 import { placeholderFiles, withChanges } from "./placeholder";
 
 const errorsOf = (files: LibraryFiles): readonly string[] => {
@@ -19,10 +18,11 @@ describe("library loading", () => {
     const result = loadLibrary(original);
     expect(result.ok ? [] : result.errors).toEqual([]);
     if (!result.ok) return;
+    // The library the app reads, served by the Vite plugin, is this same folder.
+    expect(result.value).toEqual(LIBRARY);
     const { rig, skins, weapons, animations } = result.value;
-    expect(rig).toEqual(CHIBI_RIG);
-    expect(weapons.map((item) => item.weapon)).toEqual(WEAPONS);
-    expect(weapons.map((item) => item.hold)).toEqual(WEAPONS.map(readyHold));
+    expect(weapons.map((item) => [item.name, item.weapon.name, item.hold.name])).toEqual(["sword", "spear", "axe", "daggers"].map((name) => [name, name, name]));
+    expect(weapons.map((item) => item.hold.bodies.length)).toEqual([1, 1, 1, 0]);
     expect(skins.map((skin) => skin.name)).toEqual(["plain", "block", "pixel"]);
     for (const skin of skins) {
       expect(Object.keys(skin.parts).sort()).toEqual(rig.bones.map((bone) => bone.slot).sort());

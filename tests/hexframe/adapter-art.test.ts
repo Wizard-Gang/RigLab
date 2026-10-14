@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createRig } from "../../vendor/hexframe/src/rig";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { blankAnimation } from "../../src/editor/animations";
 import { toHexframeClip, toHexframeRig } from "../../src/hexframe/adapter";
 import { parsePart } from "../../src/hexframe/parts";
 import { engineOf, setRotation } from "../../src/solve";
 
-const rig = CHIBI_RIG;
+const rig = LIBRARY.rig;
 
 describe("Hexframe adapter", () => {
   it("returns the chibi in the rig shape Hexframe's own createRig loads", () => {

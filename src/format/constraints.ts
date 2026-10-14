@@ -19,7 +19,7 @@ export interface BodyPlacement {
   readonly rotation: number;
 }
 
-/** The weapon a key holds: one of the document's weapons, and where each of its free bodies is. */
+/** The weapon a key holds: one of the library's weapons, and where each of its free bodies is. */
 export interface HeldWeapon {
   readonly name: string;
   readonly bodies: readonly BodyPlacement[];
@@ -38,7 +38,7 @@ function validateHeldWeapon(issues: Issues, at: string, value: unknown, weapons:
   if (!closedObject(issues, at, value, ["name", "bodies"]) || !checkName(issues, `${at}.name`, value.name)) return;
   const weapon = weapons.find((candidate) => candidate.name === value.name);
   if (!weapon) {
-    issues.add(`${at}.name`, "must name one of the document's weapons");
+    issues.add(`${at}.name`, "must name one of the library's weapons");
     return;
   }
   for (const chain of weaponChains(weapon)) {

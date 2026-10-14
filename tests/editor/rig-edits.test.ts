@@ -1,20 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { ANIMATION_KINDS } from "../../src/format";
-import { validateDocument } from "../../src/format/document";
-import type { RigLabDocument } from "../../src/format/document";
 import { blankAnimation } from "../../src/editor/animations";
-import { libraryDocument } from "../../src/editor/templates";
+import { libraryModel, validateModel } from "../../src/editor/model";
+import type { LibraryModel } from "../../src/editor/model";
 import { applyRigEdit, subtreeOf } from "../../src/editor/rigEdits";
 import type { RigEdit } from "../../src/editor/rigEdits";
-import { documentOf, editorReducer, initialState } from "../../src/editor/state";
+import { editorReducer, initialState, modelOf } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 
 /** The chibi with one animation of each kind, its keys swinging the front arm and lifting the root. */
-const base: RigLabDocument = {
-  ...libraryDocument(),
+const base: LibraryModel = {
+  ...libraryModel(LIBRARY),
   animations: ANIMATION_KINDS.map((kind) => {
-    const blank = blankAnimation(CHIBI_RIG, kind, kind);
+    const blank = blankAnimation(LIBRARY.rig, kind, kind);
     return {
       ...blank,
       keys: blank.keys.map((key, index) => ({
@@ -25,11 +24,11 @@ const base: RigLabDocument = {
   }),
 };
 
-function applied(edit: RigEdit, document: RigLabDocument = base): RigLabDocument {
-  const result = applyRigEdit(document, edit);
+function applied(edit: RigEdit, model: LibraryModel = base): LibraryModel {
+  const result = applyRigEdit(model, edit);
   if (!result.ok) throw new Error(result.error);
-  expect(validateDocument(result.document).ok).toBe(true);
-  return result.document;
+  expect(validateModel(result.model).ok).toBe(true);
+  return result.model;
 }
 
 function refused(edit: RigEdit): string {
@@ -38,7 +37,7 @@ function refused(edit: RigEdit): string {
   return result.ok ? "" : result.error;
 }
 
-const bone = (document: RigLabDocument, name: string) => document.rig.bones.find((candidate) => candidate.name === name);
+const bone = (model: LibraryModel, name: string) => model.rig.bones.find((candidate) => candidate.name === name);
 
 describe("rig setup edits", () => {
   it("moves a joint and changes nothing but its rest offset", () => {
@@ -60,7 +59,7 @@ describe("rig setup edits", () => {
     expect(bone(renamed, "forearm-front")?.parent).toBe("upper-arm-front");
     expect(renamed.rig.chains.find((chain) => chain.name === "arm-front")?.upper).toBe("upper-arm-front");
     expect(renamed.rig.depthProfiles?.sides.facingRight.arms.far).toBe("upper-arm-front");
-    const key = (document: RigLabDocument) => document.animations[3]!.keys[2]!.pose;
+    const key = (model: LibraryModel) => model.animations[3]!.keys[2]!.pose;
     expect(key(renamed)["upper-arm-front"]).toEqual({ rotation: 20 });
     expect(key(renamed)["upper-arm-front"]).toEqual(key(base)["arm-front"]);
     expect(key(renamed)["arm-front"]).toBeUndefined();
@@ -84,16 +83,23 @@ describe("rig setup edits", () => {
   });
 
   it("deletes a joint with its subtree, its chain and its pose entries", () => {
-    expect([...subtreeOf(base.rig, "arm-front")]).toEqual(["arm-front", "forearm-front"]);
-    const result = applyRigEdit(base, { kind: "deleteBone", bone: "arm-front" });
-    expect(result.ok && result.message).toMatch(/Deleted arm-front and 1 bone below it; its depth profiles/);
-    const deleted = applied({ kind: "deleteBone", bone: "arm-front" });
-    expect(deleted.rig.bones.map((candidate) => candidate.name)).not.toContain("forearm-front");
-    expect(deleted.rig.chains.map((chain) => chain.name)).not.toContain("arm-front");
+    expect([...subtreeOf(base.rig, "leg-front")]).toEqual(["leg-front", "shin-front"]);
+    const result = applyRigEdit(base, { kind: "deleteBone", bone: "leg-front" });
+    expect(result.ok && result.message).toMatch(/Deleted leg-front and 1 bone below it; its depth profiles/);
+    const deleted = applied({ kind: "deleteBone", bone: "leg-front" });
+    expect(deleted.rig.bones.map((candidate) => candidate.name)).not.toContain("shin-front");
+    expect(deleted.rig.chains.map((chain) => chain.name)).not.toContain("leg-front");
     expect(deleted.rig.depthProfiles).toBeUndefined();
-    expect(deleted.animations[0]!.keys[0]!.pose["forearm-front"]).toBeUndefined();
+    expect(deleted.animations[0]!.keys[0]!.pose["shin-front"]).toBeUndefined();
+    expect(deleted.weapons).toBe(base.weapons);
     expect(applied({ kind: "deleteBone", bone: "head" }).rig.depthProfiles).toEqual(base.rig.depthProfiles);
     expect(refused({ kind: "deleteBone", bone: "pelvis" })).toMatch(/root bone cannot be deleted/);
+  });
+
+  it("keeps every chain a library weapon grips", () => {
+    expect(refused({ kind: "deleteBone", bone: "arm-front" })).toBe("The sword grips chain 'arm-front', so the rig must keep it");
+    expect(refused({ kind: "removeChain", chain: "arm-back" })).toBe("The sword grips chain 'arm-back', so the rig must keep it");
+    expect(applied({ kind: "deleteBone", bone: "arm-front" }, { ...base, weapons: [] }).rig.chains.map((chain) => chain.name)).not.toContain("arm-front");
   });
 
   it("sets limits and chains through the rig validator", () => {
@@ -115,7 +121,7 @@ describe("rig setup in the editor", () => {
   it("changes anatomy only in Rig setup", () => {
     for (const mode of ["pose", "animate"] as const) {
       const state = run(initialState(), { type: "setMode", mode }, move);
-      expect(documentOf(state).rig).toBe(documentOf(initialState()).rig);
+      expect(modelOf(state).rig).toBe(modelOf(initialState()).rig);
       expect(state.history.past).toHaveLength(0);
       expect(state.status?.text).toMatch(/Switch to Rig setup/);
     }
@@ -127,7 +133,7 @@ describe("rig setup in the editor", () => {
     expect(edited.selection).toEqual({ kind: "bone", name: "bone" });
     expect(edited.history.past).toHaveLength(2);
     const undone = run(edited, { type: "undo" }, { type: "undo" });
-    expect(documentOf(undone).rig).toBe(documentOf(start).rig);
+    expect(modelOf(undone).rig).toBe(modelOf(start).rig);
     expect(undone.selection).toBeNull();
   });
 
@@ -140,7 +146,7 @@ describe("rig setup in the editor", () => {
   it("deletes the selected joint with Delete in Rig setup only", () => {
     const select: Action = { type: "select", selection: { kind: "bone", name: "head" } };
     const setup = run(initialState(), { type: "setMode", mode: "setup" }, select, { type: "deleteSelection" });
-    expect(documentOf(setup).rig.bones.map((candidate) => candidate.name)).not.toContain("head");
+    expect(modelOf(setup).rig.bones.map((candidate) => candidate.name)).not.toContain("head");
     expect(setup.selection).toEqual({ kind: "bone", name: "torso" });
     const pose = run(initialState(), { type: "setMode", mode: "pose" }, select, { type: "deleteSelection" });
     expect(pose.history.past).toHaveLength(0);

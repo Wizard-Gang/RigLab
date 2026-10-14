@@ -1,4 +1,4 @@
-// Pure document helpers: rest poses, unique names and blank animations.
+// Pure animation helpers: rest poses, unique names and blank animations.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import { ANIMATION_FORMAT, ANIMATION_VERSION } from "../format/animation";
 import type { RigLabAnimation } from "../format/animation";

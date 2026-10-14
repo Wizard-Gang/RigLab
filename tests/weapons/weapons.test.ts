@@ -1,19 +1,22 @@
 import { describe, expect, it } from "vitest";
 import type { Pose } from "../../vendor/hexframe/src/rig";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { restPose } from "../../src/editor/animations";
 import { isFree, validateWeapon } from "../../src/format/weapon";
 import type { RigLabWeapon, WeaponPoint } from "../../src/format/weapon";
+import type { Part } from "../../src/hexframe/parts";
 import { bodyPoint, bodyTransforms, chainEnd, holdConstraints, place, runtimeRig, withRotation } from "../../src/solve";
 import type { Constraints } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
-import { readyHold, WEAPON_PARTS, WEAPONS, weaponNamed } from "../../src/weapons/weapons";
 
-const rig = CHIBI_RIG;
+const rig = LIBRARY.rig;
 const chain = (name: string) => rig.chains.find((candidate) => candidate.name === name)!;
 const lengths = (pose: Pose) => skeletonFor(runtimeRig(rig), pose).segments.map(segmentLength);
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
-const weapon = (name: string): RigLabWeapon => weaponNamed(name)!;
+const item = (name: string) => LIBRARY.weapons.find((candidate) => candidate.name === name)!;
+const weapon = (name: string): RigLabWeapon => item(name).weapon;
+/** Weapon art by slot; both daggers share one part. */
+const weaponParts: Readonly<Record<string, Part>> = Object.assign({}, ...LIBRARY.weapons.map((candidate) => candidate.parts));
 /** Both feet planted where they stand. */
 const FEET = [{ chain: "leg-front", x: 5, y: 0 }, { chain: "leg-back", x: -5, y: 0 }];
 
@@ -26,17 +29,18 @@ const onAxis = (point: WeaponPoint, [butt, tip]: readonly [WeaponPoint, WeaponPo
 
 describe("the chibi's weapons", () => {
   it("are the sword, spear, axe and daggers, valid for the chibi, with art for every body", () => {
-    expect(WEAPONS.map((candidate) => candidate.name)).toEqual(["sword", "spear", "axe", "daggers"]);
-    for (const candidate of WEAPONS) {
+    const weapons = LIBRARY.weapons.map((candidate) => candidate.weapon);
+    expect(weapons.map((candidate) => candidate.name)).toEqual(["sword", "spear", "axe", "daggers"]);
+    for (const candidate of weapons) {
       expect(validateWeapon(candidate, rig).ok).toBe(true);
-      for (const body of candidate.bodies) expect(WEAPON_PARTS[body.slot]?.set).toBe(candidate.name);
+      for (const body of candidate.bodies) expect(weaponParts[body.slot]?.set).toBe(candidate.name);
     }
-    expect(Object.keys(WEAPON_PARTS).sort()).toEqual(["weapon_axe", "weapon_dagger", "weapon_spear", "weapon_sword"]);
+    expect(Object.keys(weaponParts).sort()).toEqual(["weapon_axe", "weapon_dagger", "weapon_spear", "weapon_sword"]);
   });
 
   it("use only the weapons palette's classes", () => {
     const palette = new Set(["part", "part--steel", "part--steel-dark", "part--wood", "part--wood-dark", "part--grip", "part--accent", "part--gem", "detail"]);
-    const used = Object.values(WEAPON_PARTS).flatMap((part) => part.paths.flatMap((path) => path.className.split(" ")));
+    const used = Object.values(weaponParts).flatMap((part) => part.paths.flatMap((path) => path.className.split(" ")));
     expect(used.filter((name) => !palette.has(name))).toEqual([]);
   });
 
@@ -86,8 +90,8 @@ describe("the chibi's weapons", () => {
 
 describe("a normal two-hand pose", () => {
   for (const name of ["sword", "spear", "axe"] as const) {
-    it(`holds the ${name} at its ready hold in both hands with both feet planted, every length kept and no limit passed`, () => {
-      const ready = readyHold(weapon(name));
+    it(`holds the ${name} at its hold in both hands with both feet planted, every length kept and no limit passed`, () => {
+      const ready = item(name).hold;
       expect(ready.bodies.map((placement) => placement.body)).toEqual([name]);
       const placement = ready.bodies[0]!;
       const held: Constraints = { pins: FEET, weapon: { weapon: weapon(name), bodies: ready.bodies } };
@@ -110,7 +114,7 @@ describe("a normal two-hand pose", () => {
   it("carries both daggers with their blades down along the forearms in a raised guard", () => {
     const guard = GUARD.reduce<Pose>((pose, [bone, rotation]) => withRotation(pose, bone, rotation), restPose(rig));
     const daggers = weapon("daggers");
-    expect(readyHold(daggers)).toEqual({ name: "daggers", bodies: [] });
+    expect(item("daggers").hold).toEqual({ name: "daggers", bodies: [] });
     const held: Constraints = { pins: FEET, weapon: { weapon: daggers, bodies: [] } };
     expect(holdConstraints(rig, guard, held).violations).toEqual([]);
     const placed = place(rig, guard);

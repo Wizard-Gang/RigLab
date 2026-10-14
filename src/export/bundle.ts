@@ -1,6 +1,7 @@
 // riglab-export bundles: a manifest that pins every file by SHA-256, the rig, its animations, the weapons they hold and
 // optional baked frames.
-import type { RigLabDocument } from "../format/document";
+import { heldWeapons, weaponRigs } from "../editor/model";
+import type { LibraryModel } from "../editor/model";
 import { bakeAnimation } from "./bake";
 
 export const EXPORT_FORMAT = "riglab.export";
@@ -45,27 +46,27 @@ export const animationFile = (name: string): string => `animations/${name}.anim.
 export const bakedFile = (name: string): string => `baked/${name}.baked.json`;
 export const weaponFile = (name: string): string => `weapons/${name}.weapon.json`;
 
-/** Build a bundle; paths are relative to its root, with the manifest first. */
-export async function buildBundle(document: RigLabDocument, options: { readonly baked: boolean; readonly generator: string }): Promise<Map<string, Uint8Array>> {
+/** Build a bundle of the model's rig, its animations and the weapons they hold; paths are relative to its root, with the manifest first. */
+export async function buildBundle(model: LibraryModel, options: { readonly baked: boolean; readonly generator: string }): Promise<Map<string, Uint8Array>> {
   const files = new Map<string, Uint8Array>();
   const add = async (file: string, value: unknown): Promise<string> => {
     const bytes = json(value);
     files.set(file, bytes);
     return sha256(bytes);
   };
-  const rig = { name: document.rig.name, file: rigFile(document.rig.name), sha256: await add(rigFile(document.rig.name), document.rig) };
+  const rig = { name: model.rig.name, file: rigFile(model.rig.name), sha256: await add(rigFile(model.rig.name), model.rig) };
   const animations: FileEntry[] = [];
-  for (const animation of document.animations) {
+  for (const animation of model.animations) {
     animations.push({ name: animation.name, file: animationFile(animation.name), sha256: await add(animationFile(animation.name), animation) });
   }
   const weapons: FileEntry[] = [];
-  for (const weapon of document.weapons ?? []) {
+  for (const weapon of heldWeapons(model)) {
     weapons.push({ name: weapon.name, file: weaponFile(weapon.name), sha256: await add(weaponFile(weapon.name), weapon) });
   }
   const baked: BakedEntry[] = [];
   if (options.baked) {
-    for (const animation of document.animations) {
-      const bake = bakeAnimation(document.rig, animation, document.weapons);
+    for (const animation of model.animations) {
+      const bake = bakeAnimation(model.rig, animation, weaponRigs(model));
       baked.push({ animation: animation.name, file: bakedFile(animation.name), sha256: await add(bakedFile(animation.name), bake) });
     }
   }

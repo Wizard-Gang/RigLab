@@ -2,19 +2,9 @@
 
 ## Open tasks
 
-### RL-038 — [REFACTOR] Make the editor's model the library itself
-
-- Dependency: None.
-- Why: The owner approved cutting the `riglab.document` leftovers and the re-export layers on 2026-10-13. Since RL-032 the editor's document is never a file. It still carries a format header, parse and serialize helpers that only tests call, and pruned copies of the weapons its keys hold, kept "so the document stays self-contained". `src/chibi/chibi.ts`, `src/weapons/weapons.ts` and `src/editor/templates.ts` only rename parts of `LIBRARY`. The weapon editing below needs a model that carries every weapon and its hold.
-- Scope: Replace `RigLabDocument` (`src/format/document.ts`) with the editor's model of the library in `src/editor/model.ts`: `{ rig, weapons, animations }`. `weapons` lists every library weapon in config order, each with its rig and its hold. `validateModel` checks the model whole, as `validateDocument` did. Remove `DOCUMENT_FORMAT`, `DOCUMENT_VERSION`, `parseDocument`, `serializeDocument`, `pruneWeapons` and the weapon-copy bookkeeping of the weapon pick. Delete `src/chibi/`, `src/weapons/` and `src/editor/templates.ts`. The editor, wardrobe, export and tests read `LIBRARY` or the model directly, and one helper in `src/library/` gives art parts by slot. Save still posts only the rig and animations, and export still lists only the weapons the animations hold. Update README and ARCHITECTURE (Editor, The chibi, Weapons, Source layout).
-- Non-goals: Saving weapons or holds (RL-041), the class model (RL-039), and any change a user can see. The editor, the wardrobe, saves and export bytes stay as they are.
-- Acceptance: None of these names remain in `src/` or `tests/`: `RigLabDocument`, `riglab.document`, `CHIBI_RIG`, `CHIBI_SKIN`, `CHIBI_PARTS`, `WEAPONS`, `WEAPON_PARTS`, `readyHold`, `weaponNamed` and `libraryDocument`. The model holds all four weapons and their holds, whether or not a key holds them, and picking a weapon adds or prunes nothing. The placeholder library's export bundle is byte-identical to main's. Headless Chrome on a worktree dev server over a temporary library copy picks a weapon, poses a key and saves, with no console errors. `npm run check` passes.
-- Validation: Pinned `npm ci`, the full Vitest suite, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/format/document.ts`, `src/format/index.ts`, `src/editor/types.ts`, `src/editor/core.ts`, `src/editor/documentEdits.ts`, `src/editor/weaponEdits.ts`, `src/editor/templates.ts`, `src/chibi/chibi.ts`, `src/weapons/weapons.ts`, `src/library/active.ts`, `src/library/load.ts`, `src/app/`, `src/export/bundle.ts`, `src/wardrobe/`, `tests/`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's approval on 2026-10-13.
-
 ### RL-039 — [FEAT] Give every animation a class
 
-- Dependency: RL-038.
+- Dependency: None.
 - Why: The owner said on 2026-10-13 that weapons are classes of animation: unarmed, 2h sword, 2h spear, 2h axe and daggers, with the spear kept as the fifth class. "Kind" already means idle, walk, jump, attack or hit. A class holds its weapon on every key, where today any key can pick or drop any weapon. The owner chose one animation of each kind per class, a fixed grid named `<class>-<kind>`.
 - Scope: The change has four parts.
   - Format. `riglab.anim` version 3 adds `class`, which is `unarmed` or the name of a library weapon. Each key's `weapon` gives way to `bodies`, which place the class weapon's free bodies with `body`, `x`, `y` and `rotation`. Every key of a sword, spear or axe animation places its body. Unarmed and dagger keys place none. A pin may not hold a chain the class weapon grips. The name must be `<class>-<kind>`, so a library holds at most one animation per class and kind. No weapon may be named `unarmed`.
@@ -48,7 +38,7 @@
 
 ### RL-041 — [FEAT] Save weapon rigs and holds into the library folder
 
-- Dependency: RL-038.
+- Dependency: None.
 - Why: The owner reported on 2026-10-13: "i dont see the prop (weapon) rigs at all". The library's `weapon.json` and `hold.json` change only by hand, because the RL-031 save endpoint writes only the rig and animations. Editing weapons in the editor (RL-043) first needs a write path, proven safe without UI as RL-031 was for animations.
 - Scope: The save body gains `weapons`: one `{ weapon, hold }` per library weapon, in config order. `planLibrarySave` writes `weapon.json` in the directory the weapon's line maps, and `hold.json` for a weapon with free bodies, each only when its text changes. It refuses a weapon that no `weapon` line maps, a weapon named unlike its line, and a hold for a weapon without free bodies. It never writes or removes part SVGs or palettes, or changes `config.txt`'s `weapon` lines. The merged library must still load, so a body slot without a part is refused. Backups, atomic writes and the `riglab:library-saved` event work as they do for animations. The editor's Save sends the model's weapons and holds, and an unchanged weapon writes nothing. Update README and ARCHITECTURE (Library folders, Saving).
 - Non-goals: Weapon editing UI (RL-043), creating, renaming or deleting weapons, and writing art or palettes.
@@ -89,7 +79,7 @@
 - Non-goals: Rig setup changes, timeline edits beyond interpolation, auto-key, and adding or moving keys.
 - Acceptance: Reducer and playback tests show that a pose edit is one undo step, and that pose edits are refused while playing. Switching modes keeps the frame, and no `pose` mode remains. Headless Chrome plays, pauses on a key, drags a hand, plays the change and undoes it, with no console errors. `npm run check` passes.
 - Validation: Pinned `npm ci`, focused editor and playback tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/editor/types.ts`, `src/editor/state.ts`, `src/editor/documentEdits.ts`, `src/app/App.tsx`, `src/app/ModePanel.tsx`, `src/app/Toolbar.tsx`, `src/app/Timeline.tsx`, `src/app/useCanvasDrags.ts`, `src/viewer/usePlayback.ts`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's answers on 2026-10-13.
+- Authorities: `src/editor/types.ts`, `src/editor/state.ts`, `src/editor/modelEdits.ts`, `src/app/App.tsx`, `src/app/ModePanel.tsx`, `src/app/Toolbar.tsx`, `src/app/Timeline.tsx`, `src/app/useCanvasDrags.ts`, `src/viewer/usePlayback.ts`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's answers on 2026-10-13.
 
 ### RL-045 — [FEAT] Polish the editor and the wardrobe in a UX pass
 
@@ -99,8 +89,8 @@
   - The library label appears twice, in the toolbar and in the status bar.
   - Some text still speaks of "seed animations" and "starting animations".
   - Rig setup, Pose and Animation give the same generic hint when nothing is selected.
-- Scope: Open the editor with Art on, and show the library label once. Give each mode's empty panel its own next step. Rig setup asks to select a joint or a weapon part. Animate asks to select a joint on a key. Export says what it writes. Remove stale text from the app, from `src/library/load.ts` and `placeholder-library/README.md`, and from the owner's `~/Documents/RigLab/README.md`, backing that file up first. Walk through every mode, class and kind, and the wardrobe, in headless Chrome at 1440 × 900 and at 860 px wide. Fix every overflow, clipped label, focus or contrast problem the walkthrough finds. Then sweep README and ARCHITECTURE for anything the earlier tasks left stale.
+- Scope: Open the editor with Art on, and show the library label once. Give each mode's empty panel its own next step. Rig setup asks to select a joint or a weapon part. Animate asks to select a joint on a key. Export says what it writes. Remove stale text from the app and `placeholder-library/README.md`, and from the owner's `~/Documents/RigLab/README.md`, backing that file up first. Walk through every mode, class and kind, and the wardrobe, in headless Chrome at 1440 × 900 and at 860 px wide. Fix every overflow, clipped label, focus or contrast problem the walkthrough finds. Then sweep README and ARCHITECTURE for anything the earlier tasks left stale.
 - Non-goals: New features or modes, format changes, and a new visual theme.
 - Acceptance: Tests pin Art on at start and the single library label. The walkthrough finds no horizontal overflow, clipped labels or console errors, and its screenshots go in the delivery report. No user-facing text mentions seed or starting animations, documents, New, Open or Pose mode. `npm run check` passes.
 - Validation: Pinned `npm ci`, focused app tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless walkthrough, and exact-head CI.
-- Authorities: `src/app/`, `src/wardrobe/`, `src/library/load.ts`, `placeholder-library/README.md`, `~/Documents/RigLab/README.md`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's direction on 2026-10-13.
+- Authorities: `src/app/`, `src/wardrobe/`, `placeholder-library/README.md`, `~/Documents/RigLab/README.md`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's direction on 2026-10-13.

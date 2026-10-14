@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Pose } from "../../vendor/hexframe/src/rig";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 import { restPose } from "../../src/editor/animations";
 import { bodyPoint, bodyTransforms, chainEnd, dragInPose, gripCenter, holdConstraints, runtimeRig } from "../../src/solve";
 import type { Constraints } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
 import { STAFF, TWIN } from "../format/weapon-fixtures";
 
-const rig = CHIBI_RIG;
+const rig = LIBRARY.rig;
 const chain = (name: string) => rig.chains.find((candidate) => candidate.name === name)!;
 const lengths = (pose: Pose) => skeletonFor(runtimeRig(rig), pose).segments.map(segmentLength);
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);

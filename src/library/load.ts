@@ -1,4 +1,4 @@
-// A library folder, loaded: the rig, its skins, the weapons it holds and the animations new documents start with.
+// A library folder, loaded: the rig, its skins, the weapons it holds and every animation, in config order.
 import { validateAnimation } from "../format/animation";
 import type { RigLabAnimation } from "../format/animation";
 import type { HeldWeapon } from "../format/constraints";

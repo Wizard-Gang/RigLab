@@ -1,29 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { CHIBI_RIG, CHIBI_SKIN } from "../../src/chibi/chibi";
 import { restPose } from "../../src/editor/animations";
-import { ART_PARTS } from "../../src/editor/templates";
 import type { RigLabRig } from "../../src/format";
 import { artPlacements, paintOrder, withWeaponArt } from "../../src/hexframe/art";
 import { bodyTransforms, holdConstraints, place, runtimeRig } from "../../src/solve";
 import type { Wielded } from "../../src/solve";
+import { LIBRARY } from "../../src/library/active";
+import { partsBySlot } from "../../src/library/parts";
 import { constraintGeometry } from "../../src/viewer/constraintGeometry";
-import { readyHold, weaponNamed } from "../../src/weapons/weapons";
 
-const rig = CHIBI_RIG;
-/** Rig parts draw in the editor's skin, and each weapon in its own art set. */
-const skin = CHIBI_SKIN.name;
+const rig = LIBRARY.rig;
+/** Rig parts draw in the editor's skin, the library's first, and each weapon in its own art set. */
+const skin = LIBRARY.skins[0]!.name;
+const PARTS = partsBySlot(LIBRARY);
 const runtime = runtimeRig(rig);
 const wielded = (name: string): Wielded => {
-  const weapon = weaponNamed(name)!;
-  return { weapon, bodies: readyHold(weapon).bodies };
+  const { weapon, hold } = LIBRARY.weapons.find((item) => item.name === name)!;
+  return { weapon, bodies: hold.bodies };
 };
 
 /** The paint order of the chibi's art with a weapon in an animation, as the art layer draws it. */
 function painted(name: string, animation: string | null, on: RigLabRig = rig): string[] {
   const held = wielded(name);
   const pose = holdConstraints(on, restPose(on), { pins: [], weapon: held }).pose;
-  const placements = artPlacements(on, runtimeRig(on), place(on, pose), ART_PARTS, animation);
-  return withWeaponArt(on, runtimeRig(on), placements, bodyTransforms(on, pose, held), held.weapon, ART_PARTS, animation)
+  const placements = artPlacements(on, runtimeRig(on), place(on, pose), PARTS, animation);
+  return withWeaponArt(on, runtimeRig(on), placements, bodyTransforms(on, pose, held), held.weapon, PARTS, animation)
     .map((item) => `${item.part.set}:${item.bone}`);
 }
 const art = (bones: readonly string[]): string[] => bones.map((bone) => `${skin}:${bone}`);

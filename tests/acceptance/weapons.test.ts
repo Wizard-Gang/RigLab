@@ -4,15 +4,16 @@
 // must play the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
-import { activeAnimationOf, documentOf, editorReducer, initialState } from "../../src/editor/state";
+import { weaponRigs } from "../../src/editor/model";
+import type { LibraryModel } from "../../src/editor/model";
+import { activeAnimationOf, editorReducer, initialState, modelOf } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import type { RigLabBaked } from "../../src/export/bake";
 import { buildBundle } from "../../src/export/bundle";
-import type { RigLabDocument } from "../../src/format";
 import { toHexframeClip } from "../../src/hexframe/adapter";
 import { constraintsAt, dragInPose, engineOf, gripCenter, place, playAt, rotate, samplePose, togglePin } from "../../src/solve";
 import type { DragHandle } from "../../src/solve";
-import { weaponNamed } from "../../src/weapons/weapons";
+import { LIBRARY } from "../../src/library/active";
 import { written } from "../export/written";
 
 const TOLERANCE = 1e-5;
@@ -30,10 +31,10 @@ const run = (state: EditorState, ...actions: Action[]): EditorState => {
  * key's swing may pass out of reach, as on the canvas; only the finished key must hold.
  */
 function drag(state: EditorState, handle: DragHandle, target: { x: number; y: number }): EditorState {
-  const document = documentOf(state);
+  const model = modelOf(state);
   const animation = activeAnimationOf(state)!;
-  const constraints = constraintsAt(animation, state.frame, document.weapons);
-  const solved = dragInPose(document.rig, samplePose(document.rig, animation, state.frame, document.weapons).pose, constraints, handle, target);
+  const constraints = constraintsAt(animation, state.frame, weaponRigs(model));
+  const solved = dragInPose(model.rig, samplePose(model.rig, animation, state.frame, weaponRigs(model)).pose, constraints, handle, target);
   return actions(state, { type: "setPose", pose: solved.pose, constraints: solved.constraints, warning: solved.message });
 }
 
@@ -42,17 +43,17 @@ const actions = (state: EditorState, ...list: Action[]): EditorState => list.red
 
 /** The key at the current frame holds every pin and grip. */
 function holds(state: EditorState): EditorState {
-  const document = documentOf(state);
-  expect(samplePose(document.rig, activeAnimationOf(state)!, state.frame, document.weapons).violations, `frame ${state.frame}`).toEqual([]);
+  const model = modelOf(state);
+  expect(samplePose(model.rig, activeAnimationOf(state)!, state.frame, weaponRigs(model)).violations, `frame ${state.frame}`).toEqual([]);
   return state;
 }
 
 /** Plant a foot where it stands at the current frame, the way Pin end does. */
 function pin(state: EditorState, chain: string): EditorState {
-  const document = documentOf(state);
+  const model = modelOf(state);
   const animation = activeAnimationOf(state)!;
-  const pose = samplePose(document.rig, animation, state.frame, document.weapons).pose;
-  const result = togglePin(document.rig, pose, constraintsAt(animation, state.frame, document.weapons), chain);
+  const pose = samplePose(model.rig, animation, state.frame, weaponRigs(model)).pose;
+  const result = togglePin(model.rig, pose, constraintsAt(animation, state.frame, weaponRigs(model)), chain);
   if (!result.ok) throw new Error(result.error);
   return run(state, { type: "setPose", pose, constraints: result.constraints, note: result.message });
 }
@@ -74,9 +75,9 @@ const SWINGS: Record<string, readonly (Swing | Hands)[]> = {
   ],
 };
 
-function author(name: string): RigLabDocument {
+function author(name: string): LibraryModel {
   let state = run(initialState(), { type: "activateAnimation", name: "attack" }, { type: "renameAnimation", from: "attack", to: `${name}-attack` }, { type: "setMode", mode: "pose" });
-  const weapon = weaponNamed(name)!;
+  const weapon = LIBRARY.weapons.find((item) => item.name === name)!.weapon;
   for (const [index, frame] of [0, 8, 16, 24].entries()) {
     state = run(state, { type: "setFrame", frame });
     state = pin(pin(state, "leg-front"), "leg-back");
@@ -96,7 +97,7 @@ function author(name: string): RigLabDocument {
     expect(activeAnimationOf(state)!.keys.find((key) => key.frame === frame)!.weapon!.bodies[0]!.rotation).toBeCloseTo(swing.rotation, 5);
   }
   state = run(state, { type: "timeline", edit: { kind: "setInterpolation", frame: 8, interpolation: "linear" } });
-  return documentOf(state);
+  return modelOf(state);
 }
 
 /** World position of a point in a baked transform's frame. */
@@ -109,17 +110,17 @@ const gap = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.h
 describe("weapon acceptance", () => {
   for (const name of ["sword", "spear", "axe", "daggers"]) {
     it(`authors and exports a ${name} attack with the skeleton connected, the feet planted and the ${name} in hand`, async () => {
-      const document = author(name);
-      const named = (animations: RigLabDocument["animations"]) => animations.find((item) => item.name === `${name}-attack`)!;
-      const animation = named(document.animations);
+      const model = author(name);
+      const named = (animations: LibraryModel["animations"]) => animations.find((item) => item.name === `${name}-attack`)!;
+      const animation = named(model.animations);
       expect(animation.keys.map((key) => [key.frame, key.weapon?.name, key.pins?.length])).toEqual([0, 8, 16, 24].map((frame) => [frame, name, 2]));
-      // The bundle's files are the document's own, and its baked frames are a fresh bake of them.
-      const bundle = await written(await buildBundle(document, { baked: true, generator: "RigLab acceptance" }), document);
+      // The bundle's files are the model's own, and its baked frames are a fresh bake of them.
+      const bundle = await written(await buildBundle(model, { baked: true, generator: "RigLab acceptance" }), model);
       const { rig, weapons } = bundle;
       const again = named(bundle.animations);
       const baked: RigLabBaked = bundle.baked.get(again.name)!;
       const clip = toHexframeClip(rig, again, weapons);
-      const [engine, original] = [engineOf(rig, again, weapons), engineOf(document.rig, animation, document.weapons)];
+      const [engine, original] = [engineOf(rig, again, weapons), engineOf(model.rig, animation, weaponRigs(model))];
       const weapon = weapons.find((candidate) => candidate.name === name)!;
       const transformOf = (frame: number, bone: string) => baked.frames[frame]![baked.bones.indexOf(bone)]!;
       let drift = 0;

@@ -1,6 +1,6 @@
 // Saving the editor into the library folder through the dev server, and what to do when another save changes it.
-import type { RigLabDocument } from "../format/document";
 import { SAVE_ROUTE } from "../library/save";
+import type { LibraryModel } from "./model";
 
 export type SaveAnswer =
   | { readonly ok: true; readonly saveId: string; readonly note: string }
@@ -8,14 +8,14 @@ export type SaveAnswer =
 
 const NEEDS_DEV_SERVER = "Save needs npm start: only the dev server can write the library folder";
 
-/** Post the document's rig and animations to the dev server. Every failure becomes one line for the status bar. */
-export async function saveToLibrary(document: RigLabDocument, fetchImpl: typeof fetch = fetch): Promise<SaveAnswer> {
+/** Post the model's rig and animations to the dev server. Every failure becomes one line for the status bar. */
+export async function saveToLibrary(model: LibraryModel, fetchImpl: typeof fetch = fetch): Promise<SaveAnswer> {
   let response: Response;
   try {
     response = await fetchImpl(SAVE_ROUTE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rig: document.rig, animations: document.animations }),
+      body: JSON.stringify({ rig: model.rig, animations: model.animations }),
     });
   } catch (error) {
     return { ok: false, error: `${NEEDS_DEV_SERVER} (${(error as Error).message})` };

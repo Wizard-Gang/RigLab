@@ -26,7 +26,7 @@ export interface Key {
   readonly pose: Pose;
   /** Chain ends held at world points while this key is in force. */
   readonly pins?: readonly Pin[];
-  /** A weapon of the document the key's hands hold. */
+  /** A weapon of the library the key's hands hold. */
   readonly weapon?: HeldWeapon;
 }
 
@@ -67,7 +67,7 @@ function validatePose(issues: Issues, path: string, value: unknown, rig: RigLabR
   }
 }
 
-/** Validate an animation for its rig; keys may hold only the given weapons, as the document carries them. */
+/** Validate an animation for its rig; keys may hold only the given weapons, the library's. */
 export function validateAnimation(value: unknown, rig: RigLabRig, weapons: readonly RigLabWeapon[] = []): Validation<RigLabAnimation> {
   const issues = new Issues();
   const fields = ["format", "version", "name", "rig", "kind", "fps", "length", "loop", "keys"];

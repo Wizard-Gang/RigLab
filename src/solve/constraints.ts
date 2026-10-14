@@ -14,13 +14,13 @@ import type { Wielded } from "./weapons";
 
 export interface Constraints {
   readonly pins: readonly Pin[];
-  /** The weapon the key holds, resolved against the document's weapons; absent or null when none. */
+  /** The weapon the key holds, resolved against the library's weapons; absent or null when none. */
   readonly weapon?: Wielded | null;
 }
 
 export const NO_CONSTRAINTS: Constraints = Object.freeze({ pins: [] });
 
-/** A key's constraints; its weapon is resolved against the document's `weapons`. */
+/** A key's constraints; its weapon is resolved against the library's `weapons`. */
 export function constraintsOf(key: Key, weapons: readonly RigLabWeapon[] = []): Constraints {
   const weapon = key.weapon ? wieldedOf(key.weapon, weapons) : null;
   if (!key.pins && !weapon) return NO_CONSTRAINTS;

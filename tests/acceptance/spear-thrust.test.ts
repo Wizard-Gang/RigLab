@@ -4,11 +4,12 @@
 // and playback, and that Hexframe plays the exported clip exactly as RigLab baked it.
 import { describe, expect, it } from "vitest";
 import { sampleClip } from "../../vendor/hexframe/src/rig/sample";
-import { activeAnimationOf, documentOf, editorReducer, initialState } from "../../src/editor/state";
+import { weaponRigs } from "../../src/editor/model";
+import type { LibraryModel } from "../../src/editor/model";
+import { activeAnimationOf, editorReducer, initialState, modelOf } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import type { RigLabBaked, Transform } from "../../src/export/bake";
 import { buildBundle } from "../../src/export/bundle";
-import type { RigLabDocument } from "../../src/format";
 import { toHexframeClip } from "../../src/hexframe/adapter";
 import { constraintsAt, dragInPose, engineOf, place, playAt, rotate, samplePose, togglePin } from "../../src/solve";
 import { written } from "../export/written";
@@ -21,7 +22,8 @@ const run = (state: EditorState, ...actions: Action[]): EditorState => {
 
 /** Plant a foot where it stands at the current frame, the way Pin end does. */
 function pin(state: EditorState, chain: string): EditorState {
-  const { rig, weapons } = documentOf(state);
+  const { rig } = modelOf(state);
+  const weapons = weaponRigs(modelOf(state));
   const animation = activeAnimationOf(state)!;
   const pose = samplePose(rig, animation, state.frame, weapons).pose;
   const result = togglePin(rig, pose, constraintsAt(animation, state.frame, weapons), chain);
@@ -31,7 +33,8 @@ function pin(state: EditorState, chain: string): EditorState {
 
 /** Drag the spear's move handle to put the midpoint of its grips at `target`, keying the current frame. */
 function thrust(state: EditorState, target: { x: number; y: number }): EditorState {
-  const { rig, weapons } = documentOf(state);
+  const { rig } = modelOf(state);
+  const weapons = weaponRigs(modelOf(state));
   const animation = activeAnimationOf(state)!;
   const constraints = constraintsAt(animation, state.frame, weapons);
   const drag = dragInPose(rig, samplePose(rig, animation, state.frame, weapons).pose, constraints, { kind: "weapon-move", body: "spear" }, target);
@@ -39,7 +42,7 @@ function thrust(state: EditorState, target: { x: number; y: number }): EditorSta
   return run(state, { type: "setPose", pose: drag.pose, constraints: drag.constraints });
 }
 
-function author(): RigLabDocument {
+function author(): LibraryModel {
   let state = run(initialState(), { type: "setMode", mode: "setup" });
   // Rig setup: lengthen both forearms from 11 to 14 units.
   state = run(state,
@@ -57,7 +60,7 @@ function author(): RigLabDocument {
     state = thrust(run(state, { type: "holdWeapon", name: "spear" }), target);
   }
   state = run(state, { type: "timeline", edit: { kind: "setInterpolation", frame: 8, interpolation: "linear" } });
-  return documentOf(state);
+  return modelOf(state);
 }
 
 const BONE_LENGTH_TOLERANCE = 1e-5;
@@ -73,14 +76,14 @@ const pointOf = (baked: RigLabBaked, frame: number, bone: string, local: readonl
 
 describe("spear-thrust acceptance", () => {
   it("authors and exports a spear thrust with every joint connected, every length kept and both hands on the spear", async () => {
-    const document = author();
-    const animation = document.animations.find((candidate) => candidate.name === "spear-thrust")!;
+    const model = author();
+    const animation = model.animations.find((candidate) => candidate.name === "spear-thrust")!;
     expect([animation.kind, animation.fps, animation.length, animation.loop]).toEqual(["attack", 60, 24, false]);
     expect(animation.keys.map((key) => [key.frame, key.interpolation])).toEqual([[0, "smoothstep"], [8, "linear"], [16, "smoothstep"], [24, "smoothstep"]]);
     expect(animation.keys.every((key) => key.pins?.length === 2 && key.weapon?.name === "spear")).toBe(true);
 
-    // The bundle's files are the document's own, and its baked frames are a fresh bake of them.
-    const bundle = await written(await buildBundle(document, { baked: true, generator: "RigLab acceptance" }), document);
+    // The bundle's files are the model's own, and its baked frames are a fresh bake of them.
+    const bundle = await written(await buildBundle(model, { baked: true, generator: "RigLab acceptance" }), model);
     const { rig, weapons } = bundle;
     const again = bundle.animations.find((candidate) => candidate.name === "spear-thrust")!;
     const baked: RigLabBaked = bundle.baked.get("spear-thrust")!;
@@ -88,7 +91,7 @@ describe("spear-thrust acceptance", () => {
     expect(baked.frames).toHaveLength(25);
     const clip = toHexframeClip(rig, again, weapons);
     expect([clip.duration, clip.poses.length]).toEqual([24, 13]);
-    const [engine, original] = [engineOf(rig, again, weapons), engineOf(document.rig, animation, document.weapons)];
+    const [engine, original] = [engineOf(rig, again, weapons), engineOf(model.rig, animation, weaponRigs(model))];
     const spear = weapons.find((weapon) => weapon.name === "spear")!.bodies[0]!;
 
     for (let frame = 0; frame < baked.frames.length; frame += 1) {

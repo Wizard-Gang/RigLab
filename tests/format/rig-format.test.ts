@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { validateRig } from "../../src/format";
-import { CHIBI_RIG } from "../../src/chibi/chibi";
+import { LIBRARY } from "../../src/library/active";
 
 type Mutable = Record<string, any>;
 
 /** A deep, freely mutable copy of the chibi rig for building invalid variants. */
-const chibi = (): Mutable => structuredClone(CHIBI_RIG) as Mutable;
+const chibi = (): Mutable => structuredClone(LIBRARY.rig) as Mutable;
 
 function errorsOf(change: (rig: Mutable) => void): string {
   const rig = chibi();
