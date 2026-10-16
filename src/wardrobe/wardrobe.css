@@ -5,6 +5,8 @@
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas: "bar bar" "stage panel";
   height: 100vh;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .wardrobe__title { color: var(--muted); letter-spacing: 0.04em; }
 .wardrobe__library { margin-left: auto; }
