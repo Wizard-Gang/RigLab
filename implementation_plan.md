@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-051 — [FIX] Bend the front arm's elbow outward
-
-- Dependency: RL-050, because flipping the bend makes the solver pick angles a turn away from the stored ones.
-- Why: The owner reported on 2026-10-16: "forearm front is angling the wrong way it should joint the other direction". Both arm chains in the chibi rig bend −1, so the front arm (`arm-front`, on the +x side) folds its elbow inward across the chest. The frame audit finds `forearm-front` between −102° and −128° in every frame of the sword, spear and axe animations, while the back arm folds outward. A prototype with the front chain bent +1 shows both elbows out and both fists closing on the grip.
-- Scope: Set the `arm-front` chain's `bend` to 1 in `placeholder-library/rigs/chibi.rig.json`. Right after the merge, change the owner's `~/Documents/RigLab/rigs/chibi.rig.json` the same way, after copying it to `backups/<UTC stamp>-rl-051/`. Keys keep their stored rotations. Held grips are solved with the new bend as they play, and unarmed and dagger keys are forward kinematics that the bend does not touch. Update the chibi test and ARCHITECTURE (The chibi).
-- Non-goals: Joint limits, rewriting stored keys, mirroring the unarmed motion (the prototype showed both hands meeting at the centre in the walk), and the back arm.
-- Acceptance: The chibi test pins both arm chains' bends. A solver test holds the sword at rest and finds `forearm-front` folded outward (a positive local rotation). Headless Chrome on a worktree dev server over a copy of the owner's folder shows both elbows out in the sword, spear and axe animations, in the editor and the wardrobe. `check:library` passes on the owner's folder after the change, and the backup holds the previous rig. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused chibi and solver tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, `npm run check:library` on the owner's folder, and exact-head CI.
-- Authorities: `placeholder-library/rigs/chibi.rig.json`, `~/Documents/RigLab/rigs/chibi.rig.json`, `src/solve/ik.ts`, `tests/chibi/chibi.test.ts`, `docs/ARCHITECTURE.md`, and the owner's report on 2026-10-16.
-
 ### RL-052 — [FIX] Draw held weapons over the head with the hands over their grips
 
 - Dependency: RL-051, so the hands close on the grips from outside.

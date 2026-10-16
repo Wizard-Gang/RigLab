@@ -193,7 +193,7 @@
       "name": "arm-front",
       "upper": "arm-front",
       "lower": "forearm-front",
-      "bend": -1
+      "bend": 1
     },
     {
       "name": "arm-back",

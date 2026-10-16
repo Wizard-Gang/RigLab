@@ -57,8 +57,8 @@ function author(): LibraryModel {
   // The attack has four keys, at 0, 8, 16 and 24 on Hexframe's clock, and every one holds the spear.
   state = run(state, { type: "activateAnimation", name: "spear-attack" }, { type: "setMode", mode: "animate" });
   // At each key: plant both feet, then drag the spear, level, by its grips' midpoint, so the front hand sits 8 units
-  // ahead of the target. The keys are a wind-up with the elbows back, a transition with them centered, an extension with
-  // the hands pushed forward, and the recovery.
+  // ahead of the target. The keys are a wind-up with the hands drawn in and both elbows out, a transition, an extension
+  // with the hands pushed forward, and the recovery.
   const windUp = { x: -1.5, y: -35 };
   for (const [frame, target] of [[0, windUp], [8, { x: 12.5, y: -37 }], [16, { x: 21.5, y: -41 }], [24, windUp]] as const) {
     state = pin(pin(run(state, { type: "setFrame", frame }), "leg-front"), "leg-back");
@@ -140,10 +140,13 @@ describe("spear-thrust acceptance", () => {
     const shoulder = (frame: number) => pointOf(baked, frame, "arm-front", [0, 0]);
     const elbow = (frame: number) => pointOf(baked, frame, "forearm-front", [0, 0]);
     const hand = (frame: number) => pointOf(baked, frame, "forearm-front", [0, 14]);
-    expect(elbow(0).x).toBeLessThan(shoulder(0).x - 5);
-    expect(Math.abs(elbow(8).x - shoulder(8).x)).toBeLessThan(4);
+    const backShoulder = (frame: number) => pointOf(baked, frame, "arm-back", [0, 0]);
+    const backElbow = (frame: number) => pointOf(baked, frame, "forearm-back", [0, 0]);
+    // Both elbows fold outward: the front one stays outside its shoulder at every key, the back one at the wind-up and
+    // the recovery, while the extension pushes the front hand forward.
+    for (const frame of [0, 8, 16, 24]) expect(elbow(frame).x, `front elbow at frame ${frame}`).toBeGreaterThan(shoulder(frame).x + 5);
+    expect(backElbow(0).x).toBeLessThan(backShoulder(0).x - 5);
+    expect(backElbow(24).x).toBeLessThan(backShoulder(24).x - 5);
     expect(hand(16).x).toBeGreaterThan(shoulder(16).x + 17);
-    expect(elbow(16).x).toBeGreaterThan(shoulder(16).x);
-    expect(elbow(24).x).toBeLessThan(shoulder(24).x - 5);
   });
 });

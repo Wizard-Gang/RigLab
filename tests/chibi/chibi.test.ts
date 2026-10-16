@@ -5,6 +5,7 @@ import { blankAnimation } from "../../src/editor/animations";
 import { ANIMATION_KINDS } from "../../src/format/timing";
 import { libraryModel, validateModel } from "../../src/editor/model";
 import { initialState, isDirty, modelOf } from "../../src/editor/state";
+import { holdAtRest } from "../../src/editor/weaponEdits";
 import type { RigLabRig } from "../../src/format";
 import { toHexframeRig } from "../../src/hexframe/adapter";
 import { artPlacements } from "../../src/hexframe/art";
@@ -42,13 +43,25 @@ const HEXFRAME_CHAINS = [
   { name: "arm-front", upper: "arm-front", lower: "forearm-front", bend: -1 },
   { name: "arm-back", upper: "arm-back", lower: "forearm-back", bend: -1 },
 ];
+/** The chibi folds its front elbow outward, away from the body, by the owner's direction on 2026-10-16; Hexframe never reads chains. */
+const CHIBI_CHAINS = HEXFRAME_CHAINS.map((chain) => (chain.name === "arm-front" ? { ...chain, bend: 1 } : chain));
 
 describe("chibi rig", () => {
-  it("keeps Hexframe's 11-bone tree, chains and bend sides, with art slots of its own", () => {
+  it("keeps Hexframe's 11-bone tree and chains, folds both elbows outward, and has art slots of its own", () => {
     expect(chibi.bones.map((bone) => [bone.name, bone.parent, bone.slot])).toEqual(HEXFRAME_TREE.map(([name, parent, slot]) => [name, parent, `chibi_${slot}`]));
-    expect(chibi.chains).toEqual(HEXFRAME_CHAINS);
+    expect(chibi.chains).toEqual(CHIBI_CHAINS);
     expect(chibi.depthProfiles?.sides.facingRight).toEqual({ arms: { far: "arm-front", near: "arm-back" }, legs: { far: "leg-front", near: "leg-back" } });
     expect(createRig(chibi as unknown as RigContract).bones).toHaveLength(11);
+  });
+
+  it("holds a two-handed weapon at rest with both elbows folded outward", () => {
+    for (const name of ["sword", "spear", "axe"]) {
+      const held = holdAtRest(chibi, LIBRARY.weapons.find((item) => item.weapon.name === name)!);
+      expect(held.violations, name).toEqual([]);
+      // A positive local rotation folds the front forearm in toward the body, so its elbow points out; the back arm mirrors it.
+      expect(held.pose["forearm-front"]!.rotation!, name).toBeGreaterThan(0);
+      expect(held.pose["forearm-back"]!.rotation!, name).toBeLessThan(0);
+    }
   });
 
   it("paints both arms in front while a two-handed weapon is held, and the far arm behind otherwise", () => {
