@@ -57,6 +57,8 @@ export type Action =
   /** The library folder now holds `model`; `note` says what was written. */
   | { readonly type: "saved"; readonly model: LibraryModel; readonly note: string }
   | { readonly type: "status"; readonly status: Status | null }
+  /** Discard every unsaved change: back to the library folder's saved files, with undo and redo cleared. */
+  | { readonly type: "revert" }
   | { readonly type: "undo" }
   | { readonly type: "redo" }
   | { readonly type: "deleteSelection" }

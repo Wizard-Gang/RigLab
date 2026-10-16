@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-049 — [FEAT] Revert the editor to the library folder's saved files
-
-- Dependency: None.
-- Why: The owner asked on 2026-10-16 for "a full reset button to go back to the saved versions and wipe the in progress". Undo steps back one change at a time. Reloading the page is the only full reset, and the browser's leave-page prompt blocks it while there are unsaved changes.
-- Scope: Add Revert next to Save in the toolbar, enabled while there are unsaved changes. After a confirm, it puts the rig, the weapons and holds and every animation back to the files the editor opened or last saved, and clears undo and redo. Animations the open step adds stay added, as on open. The mode, class, kind and frame stay. External changes to the folder still reload the page, as the library plugin does today. Update README and ARCHITECTURE (Editor state).
-- Non-goals: Per-animation revert, an autosave, a history of saves, and reading backups.
-- Acceptance: Reducer tests cover three cases. Revert after edits to a pose, a weapon hold and the rig restores the saved model and empties undo and redo. Revert after a save keeps what was saved. Revert with no changes is disabled. Headless Chrome on a worktree dev server over a library copy poses a key, accepts the confirm, sees the saved pose and no unsaved mark, and leaves the folder's files unchanged. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused editor tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/app/Toolbar.tsx`, `src/app/App.tsx`, `src/editor/state.ts`, `src/editor/core.ts`, `src/editor/history.ts`, `src/editor/types.ts`, `src/library/plugin.ts`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's request on 2026-10-16.
-
 ### RL-050 — [FIX] Keep every bone's rotation continuous between Hexframe's poses
 
 - Dependency: None.

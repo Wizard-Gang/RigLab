@@ -4,7 +4,7 @@ import { fillClasses } from "./classes";
 import { record, startHistory } from "./history";
 import { libraryModel } from "./model";
 import type { LibraryModel } from "./model";
-import { error, info, modelOf } from "./types";
+import { error, info, isDirty, modelOf } from "./types";
 import type { EditorState } from "./types";
 import { fitView } from "./view";
 
@@ -59,6 +59,18 @@ export function openState(loaded: LibraryModel = libraryModel(LIBRARY)): EditorS
   if (!count) return state;
   const text = [`Added ${count} missing ${count === 1 ? "animation" : "animations"}, one of each class and kind; Save writes them`, ...filled.misses].join("; ");
   return reconcile({ ...state, history: startHistory(filled.model), status: filled.misses.length ? error(text) : info(text) });
+}
+
+/**
+ * Back to the library folder's saved files: the model as last loaded or saved, with any missing class and kind started
+ * again as on open, and a fresh history, so undo cannot bring the discarded changes back. Mode, animation, frame, view
+ * and a selection the saved model still has stay.
+ */
+export function revertState(state: EditorState): EditorState {
+  if (!isDirty(state)) return state;
+  const filled = fillClasses(state.saved);
+  const model = filled.started.length ? filled.model : state.saved;
+  return reconcile({ ...state, history: startHistory(model), status: info("Reverted to the library folder's saved files; undo and redo are cleared") });
 }
 
 /** Commit a model edit to history, then point the editor at the result. */
