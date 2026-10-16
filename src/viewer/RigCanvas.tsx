@@ -43,6 +43,16 @@ const ROOT_PX = 6.5;
 const TIP_PX = 4;
 const DRAG_THRESHOLD_PX = 3;
 
+/**
+ * A press on the canvas starts no browser text selection or drag, which WebKit would paint over the canvas and panels.
+ * Cancelling it also keeps focus where it was, so a focused field is blurred here and still commits.
+ */
+function claimPress(event: ReactPointerEvent<Element>): void {
+  event.preventDefault();
+  const focused = document.activeElement;
+  if (focused instanceof HTMLElement && focused !== document.body) focused.blur();
+}
+
 /** The rig's SVG space in its own units (x right, y down), with wheel zoom at the cursor and drag to pan. */
 export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onCursor, grid, drag, constraints, weaponLines = true, weaponSetup = false, onHandle, ghosts, children }: RigCanvasProps) {
   const svg = useRef<SVGSVGElement>(null);
@@ -78,6 +88,7 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
 
   const grab = (handle: Handle) => (event: ReactPointerEvent<SVGElement>): void => {
     event.stopPropagation();
+    claimPress(event);
     if (handle.kind === "joint" || handle.kind === "tip") onSelect(handle.bone);
     onHandle?.(handle);
     if (!drag || event.button !== 0) return;
@@ -101,6 +112,7 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
       aria-label={`${rig.bones.length}-bone skeleton`}
       onPointerDown={(event) => {
         if (event.button !== 0 && event.button !== 1) return;
+        claimPress(event);
         event.currentTarget.setPointerCapture(event.pointerId);
         pan.current = { x: event.clientX, y: event.clientY, view, scale, moved: false };
       }}
@@ -160,9 +172,7 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
               {Math.hypot(pin.end.x - pin.at.x, pin.end.y - pin.at.y) > 1e-3 ? (
                 <line className="pin-strain" x1={pin.end.x} y1={pin.end.y} x2={pin.at.x} y2={pin.at.y} />
               ) : null}
-              <rect className="pin" x={pin.at.x - 5 / scale} y={pin.at.y - 5 / scale} width={10 / scale} height={10 / scale}>
-                <title>{`${pin.chain} pinned`}</title>
-              </rect>
+              <rect className="pin" aria-label={`${pin.chain} pinned`} x={pin.at.x - 5 / scale} y={pin.at.y - 5 / scale} width={10 / scale} height={10 / scale} />
             </g>
           ))}
         </g>
@@ -188,10 +198,9 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
               width={(TIP_PX * 2) / scale}
               height={(TIP_PX * 2) / scale}
               transform={`rotate(45 ${segment.to.x} ${segment.to.y})`}
+              aria-label={`${segment.bone} end`}
               onPointerDown={grab({ bone: segment.bone, kind: "tip" })}
-            >
-              <title>{`${segment.bone} end`}</title>
-            </rect>
+            />
           ))
           : null}
         {skeleton.joints.map((joint) => (
@@ -201,10 +210,9 @@ export function RigCanvas({ rig, skeleton, selected, onSelect, view, onView, onC
             cx={joint.x}
             cy={joint.y}
             r={(joint.root ? ROOT_PX : JOINT_PX) / scale}
+            aria-label={joint.bone}
             onPointerDown={grab({ bone: joint.bone, kind: "joint" })}
-          >
-            <title>{joint.bone}</title>
-          </circle>
+          />
         ))}
       </g>
       {constraints && drag ? <WeaponHandles markers={constraints.weapons} scale={scale} grab={grab} setup={weaponSetup} /> : null}

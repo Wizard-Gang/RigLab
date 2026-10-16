@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-047 — [FIX] Stop the browser's selection highlight and tooltips while posing
-
-- Dependency: None.
-- Why: The owner reported on 2026-10-16: "theres a weird highlight popping up when i try to pose. it makes it hard". The owner's editor runs in Safari; WebKit is the client on the dev server's port. No stylesheet sets `user-select`, and a press on the canvas never cancels its default action, so a pose drag can start the browser's own selection, which WebKit paints over the SVG and the panel text the pointer crosses. Every joint, tip and weapon handle also carries an SVG `<title>`, which Safari pops up as a tooltip while the pointer rests on it.
-- Scope: Set `user-select: none`, with its `-webkit-` form, on the editor's canvas, toolbar, panels, timeline and status bar, and on the wardrobe's figure and controls. Text fields stay selectable. A press on the canvas cancels its default action, and panning, wheel zoom, handle drags and selection behave as before. The canvas names its handles with `aria-label` instead of `<title>`, so no tooltip appears. Update ARCHITECTURE (Canvas).
-- Non-goals: Colors, handle sizes, hover styles, keyboard focus and the hierarchy's own labels.
-- Acceptance: A unit test renders the canvas with handles and finds no `<title>` under it and an accessible name on every joint, tip and weapon handle. Headless Chrome on a worktree dev server presses a joint, drags it across the canvas and over the inspector, and then finds `getSelection()` empty. The computed `user-select` is `none` on the canvas and panels and `text` in a number field. The owner confirms in Safari after the merge. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused canvas tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/viewer/RigCanvas.tsx`, `src/viewer/WeaponMarkers.tsx`, `src/app/styles.css`, `src/app/panels.css`, `src/wardrobe/wardrobe.css`, `docs/ARCHITECTURE.md`, and the owner's report on 2026-10-16.
-
 ### RL-048 — [FIX] Stop reporting a straightened limb as an error
 
 - Dependency: None.

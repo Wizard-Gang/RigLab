@@ -42,9 +42,7 @@ export function WeaponHandles({ markers, scale, grab, setup = false }: WeaponHan
         return (
           <g key={marker.body}>
             {marker.free ? (
-              <circle className="weapon-handle" cx={marker.center.x} cy={marker.center.y} r={4.5 / scale} onPointerDown={grab({ kind: "weapon-move", body: marker.body })}>
-                <title>{`Move the ${marker.body}`}</title>
-              </circle>
+              <circle className="weapon-handle" aria-label={`Move the ${marker.body}`} cx={marker.center.x} cy={marker.center.y} r={4.5 / scale} onPointerDown={grab({ kind: "weapon-move", body: marker.body })} />
             ) : null}
             <rect
               className="weapon-handle"
@@ -53,10 +51,9 @@ export function WeaponHandles({ markers, scale, grab, setup = false }: WeaponHan
               width={8 / scale}
               height={8 / scale}
               transform={`rotate(45 ${turn.x} ${turn.y})`}
+              aria-label={`Turn the ${marker.body}`}
               onPointerDown={grab({ kind: "weapon-turn", body: marker.body })}
-            >
-              <title>{`Turn the ${marker.body}`}</title>
-            </rect>
+            />
             {setup ? (
               <>
                 {(["butt", "tip"] as const).map((end) => (
@@ -67,15 +64,12 @@ export function WeaponHandles({ markers, scale, grab, setup = false }: WeaponHan
                     y={marker[end].y - 3 / scale}
                     width={6 / scale}
                     height={6 / scale}
+                    aria-label={`The ${marker.body} ${end}`}
                     onPointerDown={grab({ kind: "weapon-axis", body: marker.body, end })}
-                  >
-                    <title>{`The ${marker.body} ${end}`}</title>
-                  </rect>
+                  />
                 ))}
                 {marker.grips.map((grip) => (
-                  <circle key={grip.grip} className="weapon-handle weapon-handle--grip" cx={grip.x} cy={grip.y} r={3 / scale} onPointerDown={grab({ kind: "weapon-grip", body: marker.body, grip: grip.grip })}>
-                    <title>{`The ${marker.body} ${grip.grip} grip`}</title>
-                  </circle>
+                  <circle key={grip.grip} className="weapon-handle weapon-handle--grip" aria-label={`The ${marker.body} ${grip.grip} grip`} cx={grip.x} cy={grip.y} r={3 / scale} onPointerDown={grab({ kind: "weapon-grip", body: marker.body, grip: grip.grip })} />
                 ))}
               </>
             ) : null}
