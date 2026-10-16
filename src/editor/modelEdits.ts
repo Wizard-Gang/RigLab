@@ -10,6 +10,8 @@ import { applyRigEdit } from "./rigEdits";
 import type { RigEdit } from "./rigEdits";
 import { applyTimelineEdit } from "./timeline";
 import type { TimelineEdit } from "./timeline";
+import { applyWeaponEdit, holdAtRest } from "./weaponEdits";
+import type { WeaponEdit } from "./weaponEdits";
 import { KINDS } from "../format/timing";
 import { activeAnimationOf, error, info, modelOf } from "./types";
 import type { EditorState } from "./types";
@@ -25,6 +27,20 @@ export function rigEdit(state: EditorState, change: RigEdit): EditorState {
   if (!result.ok) return { ...state, status: error(result.error) };
   const selection = result.select === undefined ? state.selection : result.select === null ? null : { kind: "bone" as const, name: result.select };
   return edit(state, result.model, { selection, status: info(result.message) });
+}
+
+/**
+ * A class weapon's hold, grips and axis change only in Rig setup, at rest, as one undo step. A grip the hands cannot
+ * reach at rest is reported, and the arm stays at its closest reach.
+ */
+export function weaponEdit(state: EditorState, change: WeaponEdit): EditorState {
+  if (state.mode !== "setup") return { ...state, status: error("Switch to Rig setup to change a weapon") };
+  const result = applyWeaponEdit(modelOf(state), change);
+  if (!result.ok) return { ...state, status: error(result.error) };
+  const held = result.model.weapons.find((candidate) => candidate.weapon.name === change.weapon)!;
+  const reach = holdAtRest(result.model.rig, held).violations;
+  const text = [result.message, ...reach].join("; ");
+  return edit(state, result.model, { status: reach.length ? error(text) : info(text) });
 }
 
 /** Poses change only in Pose mode, and only by writing the active animation's key at the current frame. */

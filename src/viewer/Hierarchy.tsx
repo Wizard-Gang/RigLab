@@ -1,5 +1,6 @@
 import { hierarchyOrder } from "../../vendor/hexframe/src/rig";
 import type { Rig } from "../../vendor/hexframe/src/rig";
+import type { RigLabWeapon } from "../format/weapon";
 
 interface HierarchyProps {
   readonly rig: Rig;
@@ -33,6 +34,42 @@ export function Hierarchy({ rig, selected, onSelect }: HierarchyProps) {
           </button>
         </li>
       ))}
+    </ul>
+  );
+}
+
+interface WeaponHierarchyProps {
+  readonly weapon: RigLabWeapon;
+  /** The selected body, and its selected grip if any. */
+  readonly selected: { readonly body: string; readonly grip: string | null } | null;
+  readonly onSelect: (body: string, grip: string | null) => void;
+}
+
+/** Rig setup's class weapon after the bones: each body, and under it each grip with the chain that holds it. */
+export function WeaponHierarchy({ weapon, selected, onSelect }: WeaponHierarchyProps) {
+  const row = (body: string, grip: string | null, depth: number, label: string, title: string) => {
+    const pressed = selected?.body === body && selected.grip === grip;
+    return (
+      <li key={`${body}:${grip ?? ""}`}>
+        <button
+          type="button"
+          className={pressed ? "hierarchy__bone hierarchy__bone--selected" : "hierarchy__bone"}
+          style={{ paddingInlineStart: `${0.75 + depth * 0.9}rem` }}
+          aria-pressed={pressed}
+          title={title}
+          onClick={() => onSelect(body, grip)}
+        >
+          <span className="truncate">{label}</span>
+        </button>
+      </li>
+    );
+  };
+  return (
+    <ul className="hierarchy hierarchy--weapon" aria-label={`The ${weapon.name}'s bodies and grips`}>
+      {weapon.bodies.flatMap((body) => [
+        row(body.name, null, 0, body.name, `The ${weapon.name}'s ${body.name}`),
+        ...body.grips.map((grip) => row(body.name, grip.name, 1, `${grip.name} · ${grip.chain}`, `The ${body.name}'s ${grip.name} grip, held by ${grip.chain}`)),
+      ])}
     </ul>
   );
 }

@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { createRigLabRig } from "../format";
 import { bodyTransforms, engineOf, NO_CONSTRAINTS, playAt } from "../solve";
+import type { DragHandle } from "../solve";
 import { constraintGeometry } from "../viewer/constraintGeometry";
 import { ArtLayer } from "../viewer/ArtLayer";
 import { artPlacements, withWeaponArt } from "../hexframe/art";
 import type { Command } from "../editor/shortcuts";
 import { platformOf } from "../editor/shortcuts";
 import { weaponRigs } from "../editor/model";
+import { holdAtRest } from "../editor/weaponEdits";
 import { UNARMED } from "../format/classes";
 import { activeAnimationOf, editorReducer, isDirty, modelOf, openState } from "../editor/state";
 import { fitView, zoomAbout } from "../editor/view";
 import { LIBRARY, LIBRARY_LABEL } from "../library/active";
 import { partsBySlot } from "../library/parts";
 import type { Point } from "../editor/view";
-import { Hierarchy } from "../viewer/Hierarchy";
+import { Hierarchy, WeaponHierarchy } from "../viewer/Hierarchy";
 import { RigCanvas } from "../viewer/RigCanvas";
 import { skeletonFor } from "../viewer/skeleton";
 import { usePlayback } from "../viewer/usePlayback";
@@ -32,6 +34,7 @@ const platform = platformOf(navigator.userAgent);
 const RIGHT_TITLES = { setup: "Rig setup", pose: "Pose", animate: "Inspector", export: "Export" } as const;
 /** The editor draws the library's first skin, and the weapons' parts on their own slots. */
 const PARTS = partsBySlot(LIBRARY);
+const UNPOSED = { pose: {}, constraints: NO_CONSTRAINTS, violations: [] as readonly string[] };
 
 export function App() {
   const [state, dispatch] = useReducer(editorReducer, undefined, () => openState());
@@ -57,25 +60,32 @@ export function App() {
     () => (posed ? engineOf(model.rig, animation, weapons) : null),
     [posed, model.rig, animation, weapons],
   );
-  const played = useMemo(
-    () => (engine ? playAt(engine, state.frame) : { pose: {}, constraints: NO_CONSTRAINTS, violations: [] }),
-    [engine, state.frame],
+  /** In Rig setup with an armed class, its weapon, held at rest with both hands on its grips. */
+  const armed = useMemo(
+    () => (state.mode === "setup" && animation && animation.class !== UNARMED ? model.weapons.find((item) => item.weapon.name === animation.class) ?? null : null),
+    [state.mode, animation, model.weapons],
   );
-  const drags = useCanvasDrags(state, dispatch, played.pose, played.constraints);
+  const resting = useMemo(() => (armed ? holdAtRest(model.rig, armed) : null), [armed, model.rig]);
+  const played = useMemo(
+    () => (engine ? playAt(engine, state.frame) : resting ?? UNPOSED),
+    [engine, state.frame, resting],
+  );
+  const drags = useCanvasDrags(state, dispatch, played.pose, played.constraints, armed);
+  const wielding = posed || armed !== null;
   const rig = useMemo(() => createRigLabRig(drags.rig), [drags.rig]);
   const pose = drags.pose;
   const skeleton = useMemo(() => skeletonFor(rig, pose), [rig, pose]);
   const markers = useMemo(
-    () => (posed ? constraintGeometry(model.rig, pose, drags.constraints) : undefined),
-    [posed, model.rig, pose, drags.constraints],
+    () => (wielding ? constraintGeometry(model.rig, pose, drags.constraints) : undefined),
+    [wielding, model.rig, pose, drags.constraints],
   );
   const art = useMemo(() => {
     if (!state.art) return null;
-    const placements = artPlacements(drags.rig, rig, skeleton.placed, PARTS, state.activeAnimation, posed ? animation.class : null);
-    const wielded = posed ? drags.constraints.weapon : null;
+    const placements = artPlacements(drags.rig, rig, skeleton.placed, PARTS, state.activeAnimation, wielding && animation ? animation.class : null);
+    const wielded = wielding ? drags.constraints.weapon : null;
     if (!wielded) return placements;
     return withWeaponArt(drags.rig, rig, placements, bodyTransforms(drags.rig, pose, wielded), wielded.weapon, PARTS, state.activeAnimation);
-  }, [state.art, posed, animation, drags.rig, drags.constraints, rig, pose, skeleton.placed, state.activeAnimation]);
+  }, [state.art, wielding, animation, drags.rig, drags.constraints, rig, pose, skeleton.placed, state.activeAnimation]);
   const ghosts = useMemo(() => {
     if (!engine || !animation || !state.onion || playback.playing) return undefined;
     const previous = animation.keys.filter((key) => key.frame < state.frame).at(-1);
@@ -86,6 +96,18 @@ export function App() {
     ];
   }, [engine, animation, state.onion, playback.playing, state.frame, rig]);
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
+  const selectedPart = state.selection?.kind === "body" || state.selection?.kind === "grip"
+    ? { body: state.selection.body, grip: state.selection.kind === "grip" ? state.selection.grip : null }
+    : null;
+  const selectPart = useCallback((body: string, grip: string | null) => {
+    if (!armed) return;
+    const weapon = armed.weapon.name;
+    dispatch({ type: "select", selection: grip === null ? { kind: "body", weapon, body } : { kind: "grip", weapon, body, grip } });
+  }, [armed]);
+  const onHandle = useCallback((handle: DragHandle) => {
+    if (handle.kind === "weapon-grip") selectPart(handle.body, handle.grip);
+    else if (handle.kind === "weapon-move" || handle.kind === "weapon-turn" || handle.kind === "weapon-axis") selectPart(handle.body, null);
+  }, [selectPart]);
 
   const run = useCallback((command: Command) => {
     if (command === "save") void save();
@@ -143,6 +165,7 @@ export function App() {
           </button>
           <div id="hierarchy-bones" hidden={panels.hierarchy}>
             <Hierarchy rig={rig} selected={selectedBone} onSelect={(name) => dispatch({ type: "select", selection: { kind: "bone", name } })} />
+            {armed ? <WeaponHierarchy weapon={armed.weapon} selected={selectedPart} onSelect={selectPart} /> : null}
           </div>
         </section>
         <AnimationsPanel
@@ -169,6 +192,8 @@ export function App() {
           drag={drags.drag}
           constraints={markers}
           weaponLines={!state.art}
+          weaponSetup={armed !== null}
+          onHandle={onHandle}
           ghosts={ghosts}
         >
           {art ? <ArtLayer placements={art} /> : null}
@@ -191,6 +216,8 @@ export function App() {
           pose={pose}
           constraints={drags.constraints}
           placed={skeleton.placed}
+          armed={armed}
+          violations={resting?.violations ?? []}
         />
       </SidePanel>
 

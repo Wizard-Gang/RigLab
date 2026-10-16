@@ -17,10 +17,15 @@ export function reconcile(state: EditorState): EditorState {
     : names[0] ?? null;
   const active = model.animations.find((animation) => animation.name === activeAnimation);
   const selection = state.selection;
+  const body = selection?.kind === "body" || selection?.kind === "grip"
+    ? model.weapons.find((item) => item.weapon.name === selection.weapon && item.weapon.name === active?.class)?.weapon.bodies.find((candidate) => candidate.name === selection.body)
+    : undefined;
   const stale = selection?.kind === "animation" ? !names.includes(selection.name)
     : selection?.kind === "bone" ? !model.rig.bones.some((bone) => bone.name === selection.name)
       : selection?.kind === "key" ? !active?.keys.some((key) => key.frame === selection.frame)
-        : false;
+        : selection?.kind === "body" ? !body
+          : selection?.kind === "grip" ? !body?.grips.some((grip) => grip.name === selection.grip)
+            : false;
   return { ...state, activeAnimation, selection: stale ? null : selection, frame: Math.min(state.frame, active?.length ?? 0) };
 }
 

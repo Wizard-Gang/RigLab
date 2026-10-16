@@ -1,7 +1,7 @@
 // The editor's pure state machine. Model edits go through the undo history; view and selection do not.
 import { animationName } from "../format/classes";
 import { reconcile } from "./core";
-import { deleteEdit, poseEdit, rigEdit, timelineEdit } from "./modelEdits";
+import { deleteEdit, poseEdit, rigEdit, timelineEdit, weaponEdit } from "./modelEdits";
 import { redo, undo } from "./history";
 import { activeAnimationOf, error, info, modelOf } from "./types";
 import type { Action, EditorState } from "./types";
@@ -75,6 +75,8 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
       return { ...state, art: action.art };
     case "rigEdit":
       return rigEdit(state, action.edit);
+    case "weaponEdit":
+      return weaponEdit(state, action.edit);
     case "setPose":
       return poseEdit(state, action.pose, action.note ?? null, action.warning ?? null, action.constraints);
     case "timeline":

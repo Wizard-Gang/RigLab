@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 import type { Dispatch } from "react";
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabRig } from "../format/rig";
+import type { ModelWeapon } from "../editor/model";
 import { activeAnimationOf, modelOf } from "../editor/state";
 import type { Action, EditorState } from "../editor/state";
 import { snapToGrid } from "../editor/view";
+import { editedWeapon, holdAtRest, weaponDragEdit } from "../editor/weaponEdits";
 import type { Point } from "../editor/view";
 import { dragInPose, place, solveWithGridSnap } from "../solve";
 import type { Constraints, PoseDrag } from "../solve";
@@ -15,7 +17,7 @@ type Offset = readonly [number, number];
 export interface CanvasDrags {
   /** The rig as shown: the model's, with a joint previewed at its drag position in Rig setup. */
   readonly rig: RigLabRig;
-  /** The pose as shown: the sampled pose, or the solve previewed while dragging in Pose mode. */
+  /** The pose as shown: the sampled pose, or the solve previewed while dragging in Pose mode or a weapon in Rig setup. */
   readonly pose: Pose;
   /** The pins and weapon as shown, including any moved by the drag in progress. */
   readonly constraints: Constraints;
@@ -33,28 +35,48 @@ function withOffset(rig: RigLabRig, bone: string, offset: Offset): RigLabRig {
 }
 
 /**
- * Rig setup drags joints in rest space and commits the drop as an offset in the parent's frame.
- * Pose mode drags joints, bone ends, pins and weapon bodies through the solver, holds every pin and grip,
- * and commits the drop, constraints included, as the key at this frame.
+ * Rig setup drags joints where they are shown and commits the drop as an offset in the parent's frame; with an armed
+ * class it also drags the class weapon's handles at rest and commits each drop as one weapon edit. Pose mode drags
+ * joints, bone ends, pins and weapon bodies through the solver, holds every pin and grip, and commits the drop,
+ * constraints included, as the key at this frame.
  */
-export function useCanvasDrags(state: EditorState, dispatch: Dispatch<Action>, sampled: Pose, constraints: Constraints): CanvasDrags {
+export function useCanvasDrags(state: EditorState, dispatch: Dispatch<Action>, sampled: Pose, constraints: Constraints, armed: ModelWeapon | null = null): CanvasDrags {
   const model = modelOf(state);
   const [offsetPreview, setOffsetPreview] = useState<{ readonly bone: string; readonly offset: Offset } | null>(null);
   const [posePreview, setPosePreview] = useState<PoseDrag | null>(null);
-  const restPlaced = useMemo(() => place(model.rig, {}), [model.rig]);
+  const [weaponPreview, setWeaponPreview] = useState<ModelWeapon | null>(null);
+  const shownPlaced = useMemo(() => place(model.rig, sampled), [model.rig, sampled]);
+  const previewHeld = useMemo(() => (armed && weaponPreview ? holdAtRest(model.rig, weaponPreview) : null), [armed, weaponPreview, model.rig]);
   const rig = useMemo(
     () => (offsetPreview ? withOffset(model.rig, offsetPreview.bone, offsetPreview.offset) : model.rig),
     [model.rig, offsetPreview],
   );
 
+  const onWeaponDrag = (handle: Handle, point: Point, done: boolean): void => {
+    const change = armed ? weaponDragEdit(model.rig, armed, sampled, handle, point, state.rotationSnap) : null;
+    if (!armed || !change) return;
+    if (!done) {
+      const preview = editedWeapon(armed, change);
+      setWeaponPreview(preview.ok ? preview.held : null);
+      return;
+    }
+    setWeaponPreview(null);
+    dispatch({ type: "weaponEdit", edit: change });
+  };
+
   const onSetupDrag = (handle: Handle, point: Point, done: boolean): void => {
-    if (cancelled(point) || handle.kind !== "joint") {
+    if (cancelled(point)) {
       setOffsetPreview(null);
+      setWeaponPreview(null);
+      return;
+    }
+    if (handle.kind !== "joint") {
+      onWeaponDrag(handle, point, done);
       return;
     }
     const target = state.snap ? snapToGrid(point, state.grid) : point;
     const parentName = model.rig.bones.find((candidate) => candidate.name === handle.bone)?.parent ?? null;
-    const parent = parentName === null ? { x: 0, y: 0, rotation: 0 } : restPlaced.get(parentName)!;
+    const parent = parentName === null ? { x: 0, y: 0, rotation: 0 } : shownPlaced.get(parentName)!;
     const dx = target.x - parent.x;
     const dy = target.y - parent.y;
     const cos = Math.cos(parent.rotation);
@@ -87,11 +109,12 @@ export function useCanvasDrags(state: EditorState, dispatch: Dispatch<Action>, s
   };
 
   const posing = state.mode === "pose" && activeAnimationOf(state) !== null;
+  const setupPreview = state.mode === "setup" ? previewHeld : null;
   return {
     rig,
-    pose: posing && posePreview ? posePreview.pose : sampled,
-    constraints: posing && posePreview ? posePreview.constraints : constraints,
-    message: posing ? posePreview?.message ?? null : null,
+    pose: posing && posePreview ? posePreview.pose : setupPreview ? setupPreview.pose : sampled,
+    constraints: posing && posePreview ? posePreview.constraints : setupPreview ? setupPreview.constraints : constraints,
+    message: posing ? posePreview?.message ?? null : setupPreview?.violations.length ? setupPreview.violations.join("; ") : null,
     drag: state.mode === "setup" ? { tips: false, onDrag: onSetupDrag } : posing ? { tips: true, onDrag: onPoseDrag } : undefined,
   };
 }

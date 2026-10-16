@@ -39,6 +39,8 @@
 }
 .panel__fold:hover { color: var(--text); }
 .panel__fold-chevron { width: 0.8rem; flex: none; }
+/* Rig setup lists the class weapon's bodies and grips after the bones. */
+.hierarchy--weapon { margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px solid var(--panel-edge); }
 .panel__actions select { flex: 1 1 100%; min-width: 0; }
 /* The open panel's heading row carries its collapse toggle; a collapsed panel is one rail button. */
 .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; padding-inline: 0.75rem; }

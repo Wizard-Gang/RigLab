@@ -10,7 +10,7 @@ export { blendConstraints, chainEnd, constraintsAt, constraintsOf, holdConstrain
 export type { Constraints, Held } from "./constraints";
 export { engineOf, hexframePose, playAt } from "./engine";
 export { blendWielded, bodyPoint, bodyTransforms, gripTargets } from "./weapons";
-export { freeBodyGripping, gripCenter, moveBody, turnBody } from "./weaponDrags";
+export { freeBodyGripping, gripCenter, moveBody, pointInBody, ridingAngle, turnBody } from "./weaponDrags";
 export type { BodyTransform, GripTarget, Wielded } from "./weapons";
 export type { Engine, Played } from "./engine";
 export { togglePin } from "./holds";

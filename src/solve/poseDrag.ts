@@ -12,7 +12,11 @@ import { freeBodyGripping, moveBody, turnBody } from "./weaponDrags";
 export type DragHandle =
   | { readonly kind: "joint" | "tip"; readonly bone: string }
   | { readonly kind: "weapon-move"; readonly body: string }
-  | { readonly kind: "weapon-turn"; readonly body: string };
+  | { readonly kind: "weapon-turn"; readonly body: string }
+  /** Rig setup only: a grip point, moved in its body's frame. */
+  | { readonly kind: "weapon-grip"; readonly body: string; readonly grip: string }
+  /** Rig setup only: an end of a body's axis, moved in its body's frame. */
+  | { readonly kind: "weapon-axis"; readonly body: string; readonly end: "butt" | "tip" };
 
 export interface PoseDrag {
   readonly pose: Pose;
@@ -41,6 +45,7 @@ export function dragInPose(
   rotationSnap = 0,
 ): PoseDrag {
   const weapon = constraints.weapon;
+  if (handle.kind === "weapon-grip" || handle.kind === "weapon-axis") return { pose, constraints, status: "ok", message: null };
   if (handle.kind === "weapon-move" || handle.kind === "weapon-turn") {
     if (!weapon) return { pose, constraints, status: "ok", message: null };
     const moved = handle.kind === "weapon-move" ? moveBody(weapon, handle.body, null, target) : turnBody(weapon, handle.body, target, rotationSnap);
