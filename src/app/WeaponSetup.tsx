@@ -66,7 +66,7 @@ export function WeaponSetup({ held, body: name, grip: picked, violations, onEdit
       </dl>
       <p className="panel__note">
         The hands hold these grips on every {weapon} key, so moving a grip moves the hands throughout the {weapon} class.
-        {placement ? ` The hold is where the ${body.name} sits at rest, in the wardrobe and on a new ${weapon} animation's keys; existing keys keep theirs.` : ""}
+        {placement ? ` The hold is where the ${body.name} sits at rest and in the wardrobe, and the editor fills a missing ${weapon} animation's keys from it; existing keys keep theirs.` : ""}
       </p>
       {violations.length ? <p className="panel__note panel__note--error">{violations.join("; ")}</p> : null}
     </div>

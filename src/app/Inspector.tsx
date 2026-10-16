@@ -72,5 +72,5 @@ export function Inspector({ rig, selection, active, pose, placed, animations }: 
       </dl>
     );
   }
-  return <p className="panel__empty">Select a joint on the canvas or in the hierarchy, an animation in the list, or a key on the timeline.</p>;
+  return null;
 }

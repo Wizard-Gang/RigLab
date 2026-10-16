@@ -48,7 +48,7 @@ export interface EditorState {
   readonly rotationSnap: number;
   /** Show the previous and next keys as faint skeletons. */
   readonly onion: boolean;
-  /** Draw the bound part art under the skeleton. */
+  /** Draw the bound part art under the skeleton; on when the editor opens. */
   readonly art: boolean;
   readonly status: Status | null;
 }

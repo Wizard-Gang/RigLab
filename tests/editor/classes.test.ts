@@ -164,7 +164,7 @@ describe("filling the library's classes", () => {
     const state = openState();
     expect(modelOf(state).animations.map((animation) => animation.name)).toEqual(grid);
     expect([isDirty(state), state.history.past.length, state.activeAnimation]).toEqual([true, 0, "unarmed-idle"]);
-    expect(state.status).toEqual({ tone: "info", text: "Started 20 missing animations, one of each class and kind; Save writes them" });
+    expect(state.status).toEqual({ tone: "info", text: "Added 20 missing animations, one of each class and kind; Save writes them" });
     expect(state.saved).toEqual(library);
     const complete = openState(fillClasses(library).model);
     expect([isDirty(complete), complete.status]).toEqual([false, null]);
