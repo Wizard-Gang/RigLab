@@ -46,6 +46,13 @@ export function ModePanel({ state, dispatch, model, animation, pose, constraints
       />
     );
   }
+  if (state.selection === null) {
+    // Each mode's empty panel says what to do next there.
+    const weapon = armed ? `, or a part of the ${armed.weapon.name} under the bones to set its hold, grips and axis` : "";
+    return state.mode === "setup"
+      ? <p className="panel__empty">Select a joint on the canvas or in the hierarchy to set its rest offset, tip, slot and limits{weapon}.</p>
+      : <p className="panel__empty">Select a joint on a key to pose it: step to a key on the timeline, then drag the joint, a hand or the pelvis, or type its rotation here.</p>;
+  }
   return state.mode === "animate" && selectedBone && animation ? (
     <PoseInspector
       rig={model.rig}

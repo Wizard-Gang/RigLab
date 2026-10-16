@@ -43,7 +43,7 @@ export function initialState(model: LibraryModel = libraryModel(LIBRARY)): Edito
     snap: true,
     rotationSnap: 0,
     onion: false,
-    art: false,
+    art: true,
     status: null,
   });
 }
@@ -57,7 +57,7 @@ export function openState(loaded: LibraryModel = libraryModel(LIBRARY)): EditorS
   const filled = fillClasses(loaded);
   const count = filled.started.length;
   if (!count) return state;
-  const text = [`Started ${count} missing ${count === 1 ? "animation" : "animations"}, one of each class and kind; Save writes them`, ...filled.misses].join("; ");
+  const text = [`Added ${count} missing ${count === 1 ? "animation" : "animations"}, one of each class and kind; Save writes them`, ...filled.misses].join("; ");
   return reconcile({ ...state, history: startHistory(filled.model), status: filled.misses.length ? error(text) : info(text) });
 }
 

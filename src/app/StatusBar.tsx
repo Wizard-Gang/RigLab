@@ -1,7 +1,6 @@
 import { GRID_SPACINGS, MAX_ZOOM, MIN_ZOOM, ROTATION_SNAPS, snapToGrid } from "../editor/view";
 import type { Point } from "../editor/view";
 import type { Status } from "../editor/state";
-import { LIBRARY_LABEL } from "../library/active";
 import { fixed } from "./Inspector";
 
 interface StatusBarProps {
@@ -27,7 +26,6 @@ export function StatusBar({ status, cursor, zoom, grid, snap, onZoom, onFit, onG
       <p className={status?.tone === "error" ? "status__message status__message--error" : "status__message"} role="status">
         {status?.text ?? ""}
       </p>
-      <span className="status__library" title="The library folder RigLab reads its rig, skins, weapons and seed animations from">{LIBRARY_LABEL}</span>
       <output className="status__cursor" aria-label="Cursor position">
         {shown ? `${fixed(shown.x)}, ${fixed(shown.y)}` : "—"}
       </output>
