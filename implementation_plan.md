@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-050 — [FIX] Keep every bone's rotation continuous between Hexframe's poses
-
-- Dependency: None.
-- Why: The owner reported on 2026-10-16 that "swords are clipping weird" and asked for a full visual inspection. The inspection plays every frame with the editor's own engine. In the sword, axe and spear jumps, `arm-front` is 67.9° in one of Hexframe's 13 poses and -292.1° in the next. That is the same angle, but Hexframe's sampler interpolates the raw numbers, so the arm turns a full circle within three frames and both hands leave the weapon by up to 23 units. This happens in frames 16–17 and 31–32 of the sword and axe jumps and frames 19–20 and 28–29 of the spear jump. Export plays through the same engine, so baked clips carry the spin. The two-bone solver picks the angle nearest the keyed one, and the armed keys store angles a turn apart.
-- Scope: `engineOf` unwraps each bone's rotation against the previous pose, so consecutive poses never differ by more than half a turn. RigLab's key sampler interpolates rotations by the shorter way. Rotations written to a key are kept within (-180, 180]. Update ARCHITECTURE (Playback).
-- Non-goals: Changing Hexframe's sampler or the vendor pin, easing, the 13-pose grid, and deliberate spins of more than half a turn between two keys.
-- Acceptance: Unit tests cover three cases. An animation whose keys store a bone at 67.9° and -292.1° plays every frame without the hands leaving a two-grip weapon by more than the existing 0.3-unit drift. The engine's consecutive poses differ by at most 180° for every bone. Key writes are wrapped. The frame audit of the owner's 25 animations finds no grip miss over 0.5 units. The bundle of the placeholder library keeps its SHA-256 from main unless a test shows why it changes. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused engine, sample and export tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the frame audit on a copy of the owner's folder, and exact-head CI.
-- Authorities: `src/solve/engine.ts`, `src/format/sample.ts`, `src/editor/poseEdits.ts`, `src/solve/angles.ts`, `vendor/hexframe/src/rig/sample.ts`, `src/export/bake.ts`, `docs/ARCHITECTURE.md`, and the owner's report on 2026-10-16.
-
 ### RL-051 — [FIX] Bend the front arm's elbow outward
 
 - Dependency: RL-050, because flipping the bend makes the solver pick angles a turn away from the stored ones.

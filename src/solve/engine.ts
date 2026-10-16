@@ -34,12 +34,32 @@ export interface Engine {
   readonly poses: readonly Played[];
 }
 
+/**
+ * Each rotation moved by whole turns to within half a turn of the same bone in the pose before. Hexframe's sampler
+ * interpolates the raw numbers, so two poses a turn apart would spin the bone a full circle between them.
+ */
+function continuous(poses: readonly Played[]): Played[] {
+  const out: Played[] = [];
+  for (const played of poses) {
+    const before = out.at(-1)?.pose;
+    out.push(!before ? played : {
+      ...played,
+      pose: Object.fromEntries(Object.entries(played.pose).map(([bone, value]) => {
+        const previous = before[bone]?.rotation;
+        const turns = value.rotation === undefined || previous === undefined ? 0 : Math.round((previous - value.rotation) / 360);
+        return [bone, turns ? { ...value, rotation: value.rotation! + 360 * turns } : value];
+      })),
+    });
+  }
+  return out;
+}
+
 /** The animation as Hexframe's clip; its class weapon is one of the given weapons, the library's. */
 export function engineOf(rig: RigLabRig, animation: RigLabAnimation, weapons: readonly RigLabWeapon[] = []): Engine {
-  const poses = poseFrames(animation.length).map((frame) => {
+  const poses = continuous(poseFrames(animation.length).map((frame) => {
     const held = samplePose(rig, animation, frame, weapons);
     return { pose: hexframePose(rig, held.pose), constraints: constraintsAt(animation, frame, weapons), violations: held.violations };
-  });
+  }));
   return { clip: { loop: animation.loop, duration: animation.length, easing: "linear", poses: poses.map((entry) => entry.pose) }, poses };
 }
 
