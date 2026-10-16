@@ -27,7 +27,7 @@ export interface BodyTransform {
 export interface GripTarget {
   readonly chain: string;
   readonly target: Vector;
-  /** Names the grip in a report, such as `staff grip 'far'`. */
+  /** Names the grip in a note, such as `the staff's far grip`. */
   readonly label: string;
 }
 
@@ -37,8 +37,9 @@ export function bodyPoint(transform: Omit<BodyTransform, "body">, at: readonly [
   return { x: transform.x + offset.x, y: transform.y + offset.y };
 }
 
+const possessive = (name: string): string => (name.endsWith("s") ? `${name}'` : `${name}'s`);
 const label = (weapon: RigLabWeapon, body: WeaponBody, grip: WeaponGrip): string =>
-  `${weapon.name}${weapon.bodies.length > 1 ? ` ${body.name}` : ""} grip '${grip.name}'`;
+  `the ${possessive(weapon.name)}${weapon.bodies.length > 1 ? ` ${body.name}` : ""} ${grip.name} grip`;
 
 /** Where each hand on a free body must be. */
 export function gripTargets(wielded: Wielded): GripTarget[] {

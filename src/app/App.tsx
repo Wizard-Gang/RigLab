@@ -254,7 +254,7 @@ export function App() {
       ) : null}
 
       <StatusBar
-        status={drags.message ? { tone: "error", text: drags.message } : played.violations.length ? { tone: "error", text: played.violations.join("; ") } : state.status}
+        status={drags.message ? { tone: "info", text: drags.message } : played.violations.length ? { tone: "info", text: played.violations.join("; ") } : state.status}
         cursor={cursor}
         zoom={state.view.zoom}
         grid={state.grid}

@@ -45,8 +45,9 @@ describe("pose edits", () => {
 
   it("are one undo step and touch no other animation", () => {
     const state = posing(16);
-    const posed = run(state, { type: "setPose", pose: reach(state).pose, warning: "arm-front cannot reach" });
-    expect(posed.status).toEqual({ tone: "error", text: "Posed unarmed-attack at frame 16; arm-front cannot reach" });
+    // A pin or grip the pose cannot hold is a note in the normal tone, never an error.
+    const posed = run(state, { type: "setPose", pose: reach(state).pose, warning: "leg-front is 1.20 off its pin" });
+    expect(posed.status).toEqual({ tone: "info", text: "Posed unarmed-attack at frame 16; leg-front is 1.20 off its pin" });
     const before = modelOf(state).animations;
     const after = modelOf(posed).animations;
     expect(after.filter((animation, index) => animation !== before[index]).map((animation) => animation.name)).toEqual(["unarmed-attack"]);

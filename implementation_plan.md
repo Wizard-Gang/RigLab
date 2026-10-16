@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-048 — [FIX] Stop reporting a straightened limb as an error
-
-- Dependency: None.
-- Why: The owner reported on 2026-10-16: "the extension errors dont make sense. im able to pose it that way it shouldnt be an error. the legs are a big offender here". When a hand or foot is dragged past the limb's full length, `solveChain` straightens the limb toward the pointer, which is a valid pose. It still reports "<chain> cannot reach: the target is N beyond full extension", and the status bar shows that in red during the drag and again after the drop writes the key. No key in the owner's folder pins a foot, so every leg error comes from dragging a foot.
-- Scope: A drag of a limb's own end reports nothing when the limb straightens or folds toward the pointer. A pin or weapon grip that a pose cannot hold becomes a plain note in the status bar's normal tone, for example "leg-front is 1.2 off its pin" or "arm-front is 2.0 off the sword's upper grip". That applies during a drag, after the drop, on a played frame and in Rig setup's weapon edits. Red stays for refused edits. The solver keeps its statuses for grid snapping and holds. Update README and ARCHITECTURE (Posing).
-- Non-goals: Joint limits, IK behavior, the pin strain line on the canvas, and pin and grip semantics.
-- Acceptance: Unit tests cover three cases. Dragging the `shin-front` tip 10 units past full extension straightens `leg-front` toward the target with no message. Moving the pelvis until a pinned foot leaves its pin gives the plain note in the info tone. A pose edit with that note writes the key with an info status. Headless Chrome on a worktree dev server drags a foot far below the ground, and the status bar never shows the error tone. `npm run check` passes.
-- Validation: Pinned `npm ci`, focused solve and editor tests, `npm run check`, `npm run audit:dependencies`, `check:patch`, `git diff --check`, the headless pass, and exact-head CI.
-- Authorities: `src/solve/ik.ts`, `src/solve/poseDrag.ts`, `src/solve/holds.ts`, `src/solve/constraints.ts`, `src/app/useCanvasDrags.ts`, `src/app/App.tsx`, `src/editor/modelEdits.ts`, `README.md`, `docs/ARCHITECTURE.md`, and the owner's report on 2026-10-16.
-
 ### RL-049 — [FEAT] Revert the editor to the library folder's saved files
 
 - Dependency: None.

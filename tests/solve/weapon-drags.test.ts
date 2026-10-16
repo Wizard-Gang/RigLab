@@ -46,7 +46,7 @@ describe("dragging a free weapon body", () => {
   it("reports a move out of reach and never stretches an arm", () => {
     const drag = dragInPose(rig, held, start, { kind: "weapon-move", body: "staff" }, { x: 40, y: -30 });
     expect(drag.status).toBe("limited");
-    expect(drag.message).toMatch(/^staff grip 'near': arm-back cannot reach: the target is \d+\.\d\d beyond full extension; staff grip 'far': arm-front cannot reach/);
+    expect(drag.message).toMatch(/^arm-back is \d+\.\d\d off the staff's near grip; arm-front is \d+\.\d\d off the staff's far grip$/);
     expect(lengths(drag.pose)).toEqual(lengths(restPose(rig)).map((length) => expect.closeTo(length, 9)));
   });
 });

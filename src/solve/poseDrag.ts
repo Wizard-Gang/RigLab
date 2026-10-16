@@ -61,5 +61,6 @@ export function dragInPose(
   const solved = handle.kind === "joint"
     ? dragJoint(rig, pose, handle.bone, target, rotationSnap)
     : dragTip(rig, pose, handle.bone, target, rotationSnap);
-  return held(rig, solved.pose, constraints, solved.status, solved.message);
+  // A limb that straightens or folds toward the pointer, or stops at a limit, is the pose asked for: no note.
+  return held(rig, solved.pose, constraints, solved.status, null);
 }
