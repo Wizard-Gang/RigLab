@@ -31,32 +31,31 @@ const art = (bones: readonly string[]): string[] => bones.map((bone) => `${skin}
 const LOWER_BODY = ["leg-front", "shin-front", "leg-back", "shin-back", "pelvis"];
 
 describe("weapon art", () => {
-  it("paints both arms over the torso and a two-handed weapon just under the near hand", () => {
+  it("paints both arms over the torso, a two-handed weapon over the head and both hands over its grips", () => {
     expect(rig.depthProfiles?.default).toBe("anatomical");
     for (const name of ["sword", "spear", "axe"]) {
       for (const kind of [null, "idle", "attack"]) {
         expect(painted(name, kind), `${name} in ${kind}`).toEqual([
-          ...art([...LOWER_BODY, "torso", "arm-front", "forearm-front", "arm-back"]), `${name}:${name}`, ...art(["forearm-back", "head"]),
+          ...art([...LOWER_BODY, "torso", "arm-front", "arm-back", "head"]), `${name}:${name}`, ...art(["forearm-front", "forearm-back"]),
         ]);
       }
     }
   });
 
-  it("keeps the far arm behind the torso unarmed and with the daggers, each dagger just under its hand", () => {
+  it("keeps the far arm behind the torso unarmed, and paints the daggers over the head with each hand over its grip", () => {
     const anatomical = [...LOWER_BODY, "arm-front", "forearm-front", "torso", "arm-back", "forearm-back", "head"];
     expect(paintOrder(rig, runtime, null, null)).toEqual(anatomical);
     expect(paintOrder(rig, runtime, "unarmed-idle", "unarmed")).toEqual(anatomical);
     expect(paintOrder(rig, runtime, "daggers-idle", "daggers")).toEqual(anatomical);
     expect(painted("daggers", "idle")).toEqual([
-      ...art([...LOWER_BODY, "arm-front"]), "daggers:dagger-front", ...art(["forearm-front", "torso", "arm-back"]),
-      "daggers:dagger-back", ...art(["forearm-back", "head"]),
+      ...art([...LOWER_BODY, "arm-front", "torso", "arm-back", "head"]), "daggers:dagger-front", "daggers:dagger-back", ...art(["forearm-front", "forearm-back"]),
     ]);
   });
 
   it("lets an animation's own byClip entry win over its class's", () => {
     const punch: RigLabRig = { ...rig, depthProfiles: { ...rig.depthProfiles!, byClip: { ...rig.depthProfiles!.byClip, "sword-attack": "punch" } } };
     expect(painted("sword", "attack", punch)).toEqual([
-      ...art([...LOWER_BODY, "torso", "head", "arm-front", "forearm-front", "arm-back"]), "sword:sword", `${skin}:forearm-back`,
+      ...art([...LOWER_BODY, "torso", "head", "arm-front", "arm-back"]), "sword:sword", ...art(["forearm-front", "forearm-back"]),
     ]);
     expect(painted("sword", "idle", punch)).toEqual(painted("sword", "idle"));
   });

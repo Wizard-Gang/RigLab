@@ -49,9 +49,9 @@ export function artPlacements(
 }
 
 /**
- * Interleave a held weapon's art with the rig's, in the paint order for the animation and that weapon's class: each body
- * paints just under the last-painted lower bone of the chains that grip it, so the hand that holds it covers its grip
- * and anything painted before that hand stays under it.
+ * Add a held weapon's art to the rig's, in the paint order for the animation and that weapon's class. Every body paints
+ * over the whole figure, the head included, so a weapon raised near the head never hides behind it, and the forearms
+ * that grip a body paint over all of them, so each hand closes over its grip.
  */
 export function withWeaponArt(
   rig: RigLabRig,
@@ -63,14 +63,12 @@ export function withWeaponArt(
   animation: string | null,
 ): ArtPlacement[] {
   const order = paintOrder(rig, runtime, animation, weapon.name);
-  const under = new Map<string, ArtPlacement[]>();
-  for (const body of weapon.bodies) {
+  const hands = new Set(weapon.bodies.flatMap((body) => body.grips.flatMap((grip) => rig.chains.filter((chain) => chain.name === grip.chain).map((chain) => chain.lower))));
+  const held = weapon.bodies.flatMap((body): ArtPlacement[] => {
     const transform = bodies.find((candidate) => candidate.body === body.name);
     const part = parts[body.slot];
-    const hands = body.grips.flatMap((grip) => rig.chains.filter((chain) => chain.name === grip.chain).map((chain) => chain.lower));
-    const top = hands.sort((a, b) => order.indexOf(b) - order.indexOf(a))[0];
-    if (!transform || !part || top === undefined) continue;
-    under.set(top, [...(under.get(top) ?? []), { bone: body.name, x: transform.x, y: transform.y, rotation: transform.rotation, part }]);
-  }
-  return order.flatMap((bone) => [...(under.get(bone) ?? []), ...placements.filter((item) => item.bone === bone)]);
+    return transform && part ? [{ bone: body.name, x: transform.x, y: transform.y, rotation: transform.rotation, part }] : [];
+  });
+  const of = (bone: string): ArtPlacement[] => placements.filter((item) => item.bone === bone);
+  return [...order.filter((bone) => !hands.has(bone)).flatMap(of), ...held, ...order.filter((bone) => hands.has(bone)).flatMap(of)];
 }
