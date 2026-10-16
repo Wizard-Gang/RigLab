@@ -9,11 +9,11 @@ import type { TimelineEdit } from "./timeline";
 import type { WeaponEdit } from "./weaponEdits";
 import type { View } from "./view";
 
-export type Mode = "setup" | "pose" | "animate" | "export";
+/** Rig setup edits anatomy and weapons at rest; Animate plays the active animation and, paused, poses its keys; Export writes it out. */
+export type Mode = "setup" | "animate" | "export";
 export const MODES: readonly { readonly id: Mode; readonly label: string }[] = [
   { id: "setup", label: "Rig setup" },
-  { id: "pose", label: "Pose" },
-  { id: "animate", label: "Animation" },
+  { id: "animate", label: "Animate" },
   { id: "export", label: "Export" },
 ];
 
@@ -36,6 +36,8 @@ export interface EditorState {
   /** The library folder's model as last loaded or saved; any other present model is unsaved. */
   readonly saved: LibraryModel;
   readonly mode: Mode;
+  /** Animate and Export play the active animation; poses change only while it is paused. */
+  readonly playing: boolean;
   readonly selection: Selection;
   readonly activeAnimation: string | null;
   readonly frame: number;
@@ -75,6 +77,7 @@ export type Action =
   /** Switch to the class's animation of the active kind. */
   | { readonly type: "setClass"; readonly animationClass: string }
   | { readonly type: "setMode"; readonly mode: Mode }
+  | { readonly type: "setPlaying"; readonly playing: boolean }
   | { readonly type: "setFrame"; readonly frame: number }
   | { readonly type: "stepKey"; readonly direction: -1 | 1 }
   | { readonly type: "setView"; readonly view: View }

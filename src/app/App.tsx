@@ -31,7 +31,7 @@ import { useLibrarySave } from "./useLibrarySave";
 import { useShortcuts } from "./useShortcuts";
 
 const platform = platformOf(navigator.userAgent);
-const RIGHT_TITLES = { setup: "Rig setup", pose: "Pose", animate: "Inspector", export: "Export" } as const;
+const RIGHT_TITLES = { setup: "Rig setup", animate: "Inspector", export: "Export" } as const;
 /** The editor draws the library's first skin, and the weapons' parts on their own slots. */
 const PARTS = partsBySlot(LIBRARY);
 const UNPOSED = { pose: {}, constraints: NO_CONSTRAINTS, violations: [] as readonly string[] };
@@ -47,13 +47,17 @@ export function App() {
   const dirty = isDirty(state);
   const save = useLibrarySave(state, dispatch);
   const onFrame = useCallback((frame: number) => dispatch({ type: "setFrame", frame }), []);
-  const playback = usePlayback({
+  const playing = state.playing;
+  const pause = useCallback(() => dispatch({ type: "setPlaying", playing: false }), []);
+  const togglePlay = useCallback(() => dispatch({ type: "setPlaying", playing: !playing }), [playing]);
+  usePlayback({
     fps: animation?.fps ?? 1,
     length: animation?.length ?? 0,
     loop: animation?.loop ?? false,
     frame: state.frame,
     onFrame,
-    enabled: (state.mode === "animate" || state.mode === "export") && animation !== null,
+    playing,
+    onStop: pause,
   });
   const posed = state.mode !== "setup" && animation !== null;
   const engine = useMemo(
@@ -87,14 +91,14 @@ export function App() {
     return withWeaponArt(drags.rig, rig, placements, bodyTransforms(drags.rig, pose, wielded), wielded.weapon, PARTS, state.activeAnimation);
   }, [state.art, wielding, animation, drags.rig, drags.constraints, rig, pose, skeleton.placed, state.activeAnimation]);
   const ghosts = useMemo(() => {
-    if (!engine || !animation || !state.onion || playback.playing) return undefined;
+    if (!engine || !animation || !state.onion || playing) return undefined;
     const previous = animation.keys.filter((key) => key.frame < state.frame).at(-1);
     const next = animation.keys.find((key) => key.frame > state.frame);
     return [
       ...(previous ? [{ tone: "previous" as const, skeleton: skeletonFor(rig, playAt(engine, previous.frame).pose) }] : []),
       ...(next ? [{ tone: "next" as const, skeleton: skeletonFor(rig, playAt(engine, next.frame).pose) }] : []),
     ];
-  }, [engine, animation, state.onion, playback.playing, state.frame, rig]);
+  }, [engine, animation, state.onion, playing, state.frame, rig]);
   const selectedBone = state.selection?.kind === "bone" ? state.selection.name : null;
   const selectedPart = state.selection?.kind === "body" || state.selection?.kind === "grip"
     ? { body: state.selection.body, grip: state.selection.kind === "grip" ? state.selection.grip : null }
@@ -113,15 +117,15 @@ export function App() {
     if (command === "save") void save();
     else if (command === "undo" || command === "redo") dispatch({ type: command });
     else if (command === "delete") dispatch({ type: "deleteSelection" });
-    else if (command === "togglePlay") playback.toggle();
+    else if (command === "togglePlay") togglePlay();
     else if (command === "previousFrame" || command === "nextFrame") {
-      playback.pause();
+      pause();
       dispatch({ type: "setFrame", frame: state.frame + (command === "nextFrame" ? 1 : -1) });
     } else if (command === "previousKey" || command === "nextKey") {
-      playback.pause();
+      pause();
       dispatch({ type: "stepKey", direction: command === "nextKey" ? 1 : -1 });
     } else dispatch({ type: "select", selection: null });
-  }, [save, playback, state.frame]);
+  }, [save, togglePlay, pause, state.frame]);
   useShortcuts(platform, run);
 
   useEffect(() => {
@@ -226,24 +230,23 @@ export function App() {
           animation={animation}
           frame={state.frame}
           selectedKey={state.selection?.kind === "key" ? state.selection.frame : null}
-          playing={playback.playing}
-          canPlay={state.mode === "animate" || state.mode === "export"}
+          playing={playing}
           onion={state.onion}
-          onToggle={playback.toggle}
+          onToggle={togglePlay}
           onSeek={(frame) => {
-            playback.pause();
+            pause();
             dispatch({ type: "setFrame", frame });
           }}
           onStepKey={(direction) => {
-            playback.pause();
+            pause();
             dispatch({ type: "stepKey", direction });
           }}
           onSelectKey={(frame) => {
-            playback.pause();
+            pause();
             dispatch({ type: "select", selection: { kind: "key", frame } });
           }}
           onEdit={(edit) => {
-            playback.pause();
+            pause();
             dispatch({ type: "timeline", edit });
           }}
           onOnion={(onion) => dispatch({ type: "setOnion", onion })}

@@ -72,7 +72,7 @@ describe("timeline in the editor", () => {
     expect(modelOf(kept)).toBe(modelOf(state));
     expect(kept.status).toEqual({ tone: "error", text: "Keys stay: every hit animation keeps all 3 of its keys" });
     const setup = run(start(), { type: "setMode", mode: "setup" }, { type: "timeline", edit: { kind: "setInterpolation", frame: 0, interpolation: "linear" } });
-    expect(setup.status?.text).toBe("Switch to Pose or Animation to edit keys");
+    expect(setup.status?.text).toBe("Switch to Animate to edit keys");
   });
 
   it("steps between keys and jumps to a selected key", () => {

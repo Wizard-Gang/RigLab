@@ -57,7 +57,7 @@ describe("weapon edits in Rig setup", () => {
     const daggerTurn = run(setup("daggers"), edit({ kind: "setGripAngle", weapon: "daggers", body: "dagger-back", grip: "fist", angle: 175 }));
     expect(daggerTurn.status?.text).toBe("Turned the daggers' dagger-back to 175° on its hand, on every daggers key");
     expect(run(start, edit({ kind: "setHold", weapon: "flail", placement: { body: "flail", x: 0, y: 0, rotation: 0 } })).status?.text).toBe("The library has no weapon 'flail'");
-    for (const mode of ["pose", "animate", "export"] as const) {
+    for (const mode of ["animate", "export"] as const) {
       const elsewhere = run(start, { type: "setMode", mode }, edit({ kind: "setHold", weapon: "sword", placement: { body: "sword", x: 0, y: -30, rotation: 0 } }));
       expect(elsewhere.status).toEqual({ tone: "error", text: "Switch to Rig setup to change a weapon" });
       expect(elsewhere.history.past).toHaveLength(0);

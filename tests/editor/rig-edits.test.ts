@@ -119,7 +119,7 @@ describe("rig setup in the editor", () => {
   const move: Action = { type: "rigEdit", edit: { kind: "moveJoint", bone: "head", offset: [0, -35] } };
 
   it("changes anatomy only in Rig setup", () => {
-    for (const mode of ["pose", "animate"] as const) {
+    for (const mode of ["animate", "export"] as const) {
       const state = run(initialState(), { type: "setMode", mode }, move);
       expect(modelOf(state).rig).toBe(modelOf(initialState()).rig);
       expect(state.history.past).toHaveLength(0);
@@ -148,7 +148,7 @@ describe("rig setup in the editor", () => {
     const setup = run(initialState(), { type: "setMode", mode: "setup" }, select, { type: "deleteSelection" });
     expect(modelOf(setup).rig.bones.map((candidate) => candidate.name)).not.toContain("head");
     expect(setup.selection).toEqual({ kind: "bone", name: "torso" });
-    const pose = run(initialState(), { type: "setMode", mode: "pose" }, select, { type: "deleteSelection" });
+    const pose = run(initialState(), { type: "setMode", mode: "animate" }, select, { type: "deleteSelection" });
     expect(pose.history.past).toHaveLength(0);
   });
 });

@@ -1,4 +1,4 @@
-// One Pose-mode drag: the handle decides what moves, then every pin and grip is held again.
+// One posing drag in Animate: the handle decides what moves, then every pin and grip is held again.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabRig } from "../format/rig";
 import type { Vector } from "./angles";
@@ -32,7 +32,7 @@ function held(rig: RigLabRig, pose: Pose, constraints: Constraints, status: Solv
 }
 
 /**
- * Pose-mode drag in priority order. A pinned chain end moves its pin, a gripped one carries the free weapon body it
+ * A posing drag in priority order. A pinned chain end moves its pin, a gripped one carries the free weapon body it
  * holds, and the free bodies' handles move or turn them; any other handle poses the body, and bodies that ride a
  * hand follow it. Pins and grips are then re-held, so lengths stay fixed and a hold that cannot be kept is reported.
  */

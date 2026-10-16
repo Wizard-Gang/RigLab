@@ -13,13 +13,15 @@ interface PoseInspectorProps {
   readonly placed: ReadonlyMap<string, Placed>;
   readonly frame: number;
   readonly keyed: boolean;
+  /** While the animation plays, the fields show its pose and change nothing. */
+  readonly readOnly: boolean;
   /** Commit a pose and the constraints it holds as the key at this frame. */
   readonly onPose: (pose: Pose, constraints: Constraints, note: string | null, warning: string | null) => void;
   readonly onError: (message: string) => void;
 }
 
-/** Pose mode's inspector: rotation, root position and pins for the key at this frame. */
-export function PoseInspector({ rig, bone: name, pose, constraints, placed, frame, keyed, onPose, onError }: PoseInspectorProps) {
+/** Animate's pose inspector: rotation, root position and pins for the key at this frame, editable while paused. */
+export function PoseInspector({ rig, bone: name, pose, constraints, placed, frame, keyed, readOnly, onPose, onError }: PoseInspectorProps) {
   const bone = rig.bones.find((candidate) => candidate.name === name);
   const world = placed.get(name);
   if (!bone || !world) return null;
@@ -45,13 +47,13 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
         <dt>Bone</dt><dd><code>{bone.name}</code></dd>
         <dt>Frame</dt><dd>{frame} · {keyed ? "key" : "between keys"}</dd>
         <dt>Rotation</dt>
-        <dd><NumberField label="Rotation" value={local.rotation ?? 0} onCommit={(value) => solved(setRotation(rig, pose, name, value))} /></dd>
+        <dd><NumberField label="Rotation" value={local.rotation ?? 0} disabled={readOnly} onCommit={(value) => solved(setRotation(rig, pose, name, value))} /></dd>
         {isRoot ? (
           <>
             <dt>Position x</dt>
-            <dd><NumberField label="Root x" value={world.x} onCommit={(value) => solved(moveRoot(rig, pose, { x: value, y: world.y }))} /></dd>
+            <dd><NumberField label="Root x" value={world.x} disabled={readOnly} onCommit={(value) => solved(moveRoot(rig, pose, { x: value, y: world.y }))} /></dd>
             <dt>Position y</dt>
-            <dd><NumberField label="Root y" value={world.y} onCommit={(value) => solved(moveRoot(rig, pose, { x: world.x, y: value }))} /></dd>
+            <dd><NumberField label="Root y" value={world.y} disabled={readOnly} onCommit={(value) => solved(moveRoot(rig, pose, { x: world.x, y: value }))} /></dd>
           </>
         ) : null}
         <dt>Limits</dt><dd>{bone.limits ? `${bone.limits.min}° to ${bone.limits.max}°` : "none"}</dd>
@@ -59,9 +61,10 @@ export function PoseInspector({ rig, bone: name, pose, constraints, placed, fram
         <dt>World position</dt><dd>{fixed(world.x)}, {fixed(world.y)}</dd>
         <dt>World rotation</dt><dd>{fixed((world.rotation * 180) / Math.PI)}°</dd>
       </dl>
+      {readOnly ? <p className="panel__note">Pause to pose this key.</p> : null}
       {chain ? (
         <div className="setup__actions">
-          <button type="button" className="tool" aria-pressed={pinned} onClick={() => holds(togglePin(rig, pose, constraints, chain.name))}>
+          <button type="button" className="tool" aria-pressed={pinned} disabled={readOnly} onClick={() => holds(togglePin(rig, pose, constraints, chain.name))}>
             {pinned ? "Unpin end" : "Pin end"}
           </button>
         </div>

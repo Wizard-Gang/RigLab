@@ -1,4 +1,4 @@
-// Model edits by mode: anatomy in Rig setup, poses in Pose, and interpolation on the timeline.
+// Model edits by mode: anatomy and weapons in Rig setup, poses in Animate while paused, and interpolation on the timeline.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import type { Constraints } from "../solve/constraints";
@@ -43,9 +43,10 @@ export function weaponEdit(state: EditorState, change: WeaponEdit): EditorState 
   return edit(state, result.model, { status: reach.length ? error(text) : info(text) });
 }
 
-/** Poses change only in Pose mode, and only by writing the active animation's key at the current frame. */
+/** Poses change only in Animate while it is paused, and only by writing the active animation's key at the current frame. */
 export function poseEdit(state: EditorState, pose: Pose, note: string | null, warning: string | null, constraints?: Constraints): EditorState {
-  if (state.mode !== "pose") return { ...state, status: error("Switch to Pose to change poses") };
+  if (state.mode !== "animate") return { ...state, status: error("Switch to Animate to change poses") };
+  if (state.playing) return { ...state, status: error("Pause to change poses") };
   const model = modelOf(state);
   const animation = activeAnimationOf(state);
   if (!animation) return { ...state, status: error("Add an animation to pose") };
@@ -55,9 +56,9 @@ export function poseEdit(state: EditorState, pose: Pose, note: string | null, wa
   return edit(state, replacing(model, animation, result.animation), { status: warning ? error(text) : info(text) });
 }
 
-/** Key interpolation changes on the timeline, in Pose and Animation modes. */
+/** Key interpolation changes on the timeline, in Animate and Export. */
 export function timelineEdit(state: EditorState, change: TimelineEdit): EditorState {
-  if (state.mode === "setup") return { ...state, status: error("Switch to Pose or Animation to edit keys") };
+  if (state.mode === "setup") return { ...state, status: error("Switch to Animate to edit keys") };
   const model = modelOf(state);
   const animation = activeAnimationOf(state);
   if (!animation) return { ...state, status: error("Add an animation first") };

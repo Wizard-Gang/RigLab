@@ -34,12 +34,14 @@ interface NumberFieldProps {
   readonly value: number;
   readonly onCommit: (value: number) => void;
   readonly step?: number;
+  /** Shown but not editable, such as while an animation plays. */
+  readonly disabled?: boolean;
 }
 
 const show = (value: number): string => String(+value.toFixed(4));
 
 /** A numeric field that commits a finite number on Enter or blur; anything else reverts. */
-export function NumberField({ label, value, onCommit, step = 1 }: NumberFieldProps) {
+export function NumberField({ label, value, onCommit, step = 1, disabled = false }: NumberFieldProps) {
   const [draft, setDraft] = useState(show(value));
   useEffect(() => setDraft(show(value)), [value]);
   const commit = (): void => {
@@ -57,6 +59,7 @@ export function NumberField({ label, value, onCommit, step = 1 }: NumberFieldPro
       step={step}
       aria-label={label}
       value={draft}
+      disabled={disabled}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {

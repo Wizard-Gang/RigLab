@@ -16,8 +16,8 @@ function armed(): LibraryModel {
   return { ...model, weapons: [{ weapon: STAFF, hold: HOLDS.staff! }], animations: [...model.animations, heldAnimation(rig, STAFF, HOLDS.staff!, "attack")] };
 }
 
-/** Pose mode on the staff attack at `frame`. */
-const posing = (frame: number): EditorState => run(initialState(armed()), { type: "select", selection: { kind: "animation", name: "staff-attack" } }, { type: "setMode", mode: "pose" }, { type: "setFrame", frame });
+/** Animate, paused, on the staff attack at `frame`. */
+const posing = (frame: number): EditorState => run(initialState(armed()), { type: "select", selection: { kind: "animation", name: "staff-attack" } }, { type: "setMode", mode: "animate" }, { type: "setFrame", frame });
 
 describe("an animation whose class holds a weapon", () => {
   it("holds it on every key, with both hands on its grips", () => {
@@ -53,7 +53,7 @@ describe("an animation whose class holds a weapon", () => {
     expect(modelOf(undone)).toEqual(armed());
   });
 
-  it("moves and turns its free body per key in Pose mode, as one undo step", () => {
+  it("moves and turns its free body per key in Animate, as one undo step", () => {
     const state = posing(16);
     const model = modelOf(state);
     const animation = activeAnimationOf(state)!;

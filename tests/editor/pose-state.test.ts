@@ -2,19 +2,19 @@ import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../../src/library/active";
 import { sampleAnimation } from "../../src/format";
 import { setKeyPose } from "../../src/editor/poseEdits";
-import { activeAnimationOf, modelOf, editorReducer, initialState } from "../../src/editor/state";
+import { activeAnimationOf, editorReducer, initialState, MODES, modelOf } from "../../src/editor/state";
 import type { Action, EditorState } from "../../src/editor/state";
 import { dragTip } from "../../src/solve";
 
 const run = (state: EditorState, ...actions: Action[]): EditorState => actions.reduce(editorReducer, state);
 
-/** Pose mode on the seeded attack (keys at 0, 8, 16 and 24) at `frame`, after the idle. */
+/** Animate, paused, on the unarmed attack (keys at 0, 8, 16 and 24) at `frame`, after the idle. */
 function posing(frame: number): EditorState {
   return run(
     initialState(),
     { type: "activateAnimation", name: "unarmed-idle" },
     { type: "activateAnimation", name: "unarmed-attack" },
-    { type: "setMode", mode: "pose" },
+    { type: "setMode", mode: "animate" },
     { type: "setFrame", frame },
   );
 }
@@ -59,11 +59,33 @@ describe("pose edits", () => {
     expect(noted.status).toEqual({ tone: "info", text: "Posed unarmed-attack at frame 8; Pinned leg-front at 5, 0" });
   });
 
-  it("happen only in Pose mode", () => {
-    const animate = run(posing(8), { type: "setMode", mode: "animate" });
-    const refused = run(animate, { type: "setPose", pose: reach(animate).pose });
-    expect(refused.status?.text).toBe("Switch to Pose to change poses");
-    expect(modelOf(refused)).toBe(modelOf(animate));
+  it("happen only in Animate, and only while it is paused", () => {
+    for (const mode of ["setup", "export"] as const) {
+      const elsewhere = run(posing(8), { type: "setMode", mode });
+      const refused = run(elsewhere, { type: "setPose", pose: reach(elsewhere).pose });
+      expect(refused.status?.text).toBe("Switch to Animate to change poses");
+      expect(modelOf(refused)).toBe(modelOf(elsewhere));
+    }
+    const playing = run(posing(8), { type: "setPlaying", playing: true });
+    expect(playing.playing).toBe(true);
+    const refused = run(playing, { type: "setPose", pose: reach(playing).pose });
+    expect(refused.status).toEqual({ tone: "error", text: "Pause to change poses" });
+    expect(refused.history.past).toHaveLength(0);
+    const paused = run(playing, { type: "setPlaying", playing: false }, { type: "setPose", pose: reach(playing).pose });
+    expect([paused.status?.text, paused.history.past.length]).toEqual(["Posed unarmed-attack at frame 8", 1]);
+  });
+
+  it("keep the frame across modes, play only where there is something to play, and leave no Pose mode", () => {
+    const state = posing(16);
+    expect(MODES.map((mode) => mode.id)).toEqual(["setup", "animate", "export"]);
+    expect(MODES.map((mode) => mode.label)).toEqual(["Rig setup", "Animate", "Export"]);
+    expect(initialState().mode).toBe("animate");
+    const exported = run(state, { type: "setPlaying", playing: true }, { type: "setMode", mode: "export" });
+    expect([exported.mode, exported.frame, exported.playing]).toEqual(["export", 16, true]);
+    const setup = run(exported, { type: "setMode", mode: "setup" });
+    expect([setup.frame, setup.playing]).toEqual([16, false]);
+    expect(run(setup, { type: "setPlaying", playing: true }).playing).toBe(false);
+    expect(run(setup, { type: "setMode", mode: "animate" }).frame).toBe(16);
   });
 
   it("refuse a pose that would translate a non-root bone", () => {
