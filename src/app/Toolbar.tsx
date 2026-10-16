@@ -12,10 +12,11 @@ interface ToolbarProps {
   readonly canRedo: boolean;
   readonly title: string;
   readonly dirty: boolean;
+  /** Asks, then discards every unsaved change. */
+  readonly onRevert: () => void;
 }
 
-
-export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, title, dirty }: ToolbarProps) {
+export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, title, dirty, onRevert }: ToolbarProps) {
   const button = (command: Command, label: string, disabled = false) => (
     <button
       key={command}
@@ -33,6 +34,9 @@ export function Toolbar({ platform, mode, onMode, onCommand, canUndo, canRedo, t
       <h1 className="app__title">RigLab</h1>
       <div className="toolbar" role="toolbar" aria-label="Library">
         {button("save", "Save")}
+        <button type="button" className="tool" disabled={!dirty} title="Discard every unsaved change and go back to the library folder's saved files" onClick={onRevert}>
+          Revert
+        </button>
       </div>
       <div className="toolbar" role="toolbar" aria-label="Edit">
         {button("undo", "Undo", !canUndo)}

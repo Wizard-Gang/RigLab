@@ -35,6 +35,7 @@ const RIGHT_TITLES = { setup: "Rig setup", animate: "Inspector", export: "Export
 /** The editor draws the library's first skin, and the weapons' parts on their own slots. */
 const PARTS = partsBySlot(LIBRARY);
 const UNPOSED = { pose: {}, constraints: NO_CONSTRAINTS, violations: [] as readonly string[] };
+const REVERT_QUESTION = "Discard every unsaved change and go back to the library folder's saved files? Undo cannot bring them back.";
 
 export function App() {
   const [state, dispatch] = useReducer(editorReducer, undefined, () => openState());
@@ -146,6 +147,9 @@ export function App() {
         canRedo={state.history.future.length > 0}
         title={LIBRARY_LABEL}
         dirty={dirty}
+        onRevert={() => {
+          if (window.confirm(REVERT_QUESTION)) dispatch({ type: "revert" });
+        }}
       />
 
       <SidePanel
