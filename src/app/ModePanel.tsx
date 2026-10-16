@@ -46,7 +46,7 @@ export function ModePanel({ state, dispatch, model, animation, pose, constraints
       />
     );
   }
-  return state.mode === "pose" && selectedBone && animation ? (
+  return state.mode === "animate" && selectedBone && animation ? (
     <PoseInspector
       rig={model.rig}
       bone={selectedBone}
@@ -55,6 +55,7 @@ export function ModePanel({ state, dispatch, model, animation, pose, constraints
       placed={placed}
       frame={state.frame}
       keyed={keyed}
+      readOnly={state.playing}
       onPose={(next, held, note, warning) => dispatch({ type: "setPose", pose: next, constraints: held, note, warning })}
       onError={(text) => dispatch({ type: "status", status: { tone: "error", text } })}
     />

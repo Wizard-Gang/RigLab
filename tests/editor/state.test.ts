@@ -56,10 +56,10 @@ describe("editor state", () => {
   });
 
   it("records a save to the library folder, keeping history, mode and frame", () => {
-    const edited = run(initialState(), ease(0, "linear"), { type: "setMode", mode: "pose" }, { type: "setFrame", frame: 15 });
+    const edited = run(initialState(), ease(0, "linear"), { type: "setMode", mode: "animate" }, { type: "setFrame", frame: 15 });
     const saved = run(edited, { type: "saved", model: modelOf(edited), note: "Saved 1 file to ~/Documents/RigLab" });
     expect([isDirty(edited), isDirty(saved), saved.status?.text]).toEqual([true, false, "Saved 1 file to ~/Documents/RigLab"]);
-    expect([saved.history, saved.mode, saved.frame, saved.activeAnimation]).toEqual([edited.history, "pose", 15, edited.activeAnimation]);
+    expect([saved.history, saved.mode, saved.frame, saved.activeAnimation]).toEqual([edited.history, "animate", 15, edited.activeAnimation]);
     expect(isDirty(run(saved, ease(15, "linear")))).toBe(true);
   });
 

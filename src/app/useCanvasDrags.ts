@@ -17,7 +17,7 @@ type Offset = readonly [number, number];
 export interface CanvasDrags {
   /** The rig as shown: the model's, with a joint previewed at its drag position in Rig setup. */
   readonly rig: RigLabRig;
-  /** The pose as shown: the sampled pose, or the solve previewed while dragging in Pose mode or a weapon in Rig setup. */
+  /** The pose as shown: the sampled pose, or the solve previewed while dragging in Animate or a weapon in Rig setup. */
   readonly pose: Pose;
   /** The pins and weapon as shown, including any moved by the drag in progress. */
   readonly constraints: Constraints;
@@ -36,7 +36,7 @@ function withOffset(rig: RigLabRig, bone: string, offset: Offset): RigLabRig {
 
 /**
  * Rig setup drags joints where they are shown and commits the drop as an offset in the parent's frame; with an armed
- * class it also drags the class weapon's handles at rest and commits each drop as one weapon edit. Pose mode drags
+ * class it also drags the class weapon's handles at rest and commits each drop as one weapon edit. Animate, paused, drags
  * joints, bone ends, pins and weapon bodies through the solver, holds every pin and grip, and commits the drop,
  * constraints included, as the key at this frame.
  */
@@ -108,7 +108,8 @@ export function useCanvasDrags(state: EditorState, dispatch: Dispatch<Action>, s
     dispatch({ type: "setPose", pose: solved.pose, warning: solved.message, constraints: solved.constraints });
   };
 
-  const posing = state.mode === "pose" && activeAnimationOf(state) !== null;
+  // Animate poses the active animation's key while paused; playing, it hides the handles and poses nothing.
+  const posing = state.mode === "animate" && !state.playing && activeAnimationOf(state) !== null;
   const setupPreview = state.mode === "setup" ? previewHeld : null;
   return {
     rig,

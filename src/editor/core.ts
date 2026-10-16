@@ -34,6 +34,7 @@ export function initialState(model: LibraryModel = libraryModel(LIBRARY)): Edito
     history: startHistory(model),
     saved: model,
     mode: "animate",
+    playing: false,
     selection: null,
     activeAnimation: null,
     frame: 0,

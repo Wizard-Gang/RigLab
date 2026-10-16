@@ -55,7 +55,7 @@ function author(): LibraryModel {
     { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-front", tip: [0, 14] } },
     { type: "rigEdit", edit: { kind: "setTip", bone: "forearm-back", tip: [0, 14] } });
   // The attack has four keys, at 0, 8, 16 and 24 on Hexframe's clock, and every one holds the spear.
-  state = run(state, { type: "activateAnimation", name: "spear-attack" }, { type: "setMode", mode: "pose" });
+  state = run(state, { type: "activateAnimation", name: "spear-attack" }, { type: "setMode", mode: "animate" });
   // At each key: plant both feet, then drag the spear, level, by its grips' midpoint, so the front hand sits 8 units
   // ahead of the target. The keys are a wind-up with the elbows back, a transition with them centered, an extension with
   // the hands pushed forward, and the recovery.

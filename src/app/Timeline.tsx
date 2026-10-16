@@ -11,8 +11,6 @@ interface TimelineProps {
   readonly frame: number;
   readonly selectedKey: number | null;
   readonly playing: boolean;
-  /** Pose mode scrubs and edits keys without playing. */
-  readonly canPlay: boolean;
   readonly onion: boolean;
   readonly onToggle: () => void;
   readonly onSeek: (frame: number) => void;
@@ -26,7 +24,7 @@ const LABELS: Readonly<Record<Interpolation, string>> = { hold: "Hold", linear: 
 
 /** The kind's keys on Hexframe's 60 Hz clock: play, scrub, step and choose how each key moves to the next. */
 export function Timeline(props: TimelineProps) {
-  const { animation, frame, selectedKey, playing, canPlay, onion, onToggle, onSeek, onStepKey, onSelectKey, onEdit, onOnion } = props;
+  const { animation, frame, selectedKey, playing, onion, onToggle, onSeek, onStepKey, onSelectKey, onEdit, onOnion } = props;
   const keyHere = animation.keys.find((key) => key.frame === frame);
   const inForce = animation.keys[keyIndexAt(animation.keys, frame)]!;
   const target = selectedKey ?? keyHere?.frame ?? null;
@@ -34,7 +32,7 @@ export function Timeline(props: TimelineProps) {
   return (
     <section className="timeline" aria-label="Timeline">
       <div className="timeline__row">
-        {canPlay ? <button type="button" className="tool transport__play" onClick={onToggle}>{playing ? "Pause" : "Play"}</button> : null}
+        <button type="button" className="tool transport__play" onClick={onToggle}>{playing ? "Pause" : "Play"}</button>
         <div className="toolbar" role="toolbar" aria-label="Step">
           <button type="button" className="tool tool--small" aria-label="Previous key" title="Previous key (⇧←)" onClick={() => onStepKey(-1)}>⏮</button>
           <button type="button" className="tool tool--small" aria-label="Previous frame" title="Previous frame (←)" onClick={() => onSeek(frame - 1)}>◀</button>

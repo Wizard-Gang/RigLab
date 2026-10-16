@@ -56,7 +56,9 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
     case "setClass":
       return switchClass(state, action.animationClass);
     case "setMode":
-      return { ...state, mode: action.mode };
+      return { ...state, mode: action.mode, playing: action.mode === "setup" ? false : state.playing };
+    case "setPlaying":
+      return { ...state, playing: action.playing && state.mode !== "setup" && activeAnimationOf(state) !== null };
     case "setFrame":
       return reconcile({ ...state, frame: Math.max(0, Math.round(action.frame)) });
     case "stepKey":

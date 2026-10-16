@@ -83,7 +83,7 @@ function author(name: string): LibraryModel {
   const started = startClassAnimation(LIBRARY.rig, { weapon, hold }, "attack", model.animations.find((animation) => animation.name === "unarmed-attack"));
   expect(started.misses).toEqual([]);
   let state = run(initialState({ ...model, animations: [...model.animations, started.animation] }));
-  state = run(state, { type: "activateAnimation", name: `${name}-attack` }, { type: "setMode", mode: "pose" });
+  state = run(state, { type: "activateAnimation", name: `${name}-attack` }, { type: "setMode", mode: "animate" });
   for (const [index, frame] of [0, 8, 16, 24].entries()) {
     state = run(state, { type: "setFrame", frame });
     state = pin(pin(state, "leg-front"), "leg-back");

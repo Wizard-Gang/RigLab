@@ -1,4 +1,4 @@
-// Pose-mode pins: pinning a chain end where it is, and holding every pin and grip again after a change.
+// Pins while posing: pinning a chain end where it is, and holding every pin and grip again after a change.
 import type { Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabRig } from "../format/rig";
 import { tidy } from "./angles";

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export interface PlaybackOptions {
   readonly fps: number;
@@ -6,26 +6,21 @@ export interface PlaybackOptions {
   readonly loop: boolean;
   readonly frame: number;
   readonly onFrame: (frame: number) => void;
-  /** Playback stops whenever this turns false. */
-  readonly enabled: boolean;
-}
-
-export interface Playback {
+  /** The editor's own playing state; frames advance only while it holds. */
   readonly playing: boolean;
-  readonly toggle: () => void;
-  readonly pause: () => void;
+  /** A one-shot animation reached its last frame. */
+  readonly onStop: () => void;
 }
 
 /**
- * Integer-frame playback at a fixed rate, reporting frames through `onFrame`. Frames advance from
- * wall-clock time, so a slow display drops frames instead of slowing the animation. A non-looping
- * animation stops on its last frame.
+ * Integer-frame playback at a fixed rate, reporting frames through `onFrame` while `playing` holds. Frames advance
+ * from wall-clock time, so a slow display drops frames instead of slowing the animation. A non-looping animation stops
+ * on its last frame and reports it through `onStop`.
  */
-export function usePlayback({ fps, length, loop, frame, onFrame, enabled }: PlaybackOptions): Playback {
-  const [playing, setPlaying] = useState(false);
-  const latest = useRef({ frame, onFrame });
-  latest.current = { frame, onFrame };
-  const active = playing && enabled && length > 0;
+export function usePlayback({ fps, length, loop, frame, onFrame, playing, onStop }: PlaybackOptions): void {
+  const latest = useRef({ frame, onFrame, onStop });
+  latest.current = { frame, onFrame, onStop };
+  const active = playing && length > 0;
 
   useEffect(() => {
     if (!active) return undefined;
@@ -39,7 +34,7 @@ export function usePlayback({ fps, length, loop, frame, onFrame, enabled }: Play
       const next = origin.frame + Math.floor(((time - origin.time) / 1000) * fps);
       if (!loop && next >= length) {
         latest.current.onFrame(length);
-        setPlaying(false);
+        latest.current.onStop();
         return;
       }
       latest.current.onFrame(loop ? next % length : next);
@@ -48,8 +43,4 @@ export function usePlayback({ fps, length, loop, frame, onFrame, enabled }: Play
     handle = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(handle);
   }, [active, fps, length, loop]);
-
-  const toggle = useCallback(() => setPlaying((value) => !value), []);
-  const pause = useCallback(() => setPlaying(false), []);
-  return { playing: active, toggle, pause };
 }
