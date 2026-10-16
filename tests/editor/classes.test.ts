@@ -120,7 +120,7 @@ describe("starting a class's animation from the unarmed one", () => {
   it("reports a grip a hand cannot reach, and never stretches the arm", () => {
     const short: RigLabRig = { ...rig, bones: rig.bones.map((bone) => (bone.name.startsWith("forearm") ? { ...bone, tip: [0, 3] } : bone)) };
     const { animation, misses: missed } = startClassAnimation(short, held("sword"), "idle");
-    expect(missed[0]).toMatch(/^sword-idle at frame 0: sword grip '\w+': arm-\w+ cannot reach: the target is \d+\.\d\d beyond full extension$/);
+    expect(missed[0]).toMatch(/^sword-idle at frame 0: arm-\w+ is \d+\.\d\d off the sword's \w+ grip$/);
     expect(missed).toHaveLength(8);
     for (const key of animation.keys) expect(lengths(short, key.pose)).toEqual(lengths(short, restPose(short)).map((length) => expect.closeTo(length, 9)));
   });

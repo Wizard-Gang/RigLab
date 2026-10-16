@@ -41,8 +41,8 @@ describe("a free weapon body", () => {
   it("reports a grip out of reach and never stretches the arm", () => {
     const held = holdConstraints(rig, rest, staffAt(30, -30));
     expect(held.violations).toEqual([
-      "staff grip 'near': arm-back cannot reach: the target is 20.79 beyond full extension",
-      "staff grip 'far': arm-front cannot reach: the target is 15.25 beyond full extension",
+      "arm-back is 20.79 off the staff's near grip",
+      "arm-front is 15.25 off the staff's far grip",
     ]);
     expect(lengths(rig, held.pose)).toEqual(lengths(rig, rest).map((length) => expect.closeTo(length, 9)));
   });
@@ -50,7 +50,8 @@ describe("a free weapon body", () => {
   it("respects angle limits and reports the capped hold", () => {
     const limited: RigLabRig = { ...rig, bones: rig.bones.map((bone) => (bone.name === "forearm-front" ? { ...bone, limits: { min: -10, max: 10 } } : bone)) };
     const held = holdConstraints(limited, rest, staffAt(-6, -30));
-    expect(held.violations).toEqual(["staff grip 'far': arm-front is held by its angle limits"]);
+    expect(held.violations).toHaveLength(1);
+    expect(held.violations[0]).toMatch(/^arm-front is \d+\.\d\d off the staff's far grip$/);
     const rotation = held.pose["forearm-front"]!.rotation!;
     expect(rotation).toBeGreaterThanOrEqual(-10);
     expect(rotation).toBeLessThanOrEqual(10);

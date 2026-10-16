@@ -31,7 +31,7 @@ export function rigEdit(state: EditorState, change: RigEdit): EditorState {
 
 /**
  * A class weapon's hold, grips and axis change only in Rig setup, at rest, as one undo step. A grip the hands cannot
- * reach at rest is reported, and the arm stays at its closest reach.
+ * reach at rest is noted, and the arm stays at its closest reach.
  */
 export function weaponEdit(state: EditorState, change: WeaponEdit): EditorState {
   if (state.mode !== "setup") return { ...state, status: error("Switch to Rig setup to change a weapon") };
@@ -40,7 +40,7 @@ export function weaponEdit(state: EditorState, change: WeaponEdit): EditorState 
   const held = result.model.weapons.find((candidate) => candidate.weapon.name === change.weapon)!;
   const reach = holdAtRest(result.model.rig, held).violations;
   const text = [result.message, ...reach].join("; ");
-  return edit(state, result.model, { status: reach.length ? error(text) : info(text) });
+  return edit(state, result.model, { status: info(text) });
 }
 
 /** Poses change only in Animate while it is paused, and only by writing the active animation's key at the current frame. */
@@ -53,7 +53,7 @@ export function poseEdit(state: EditorState, pose: Pose, note: string | null, wa
   const result = setKeyPose(model.rig, animation, state.frame, pose, constraints, weaponRigs(model));
   if (!result.ok) return { ...state, status: error(result.error) };
   const text = [`Posed ${animation.name} at frame ${state.frame}`, note, warning].filter(Boolean).join("; ");
-  return edit(state, replacing(model, animation, result.animation), { status: warning ? error(text) : info(text) });
+  return edit(state, replacing(model, animation, result.animation), { status: info(text) });
 }
 
 /** Key interpolation changes on the timeline, in Animate and Export. */

@@ -64,7 +64,8 @@ export interface Held {
 
 /**
  * Re-solve every pinned or gripped chain to its target: pins, then the grips of the weapon's free bodies. A chain
- * that cannot hold is reported, never stretched. Bodies that ride a hand need no solve.
+ * that cannot hold is never stretched; a note says how far its end is from the target, such as
+ * `leg-front is 1.20 off its pin`. Bodies that ride a hand need no solve.
  */
 export function holdConstraints(rig: RigLabRig, pose: Pose, constraints: Constraints): Held {
   let next = pose;
@@ -74,9 +75,11 @@ export function holdConstraints(rig: RigLabRig, pose: Pose, constraints: Constra
     if (!chain) return;
     const solved = solveChain(rig, next, chain, target);
     next = solved.pose;
-    if (solved.status !== "ok") violations.push(`${what}: ${solved.message}`);
+    if (solved.status === "ok") return;
+    const end = chainEnd(rig, next, chain);
+    violations.push(`${chain.name} is ${Math.hypot(end.x - target.x, end.y - target.y).toFixed(2)} off ${what}`);
   };
-  for (const pin of constraints.pins) hold(pin.chain, pin, "Pin");
+  for (const pin of constraints.pins) hold(pin.chain, pin, "its pin");
   if (constraints.weapon) for (const grip of gripTargets(constraints.weapon)) hold(grip.chain, grip.target, grip.label);
   return { pose: next, violations };
 }

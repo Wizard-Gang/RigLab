@@ -64,10 +64,10 @@ describe("weapon edits in Rig setup", () => {
     }
   });
 
-  it("reports a grip the hands cannot reach at rest, keeping the edit and never stretching an arm", () => {
+  it("notes a grip the hands cannot reach at rest, keeping the edit and never stretching an arm", () => {
     const far = run(setup("spear"), edit({ kind: "setHold", weapon: "spear", placement: { body: "spear", x: 40, y: -30, rotation: 0 } }));
-    expect(far.status?.tone).toBe("error");
-    expect(far.status?.text).toMatch(/^Held the spear at 40, -30, 0°; spear grip '\w+': arm-\w+ cannot reach/);
+    expect(far.status?.tone).toBe("info");
+    expect(far.status?.text).toMatch(/^Held the spear at 40, -30, 0°; arm-\w+ is \d+\.\d\d off the spear's \w+ grip/);
     expect(heldOf(far, "spear").hold.bodies[0]!.x).toBe(40);
     expect(holdAtRest(rig, heldOf(far, "spear")).violations.length).toBeGreaterThan(0);
   });

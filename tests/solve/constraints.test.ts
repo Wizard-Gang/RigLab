@@ -5,7 +5,7 @@ import { setKeyPose } from "../../src/editor/poseEdits";
 import { sampleAnimation, validateAnimation } from "../../src/format";
 import type { RigLabAnimation } from "../../src/format";
 import { LIBRARY } from "../../src/library/active";
-import { chainEnd, constraintsAt, dragInPose, NO_CONSTRAINTS, runtimeRig, samplePose, togglePin } from "../../src/solve";
+import { chainEnd, constraintsAt, dragInPose, NO_CONSTRAINTS, place, runtimeRig, samplePose, togglePin } from "../../src/solve";
 import type { Constraints } from "../../src/solve";
 import { segmentLength, skeletonFor } from "../../src/viewer/skeleton";
 
@@ -34,12 +34,23 @@ describe("planted feet", () => {
     lengths(lunge.pose).forEach((length, index) => expect(length).toBeCloseTo(lengths(rest)[index]!, 9));
   });
 
-  it("report a pin the legs cannot hold instead of stretching them", () => {
+  it("note a pin the legs cannot hold, by how far the foot is off it, instead of stretching them", () => {
     const lift = dragInPose(rig, rest, pinned("leg-front"), { kind: "joint", bone: "pelvis" }, { x: 0, y: -50 });
     expect(lift.status).toBe("limited");
     // The hip rises to (5, -50); the pin is at (5, 0), 50 away, and the leg reaches 12 + 13 = 25.
-    expect(lift.message).toBe("Pin: leg-front cannot reach: the target is 25.00 beyond full extension");
+    expect(lift.message).toBe("leg-front is 25.00 off its pin");
     lengths(lift.pose).forEach((length, index) => expect(length).toBeCloseTo(lengths(rest)[index]!, 9));
+  });
+
+  it("straighten a dragged leg toward a foot target past its reach, with no note", () => {
+    const hip = place(rig, rest).get("leg-front")!;
+    // Straight down from the hip and 10 past the leg's full 12 + 13 = 25.
+    const reach = dragInPose(rig, rest, NO_CONSTRAINTS, { kind: "tip", bone: "shin-front" }, { x: hip.x + 21, y: hip.y + 28 });
+    expect(reach).toMatchObject({ status: "unreachable", message: null });
+    const foot = chainEnd(rig, reach.pose, chain("leg-front"));
+    expect(foot.x - hip.x).toBeCloseTo(15, 6);
+    expect(foot.y - hip.y).toBeCloseTo(20, 6);
+    lengths(reach.pose).forEach((length, index) => expect(length).toBeCloseTo(lengths(rest)[index]!, 9));
   });
 
   it("move a pin when its chain end is dragged, and release it on the second toggle", () => {
