@@ -15,8 +15,9 @@ Controls:
 How the risk is constrained or reversed.
 
 Validation:
-Checks actually run and their results, including npm ci, npm run check,
-npm run audit:dependencies, and the committed patch check.
+Checks actually run and their results: npm ci, typecheck, the placeholder build,
+the non-test check scripts, npm run audit:dependencies and the committed patch
+check. Agents leave tests and npm run check to CI's exact-head checks.
 
 Evidence:
 Affected contract paths and observations available before commit. Record later CI

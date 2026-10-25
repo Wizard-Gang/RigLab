@@ -12,7 +12,7 @@ This file is the only required reading. Every other doc is a reference: look up 
 
 - `implementation_plan.md` is a permanent, current-only queue. Work its first open task and keep later tasks and their order unless the owner changes priority. A delivery removes only its own task; history lives in Git, PRs, CI, tags and Releases, never in the queue.
 - "Do needful" authorizes delivering the first open task through merge and post-merge verification. It never authorizes inventing work for an empty queue.
-- An empty queue selects no task. The next instruction fills it with a plan-only change that takes the next unassigned ID, does not steal a reserved one, and changes only `implementation_plan.md`. An owner-directed plan change may append future tasks while other work is open; it preserves existing IDs and order and delivers nothing.
+- An empty queue selects no task; the next instruction fills it with a plan-only change to `implementation_plan.md` that takes the next unassigned ID without stealing a reserved one. An owner-directed plan change may append future tasks while other work is open, keeping existing IDs and order and delivering nothing.
 
 ## Lookups
 
@@ -24,7 +24,7 @@ This file is the only required reading. Every other doc is a reference: look up 
 ## Controlled delivery
 
 - Branch `rl-NNN-imperative-summary` from exact current `main` and implement only the task's scope in one controlled commit. Open one PR with the same title; its body must equal the commit body exactly.
-- Validate with focused tests, pinned `npm ci`, credential-free `npm run check`, `npm run audit:dependencies`, `git diff --check` and `check:patch`.
+- Agents do not run tests or `npm run check` locally (vitest, `node --test`, `npm test`, `npm run test:*`); CI's required checks run them on the exact head. Validate with pinned `npm ci`, `typecheck`, `build -- --mode placeholder`, the `check:*` scripts that `check` runs, `audit:dependencies`, `git diff --check` and `check:patch`.
 - Before merging, re-fetch the PR and `main`. Every required check must be green on the exact current head and mergeability confirmed; reconcile and revalidate a moved base or head. Squash only that head into `main` with the controlled subject and body. Then confirm one controlled commit on `main`, green post-merge CI and the branch deleted. If a gate cannot pass, leave the branch and PR recoverable and report the exact blocker.
 - Never direct-push or force-push `main`, merge or rebase-merge a controlled PR, bypass required checks, add bypass actors, rewrite published controlled history or weaken immutable release-tag protection.
 
@@ -37,12 +37,12 @@ This file is the only required reading. Every other doc is a reference: look up 
 
 ## Release and deployment
 
-Ordinary changes create no tags, Releases or deployments. Follow the documented release workflow only when a task calls for a release. Stay inside the local-only, no-production boundary. Never change versions, secrets, DNS, protected environments or production state for process parity.
+Ordinary changes create no tags, Releases or deployments. Follow the release workflow only when a task calls for one. Stay local-only with no production; never change versions, secrets, DNS, protected environments or production state for process parity.
 
 ## Keep sessions cheap
 
-Each tool call re-sends the whole session, so everything that enters context is paid for again on every later call.
+Each tool call re-sends the whole session, so whatever enters context is paid for again on every later call.
 
 - Read by range (`grep -n`, `sed -n`), not whole files, and never re-read what you already have.
 - Write long output to a log and print only the tail or the failures. Wait on CI with one blocking `gh run watch --exit-status`, not repeated polls.
-- Hand a long task to a fresh session with a handoff of 25 lines or fewer instead of carrying a huge context to the end.
+- At about 200k tokens of context, finish the current step. At 300k the owner's context-budget hook blocks work tools: reach a recoverable point (commit, push or PR open), then hand off in 25 lines or fewer to `~/Documents/handoffs/riglab-<YYYY-MM-DD>.md`.
