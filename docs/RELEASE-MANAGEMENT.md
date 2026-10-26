@@ -4,7 +4,7 @@
 
 ## Tag gate
 
-After merged `main` and its post-merge CI are verified, Release Cutter creates or verifies the annotated semantic tag at the exact accepted commit. It explicitly dispatches Release at the tag ref with that commit because a tag pushed with the workflow token does not trigger another workflow. A later same-version merge never moves the tag. The tag ruleset blocks updates and deletions. The Release workflow also accepts an intentional tag push and independently proves:
+Main has no push CI: it moves only by a merged PR whose exact head passed `verify`. On each push to main, Release Cutter finds the PR merged as that exact commit, fetches its tested head, and fails unless main's tree equals that head's tree and `verify` passed there. Only then does it create or verify the annotated semantic tag at the exact accepted commit. It explicitly dispatches Release at the tag ref with that commit because a tag pushed with the workflow token does not trigger another workflow. A later same-version merge never moves the tag. The tag ruleset blocks updates and deletions. The Release workflow also accepts an intentional tag push and independently proves:
 
 - the tag name is exact semantic `vX.Y.Z`, its Git object type is `tag`, and it resolves to checked-out `HEAD`;
 - the commit is reachable from current `main` and its `package.json` version equals the tag;

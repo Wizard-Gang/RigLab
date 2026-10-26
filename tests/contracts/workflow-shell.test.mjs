@@ -12,7 +12,7 @@ test('workflow shell checker catches the missing publish-job fi', () => {
 
 test('every committed workflow has valid literal Bash blocks', () => {
   const paths = workflowPaths();
-  assert.deepEqual(paths, ['ci.yml', 'release-cutter.yml', 'release.yml'].map((name) => `.github/workflows/${name}`));
+  assert.deepEqual(paths, ['change.yml', 'gate.yml', 'release-cutter.yml', 'release.yml', 'verify.yml'].map((name) => `.github/workflows/${name}`));
   assert.ok(literalRunBlocks(readFileSync(new URL('../../.github/workflows/release.yml', import.meta.url), 'utf8')).length > 0);
   for (const path of paths) {
     assert.deepEqual(checkLiteralBashRuns(readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')), [], path);

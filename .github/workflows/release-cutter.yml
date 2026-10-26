@@ -1,30 +1,27 @@
 name: Release Cutter
 
+# Main moves only by a merged PR. Prove main carries that PR's tested tree before a version tag is cut.
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
+  push:
     branches: [main]
 
 permissions:
   contents: write
   actions: write
+  checks: read
+  pull-requests: read
 
 jobs:
   cut:
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
+      VALIDATED_SHA: ${{ github.sha }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Cut or verify accepted version tag
         id: candidate
@@ -33,9 +30,28 @@ jobs:
           set -euo pipefail
           git fetch origin main --tags
           if [ "$(git rev-parse origin/main)" != "$VALIDATED_SHA" ]; then
-            echo "Validated main moved; the newer CI run owns release selection."
+            echo "Main moved; the newer push owns release selection."
             exit 0
           fi
+          pr=""
+          for attempt in 1 2 3; do
+            pr="$(gh api "repos/$GITHUB_REPOSITORY/commits/$VALIDATED_SHA/pulls" \
+              --jq "[.[] | select(.base.ref == \"main\" and .merge_commit_sha == \"$VALIDATED_SHA\")] | if length == 1 then .[0].number else empty end")"
+            [ -n "$pr" ] && break
+            sleep 10
+          done
+          [ -n "$pr" ] || { echo "::error::$VALIDATED_SHA is not the merge of exactly one PR into main"; exit 1; }
+          tested_head="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq .head.sha)"
+          git fetch --no-tags origin "refs/pull/$pr/head"
+          [ "$(git rev-parse FETCH_HEAD)" = "$tested_head" ] || { echo "::error::PR #$pr head ref is not its tested head"; exit 1; }
+          if [ "$(git rev-parse "$VALIDATED_SHA^{tree}")" != "$(git rev-parse "$tested_head^{tree}")" ]; then
+            echo "::error::main tree differs from PR #$pr tested head $tested_head"
+            exit 1
+          fi
+          verify="$(gh api "repos/$GITHUB_REPOSITORY/commits/$tested_head/check-runs?check_name=verify" \
+            --jq '.check_runs | max_by(.completed_at // "") | .conclusion // "missing"')"
+          [ "$verify" = success ] || { echo "::error::verify on PR #$pr tested head $tested_head is $verify"; exit 1; }
+          echo "Main $VALIDATED_SHA carries the tree of PR #$pr tested head $tested_head, which passed verify."
           version="$(node -p "require('./package.json').version")"
           if ! [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
             echo "::error::package version is not exact semantic X.Y.Z"

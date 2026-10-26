@@ -30,7 +30,7 @@ The editor edits the library folder (below), which is the only source of the rig
 
 Scroll to zoom about the cursor and drag empty canvas to pan.
 
-Controlled changes use the `RL-###` namespace and the title/body format in [Change management](docs/CHANGE-MANAGEMENT.md). Required PR checks are `verify`, `change-id`, and `security` on the exact head. The committed [GitHub settings](config/github-repository-settings.json) require current-with-main status, squash-only merges, automatic completed-branch deletion, zero bypass actors, immutable Releases and immutable `v*` tags. [AGENTS.md](AGENTS.md) carries the shared work protocol, and the [implementation plan](implementation_plan.md) is the current/future queue.
+Controlled changes use the `RL-###` namespace and the title/body format in [Change management](docs/CHANGE-MANAGEMENT.md). Task PRs squash into the open `release/rNNN` branch after `gate` and `change-id` pass on the exact head; the release PR rebase-merges into `main` after `verify`, `change-id` and `security`. The committed [GitHub settings](config/github-repository-settings.json) require current-with-base status, rebase-only linear `main`, squash-only release branches, automatic completed-branch deletion, zero bypass actors, immutable Releases and immutable `v*` tags. [AGENTS.md](AGENTS.md) carries the shared work protocol, and the [implementation plan](implementation_plan.md) is the current/future queue.
 
 ## Run locally
 
@@ -66,6 +66,7 @@ Save writes the editor's rig, weapon rigs and holds, and animations into that fo
 | Install exact dependencies | `npm ci` | Local install from the committed lockfile |
 | Start the editor | `npm start` | Runs `npm run dev`: teardown, reset, install, build, then the credential-free Vite dev server |
 | Repository acceptance | `npm run check` | Plan queue, workflow shell, vendor pin, repository and delivery contracts, types, tests, build and change identity |
+| Release-branch gate | `npm run check:gate` | The non-test checks CI's `gate` runs: plan queue, workflow shell, vendor pin, repository contract, types and build |
 | Rig and editor tests | `npm test` | Vitest, node environment, against `placeholder-library/` |
 | Validate a library folder | `npm run check:library [folder]` | Local only; defaults to the folder `npm start` reads |
 | Dependency advisory gate | `npm run audit:dependencies` | Network-backed npm registry query; fails on high or critical advisories |
