@@ -8,7 +8,9 @@ import {
 const root = new URL('../../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const current = () => ({
-  ci: read('.github/workflows/ci.yml'),
+  verify: read('.github/workflows/verify.yml'),
+  gate: read('.github/workflows/gate.yml'),
+  change: read('.github/workflows/change.yml'),
   release: read('.github/workflows/release.yml'),
   cutter: read('.github/workflows/release-cutter.yml'),
   pkg: JSON.parse(read('package.json')),
@@ -49,15 +51,30 @@ test('dependencies are exact pins and versions agree', () => {
   assert.match(failuresWith((state) => { state.pkg.packageManager = 'npm@11.0.0'; }), /Node 26\/npm 12 baseline/);
 });
 
-test('CI keeps the three required jobs on the exact head with a read-only token', () => {
-  assert.match(failuresWith((state) => { state.ci = state.ci.replace('  security:', '  audit:'); }), /verify, change-id, security/);
-  assert.match(failuresWith((state) => { state.ci = state.ci.replace('contents: read', 'contents: write'); }), /read-only/);
+test('delivery workflows keep their jobs on the exact head with a read-only token and no push runs', () => {
+  assert.match(failuresWith((state) => { state.verify = state.verify.replace('  security:', '  audit:'); }), /exactly the verify, security jobs/);
+  assert.match(failuresWith((state) => { state.verify = state.verify.replace('contents: read', 'contents: write'); }), /verify\.yml default token must be read-only/);
   assert.match(failuresWith((state) => {
-    state.ci = state.ci.replace('run: npm run check:change', 'run: echo skipped');
+    state.change = state.change.replace('run: npm run check:change', 'run: echo skipped');
   }), /change-id must validate exact PR identity/);
   assert.match(failuresWith((state) => {
-    state.ci = state.ci.replace(/actions\/checkout@[0-9a-f]{40}/, 'actions/checkout@v7');
+    state.gate = state.gate.replace(/actions\/checkout@[0-9a-f]{40}/, 'actions/checkout@v7');
   }), /pinned to a full commit SHA/);
+  assert.match(failuresWith((state) => {
+    state.verify = state.verify.replace('  workflow_dispatch:', '  push:\n    branches: [main]\n  workflow_dispatch:');
+  }), /verify\.yml must trigger only on PRs and workflow_dispatch, never on push/);
+  assert.match(failuresWith((state) => {
+    state.change = state.change.replace("branches: [main, 'release/**']", 'branches: [main]');
+  }), /change\.yml must run on PRs into main and release\/\*\*/);
+  assert.match(failuresWith((state) => {
+    state.gate = state.gate.replace('    runs-on: ubuntu-latest', "    if: github.actor != 'x'\n    runs-on: ubuntu-latest");
+  }), /gate must always run/);
+});
+
+test('the release-branch gate runs only the non-test checks', () => {
+  assert.match(failuresWith((state) => { state.gate = state.gate.replace('run: npm run check:gate', 'run: npm run check'); }), /gate must run the non-test checks[\s\S]*gate must not run tests/);
+  assert.match(failuresWith((state) => { state.pkg.scripts['check:gate'] += ' && npm run test:contracts'; }), /check:gate must run only the non-test checks/);
+  assert.match(failuresWith((state) => { state.pkg.scripts['check:gate'] += ' && vitest run'; }), /check:gate must run only the non-test checks/);
 });
 
 test('release path reproduces, attests and never moves a tag', () => {
@@ -68,12 +85,33 @@ test('release path reproduces, attests and never moves a tag', () => {
   }), /older same-version tags untouched/);
 });
 
-test('provider policy is squash-only, current-with-main and bypass-free', () => {
-  assert.match(failuresWith((state) => { state.provider.mergeMethods.rebase = true; }), /squash-only baseline/);
+test('Release Cutter proves each main push carries its PR tested tree and green verify', () => {
+  assert.match(failuresWith((state) => {
+    state.cutter = state.cutter.replace('  push:\n    branches: [main]', '  workflow_run:\n    workflows: [CI]');
+  }), /follow pushes to main only/);
+  assert.match(failuresWith((state) => { state.cutter = state.cutter.replace('"$tested_head^{tree}"', '"$tested_head"'); }), /tested head tree/);
+  assert.match(failuresWith((state) => { state.cutter = state.cutter.replace('[ "$verify" = success ]', 'true'); }), /green verify/);
+  assert.match(failuresWith((state) => { state.cutter = state.cutter.replace('  checks: read\n', ''); }), /scoped checks: read/);
+});
+
+test('provider policy: rebase-only linear main, squash-only release branches, no bypass actors', () => {
+  const ruleset = (state, name) => state.provider.rulesets.find((rule) => rule.name === name);
+  assert.match(failuresWith((state) => { state.provider.mergeMethods.rebase = false; }), /only squash and rebase merges/);
+  assert.match(failuresWith((state) => { state.provider.mergeMethods.mergeCommit = true; }), /only squash and rebase merges/);
   assert.match(failuresWith((state) => { state.provider.immutableReleases = false; }), /immutable Releases/);
   assert.match(failuresWith((state) => { state.provider.rulesets[0].bypassActors = [{ actor_id: 1 }]; }), /no bypass actors/);
-  assert.match(failuresWith((state) => { state.provider.requiredStatusChecks = ['verify']; }), /match CI job names/);
-  assert.match(failuresWith((state) => { state.provider.repository = 'Wizard-Gang/baseline'; }), /squash-only baseline/);
+  assert.match(failuresWith((state) => { ruleset(state, 'main-protection').allowedMergeMethods = ['squash']; }), /main must accept PRs by rebase merge only/);
+  assert.match(failuresWith((state) => {
+    ruleset(state, 'main-protection').rules = ruleset(state, 'main-protection').rules.filter((rule) => rule !== 'required_linear_history');
+  }), /main ruleset must enforce/);
+  assert.match(failuresWith((state) => { ruleset(state, 'main-protection').requiredStatusChecks = ['verify']; }), /main required checks must match/);
+  assert.match(failuresWith((state) => { ruleset(state, 'release-branch-protection').allowedMergeMethods = ['rebase']; }), /release\/\* must accept PRs by squash merge only/);
+  assert.match(failuresWith((state) => { ruleset(state, 'release-branch-protection').rules.push('deletion'); }), /release\/\* ruleset must enforce/);
+  assert.match(failuresWith((state) => { ruleset(state, 'release-branch-protection').requiredStatusChecks = ['verify', 'change-id']; }), /release\/\* required checks must match/);
+  assert.match(failuresWith((state) => {
+    state.provider.rulesets = state.provider.rulesets.filter((rule) => rule.name !== 'release-branch-protection');
+  }), /exactly the main and release\/\* branch rulesets/);
+  assert.match(failuresWith((state) => { state.provider.repository = 'Wizard-Gang/baseline'; }), /only squash and rebase merges/);
 });
 
 test('RigLab stays React and TypeScript: no Rust, Cargo or Tauri files, dependencies or scripts', () => {

@@ -12,11 +12,11 @@ function sameSet(actual, expected) {
 
 export const REPOSITORY = 'Wizard-Gang/RigLab';
 
-// RigLab is a local-first authoring application: CI, a release cutter and a source release, never a deployment.
-export const WORKFLOWS = Object.freeze(['ci.yml', 'release-cutter.yml', 'release.yml']);
+// RigLab is a local-first authoring application: delivery gates, a release cutter and a source release, never a deployment.
+export const WORKFLOWS = Object.freeze(['change.yml', 'gate.yml', 'release-cutter.yml', 'release.yml', 'verify.yml']);
 
 export const REQUIRED_SCRIPTS = Object.freeze([
-  'start', 'dev', 'build', 'typecheck', 'test', 'check', 'check:change', 'check:release', 'check:patch',
+  'start', 'dev', 'build', 'typecheck', 'test', 'check', 'check:gate', 'check:change', 'check:release', 'check:patch',
   'check:repository', 'check:vendor', 'check:workflow-shell', 'test:contracts', 'test:plan-queue',
   'test:github-settings', 'verify:github-settings', 'apply:github-settings', 'audit:dependencies',
 ]);
@@ -60,8 +60,11 @@ export function validatePackage(pkg, lock) {
   if (pkg.scripts?.['audit:dependencies'] !== 'npm audit --audit-level=high') {
     failures.push('dependency advisory gate must fail on high-severity advisories');
   }
-  if (OUTSIDE_CHECK.test(pkg.scripts?.check ?? '')) {
+  if (OUTSIDE_CHECK.test(pkg.scripts?.check ?? '') || OUTSIDE_CHECK.test(pkg.scripts?.['check:gate'] ?? '')) {
     failures.push('npm run check must stay credential-free and offline');
+  }
+  if (/vitest|--test|\bnpm (?:run )?test\b|npm run check(?:\s|$)/.test(pkg.scripts?.['check:gate'] ?? '')) {
+    failures.push('npm run check:gate must run only the non-test checks');
   }
   for (const [name, script] of Object.entries(pkg.scripts ?? {})) {
     if (/wrangler|deploy/.test(script)) failures.push(`package script ${name} must never deploy`);
@@ -77,26 +80,47 @@ export function validatePackage(pkg, lock) {
   return failures;
 }
 
-function validateCi(ci, failures) {
-  const ciEvents = keys(block(ci, 'on'), 2);
-  if (!sameSet(ciEvents, ['pull_request', 'push'])) failures.push('CI must trigger only on PR and main push');
-  requireMatch(failures, 'CI must rerun when PR title or body is edited', block(ci, 'pull_request', 2), /types: \[[^\]]*edited[^\]]*\]/);
-  requireMatch(failures, 'CI push target must be main', block(ci, 'push', 2), /^    branches: \[main\]$/m);
-  if (block(ci, 'permissions')?.trim() !== 'contents: read') failures.push('CI default token must be read-only');
-  requireMatch(failures, 'CI must cancel only in-progress PR runs', block(ci, 'concurrency'), /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/);
-  const ciJobs = keys(block(ci, 'jobs'), 2);
-  if (!sameSet(ciJobs, ['verify', 'change-id', 'security'])) failures.push('CI must expose verify, change-id, security required jobs');
-  for (const job of ciJobs) {
-    const contents = block(ci, job, 2);
+// Each delivery workflow: its PR bases, whether it can be dispatched, and its job names. None runs on push.
+const DELIVERY = Object.freeze({
+  verify: { branches: /^    branches: \[main\]$/m, bases: 'main', dispatch: true, jobs: ['verify', 'security'] },
+  gate: { branches: /^    branches: \['release\/\*\*'\]$/m, bases: 'release/**', dispatch: false, jobs: ['gate'] },
+  change: { branches: /^    branches: \[main, 'release\/\*\*'\]$/m, bases: 'main and release/**', dispatch: false, jobs: ['change-id'] },
+});
+
+function validateDelivery(name, workflow, failures) {
+  const { branches, bases, dispatch, jobs } = DELIVERY[name];
+  const events = keys(block(workflow, 'on'), 2);
+  if (!sameSet(events, dispatch ? ['pull_request', 'workflow_dispatch'] : ['pull_request'])) {
+    failures.push(`${name}.yml must trigger only on ${dispatch ? 'PRs and workflow_dispatch' : 'PRs'}, never on push`);
+  }
+  const pullRequest = block(workflow, 'pull_request', 2);
+  requireMatch(failures, `${name}.yml must run on PRs into ${bases}`, pullRequest, branches);
+  requireMatch(failures, `${name}.yml must rerun when PR title or body is edited`, pullRequest, /types: \[[^\]]*edited[^\]]*\]/);
+  if (block(workflow, 'permissions')?.trim() !== 'contents: read') failures.push(`${name}.yml default token must be read-only`);
+  requireMatch(failures, `${name}.yml must cancel only in-progress PR runs`, block(workflow, 'concurrency'), /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/);
+  const actual = keys(block(workflow, 'jobs'), 2);
+  if (!sameSet(actual, jobs)) failures.push(`${name}.yml must expose exactly the ${jobs.join(', ')} jobs`);
+  for (const job of actual) {
+    const contents = block(workflow, job, 2);
     requireMatch(failures, `${job} must check out the exact PR head`, contents,
       /ref: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
     if (block(contents, 'permissions', 4)) failures.push(`${job} must not broaden token permissions`);
+    if (/^    if:/m.test(contents ?? '')) failures.push(`${job} must always run; a skipped job cannot gate a merge`);
   }
-  requireMatch(failures, 'verify must run the complete local contract', block(ci, 'verify', 2), /run: npm run check/);
-  requireMatch(failures, 'verify must check the committed PR patch', block(ci, 'verify', 2), /run: npm run check:patch/);
-  requireMatch(failures, 'change-id must validate exact PR identity', block(ci, 'change-id', 2), /run: npm run check:change/);
-  requireMatch(failures, 'security must run the dependency advisory gate', block(ci, 'security', 2), /run: npm run audit:dependencies/);
-  return ciJobs;
+  return actual;
+}
+
+function validateDeliveryCommands({ verify, gate, change }, failures) {
+  requireMatch(failures, 'verify must run the complete local contract', block(verify, 'verify', 2), /run: npm run check$/m);
+  requireMatch(failures, 'verify must check the committed PR patch', block(verify, 'verify', 2), /run: npm run check:patch/);
+  requireMatch(failures, 'security must run the dependency advisory gate', block(verify, 'security', 2), /run: npm run audit:dependencies/);
+  const gateJob = block(gate, 'gate', 2);
+  requireMatch(failures, 'gate must run the non-test checks', gateJob, /run: npm run check:gate$/m);
+  requireMatch(failures, 'gate must check the committed PR patch', gateJob, /run: npm run check:patch/);
+  if (/vitest|--test|\bnpm (?:run )?test\b|npm run check$/m.test(gateJob ?? '')) failures.push('gate must not run tests');
+  const changeJob = block(change, 'change-id', 2);
+  requireMatch(failures, 'change-id must validate exact PR identity', changeJob, /run: npm run check:change/);
+  requireMatch(failures, 'change-id must fetch merged PR heads for the release ledger', changeJob, /git fetch [^\n]*refs\/pull\/\*\/head/);
 }
 
 function validateRelease(release, failures) {
@@ -128,46 +152,71 @@ function validateRelease(release, failures) {
 }
 
 function validateCutter(cutter, failures) {
-  if (!sameSet(keys(block(cutter, 'on'), 2), ['workflow_run'])) failures.push('Release Cutter must follow CI workflow_run only');
-  requireMatch(failures, 'Release Cutter must require successful main push CI', cutter,
-    /workflow_run\.conclusion == 'success'[\s\S]*workflow_run\.event == 'push'[\s\S]*workflow_run\.head_branch == 'main'/);
+  if (!sameSet(keys(block(cutter, 'on'), 2), ['push'])) failures.push('Release Cutter must follow pushes to main only');
+  requireMatch(failures, 'Release Cutter push target must be main', block(cutter, 'push', 2), /^    branches: \[main\]$/m);
+  if (/^    if:/m.test(block(cutter, 'cut', 2) ?? '')) failures.push('Release Cutter must prove every push to main');
   requireMatch(failures, 'Release Cutter must check exact current main', cutter, /git rev-parse origin\/main/);
+  requireMatch(failures, 'Release Cutter must find the PR merged as exactly this main commit', cutter,
+    /commits\/\$VALIDATED_SHA\/pulls[\s\S]*merge_commit_sha == \\"\$VALIDATED_SHA\\"/);
+  requireMatch(failures, 'Release Cutter must prove main carries the tested head tree', cutter,
+    /"\$VALIDATED_SHA\^\{tree\}"[\s\S]*"\$tested_head\^\{tree\}"/);
+  requireMatch(failures, 'Release Cutter must require green verify on the tested head', cutter,
+    /commits\/\$tested_head\/check-runs\?check_name=verify[\s\S]*\[ "\$verify" = success \]/);
   requireMatch(failures, 'Release Cutter must create an annotated exact-head tag', cutter, /git tag -a "\$tag" "\$VALIDATED_SHA"/);
   requireMatch(failures, 'Release Cutter must leave older same-version tags untouched', cutter, /\[ "\$release_sha" != "\$VALIDATED_SHA" \]/);
   requireMatch(failures, 'Release Cutter must dispatch the exact tag and commit', cutter,
     /gh workflow run release\.yml --ref "\$RELEASE_TAG" -f expected_sha="\$EXPECTED_SHA"/);
-  for (const permission of ['contents: write', 'actions: write']) {
+  for (const permission of ['contents: write', 'actions: write', 'checks: read', 'pull-requests: read']) {
     if (!block(cutter, 'permissions')?.includes(permission)) failures.push(`Release Cutter requires scoped ${permission}`);
   }
 }
 
-function validateProvider(provider, ciJobs, failures) {
-  if (!sameSet(provider?.requiredStatusChecks ?? [], ciJobs)) failures.push('provider required checks must match CI job names');
+const MAIN_RULES = Object.freeze(['deletion', 'non_fast_forward', 'pull_request', 'required_linear_history', 'required_status_checks']);
+// No deletion rule: automatic branch deletion removes a release branch once its release PR merges.
+const RELEASE_RULES = Object.freeze(['non_fast_forward', 'pull_request', 'required_status_checks']);
+
+function validateBranchRuleset(ruleset, label, { rules, mergeMethod, checks, checkSource }, failures) {
+  if (ruleset?.enforcement !== 'active' || ruleset?.requireBranchUpToDate !== true
+      || ruleset?.bypassActors?.length !== 0 || !sameSet(ruleset?.rules ?? [], rules)) {
+    failures.push(`${label} ruleset must enforce ${rules.join(', ')} on current branches with no bypass actors`);
+  }
+  if (!sameSet(ruleset?.allowedMergeMethods ?? [], [mergeMethod])) failures.push(`${label} must accept PRs by ${mergeMethod} merge only`);
+  if (!sameSet(ruleset?.requiredStatusChecks ?? [], checks)) failures.push(`${label} required checks must match the ${checkSource} jobs`);
+}
+
+function validateProvider(provider, { mainChecks, releaseChecks }, failures) {
   if (provider?.repository !== REPOSITORY || provider?.defaultBranch !== 'main'
       || provider?.mergeMethods?.mergeCommit !== false || provider?.mergeMethods?.squash !== true
-      || provider?.mergeMethods?.rebase !== false || provider?.deleteBranchOnMerge !== true
+      || provider?.mergeMethods?.rebase !== true || provider?.deleteBranchOnMerge !== true
       || provider?.allowAutoMerge !== true || provider?.immutableReleases !== true) {
-    failures.push('provider must enforce the committed squash-only baseline with immutable Releases');
+    failures.push('provider must allow only squash and rebase merges, delete merged branches and keep immutable Releases');
   }
-  const main = provider?.rulesets?.find((rule) => rule.target === 'branch');
+  const branches = provider?.rulesets?.filter((rule) => rule.target === 'branch') ?? [];
+  const main = branches.find((rule) => sameSet(rule.include ?? [], ['refs/heads/main']));
+  const release = branches.find((rule) => sameSet(rule.include ?? [], ['refs/heads/release/*']));
+  if (branches.length !== 2 || !main || !release) failures.push('provider must have exactly the main and release/* branch rulesets');
+  validateBranchRuleset(main, 'main', {
+    rules: MAIN_RULES, mergeMethod: 'rebase', checks: mainChecks, checkSource: 'verify.yml and change.yml',
+  }, failures);
+  validateBranchRuleset(release, 'release/*', {
+    rules: RELEASE_RULES, mergeMethod: 'squash', checks: releaseChecks, checkSource: 'gate.yml and change.yml',
+  }, failures);
   const tags = provider?.rulesets?.find((rule) => rule.target === 'tag');
-  if (main?.enforcement !== 'active' || main?.requireBranchUpToDate !== true
-      || main?.bypassActors?.length !== 0 || !sameSet(main?.include ?? [], ['refs/heads/main'])
-      || !sameSet(main?.rules ?? [], ['deletion', 'non_fast_forward', 'pull_request', 'required_status_checks'])) {
-    failures.push('main ruleset must protect current main with no bypass actors');
-  }
   if (tags?.enforcement !== 'active' || tags?.bypassActors?.length !== 0
       || !sameSet(tags?.include ?? [], ['refs/tags/v*']) || !sameSet(tags?.rules ?? [], ['deletion', 'update'])) {
     failures.push('release tag ruleset must make v* tags immutable');
   }
 }
 
-export function validateRepositoryContract({ ci, release, cutter, pkg, lock, provider }) {
+export function validateRepositoryContract({ verify, gate, change, release, cutter, pkg, lock, provider }) {
   const failures = validatePackage(pkg, lock);
-  const ciJobs = validateCi(ci, failures);
+  const verifyJobs = validateDelivery('verify', verify, failures);
+  const gateJobs = validateDelivery('gate', gate, failures);
+  const changeJobs = validateDelivery('change', change, failures);
+  validateDeliveryCommands({ verify, gate, change }, failures);
   validateRelease(release, failures);
   validateCutter(cutter, failures);
-  const workflows = `${ci}\n${release}\n${cutter}`;
+  const workflows = [verify, gate, change, release, cutter].join('\n');
   if (/deploy-worker|wrangler|^\s*environment:/m.test(workflows)) failures.push('workflows must never deploy');
   const uses = [...workflows.matchAll(/^\s*-?\s*uses:\s*([^\s#]+)/gm)].map((match) => match[1]);
   if (!uses.length || uses.some((use) => !/^actions\/[a-z0-9-]+@[0-9a-f]{40}$/.test(use))) {
@@ -176,7 +225,9 @@ export function validateRepositoryContract({ ci, release, cutter, pkg, lock, pro
   for (const match of workflows.matchAll(/\bnpm run ([\w:-]+)/g)) {
     if (!pkg.scripts?.[match[1]]) failures.push(`workflow references missing package script ${match[1]}`);
   }
-  validateProvider(provider, ciJobs, failures);
+  validateProvider(provider, {
+    mainChecks: [...verifyJobs, ...changeJobs], releaseChecks: [...gateJobs, ...changeJobs],
+  }, failures);
   return failures;
 }
 
@@ -184,7 +235,7 @@ export const REQUIRED_AUTHORITIES = Object.freeze([
   'README.md', 'AGENTS.md', 'CONTRIBUTING.md', 'LICENSE', 'SECURITY.md', 'implementation_plan.md',
   'docs/ARCHITECTURE.md', 'docs/CHANGE-MANAGEMENT.md', 'docs/RELEASE-MANAGEMENT.md',
   '.node-version', '.npmrc', 'package.json', 'package-lock.json', '.github/pull_request_template.md',
-  'config/github-repository-settings.json', 'vendor/hexframe/lock.json',
+  'config/github-repository-settings.json', 'docs/releases.json', 'vendor/hexframe/lock.json',
   ...WORKFLOWS.map((file) => `.github/workflows/${file}`),
 ]);
 
@@ -204,7 +255,9 @@ export function validateRepositoryAt(root, trackedPaths = []) {
   }
   failures.push(...validateTrackedFiles(trackedPaths));
   return [...failures, ...validateRepositoryContract({
-    ci: read('.github/workflows/ci.yml'),
+    verify: read('.github/workflows/verify.yml'),
+    gate: read('.github/workflows/gate.yml'),
+    change: read('.github/workflows/change.yml'),
     release: read('.github/workflows/release.yml'),
     cutter: read('.github/workflows/release-cutter.yml'),
     pkg: JSON.parse(read('package.json')),

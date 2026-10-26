@@ -22,6 +22,7 @@
     "test:plan-queue": "node scripts/check-portfolio-contract.mjs",
     "test:github-settings": "node --test tests/contracts/github-settings.test.mjs",
     "check": "npm run test:plan-queue && npm run check:workflow-shell && npm run check:vendor && npm run check:repository && npm run test:contracts && npm run typecheck && npm run test && npm run build -- --mode placeholder && npm run check:change",
+    "check:gate": "node scripts/check-portfolio-contract.mjs && npm run check:workflow-shell && npm run check:vendor && npm run check:repository && npm run typecheck && npm run build -- --mode placeholder",
     "check:change": "node scripts/check-change.mjs",
     "check:release": "node scripts/check-release.mjs",
     "check:patch": "node scripts/check-patch.mjs",
