@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.hold:1",
+  "title": "riglab.hold v1",
+  "description": "Where a weapon's free bodies first sit when the rig, standing at rest, takes it (src/format/hold.ts, validateHold), in rest-pose coordinates carried with the torso. Rules this schema cannot express, which a reader must check against the weapon: `name` is the weapon's name; `bodies` places each of the weapon's free bodies (those with two grips) exactly once, and no body that rides a hand.",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.hold" },
+    "version": { "const": 1 },
+    "name": { "$ref": "#/$defs/name" },
+    "bodies": { "type": "array", "items": { "$ref": "#/$defs/body-placement" } }
+  },
+  "required": ["format", "version", "name", "bodies"],
+  "additionalProperties": false,
+  "$defs": {
+    "name": {
+      "description": "1-64 letters, digits, '_' or '-', starting with a letter.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "body-placement": {
+      "description": "A free body's origin and its rotation in degrees.",
+      "type": "object",
+      "properties": {
+        "body": { "$ref": "#/$defs/name" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "rotation": { "type": "number" }
+      },
+      "required": ["body", "x", "y", "rotation"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.weapon:1",
+  "title": "riglab.weapon v1",
+  "description": "A RigLab weapon rig (src/format/weapon.ts, validateWeapon): rigid bodies and the fixed grips the rig's hands hold them by. A body with one grip rides that hand at the grip's `angle`; a body with two grips is free, placed by each key, and its grips carry no angle. Rules this schema cannot express, which a reader must check itself: body names are unique within the weapon; grip names are unique within a body; a chain is gripped at most once in the whole weapon, and names a chain of the rig; a body's axis butt and tip are apart, and a free body's two grips sit at different points (both more than 1e-6 apart).",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.weapon" },
+    "version": { "const": 1 },
+    "name": {
+      "description": "A name other than `unarmed`, the class that holds no weapon.",
+      "type": "string",
+      "pattern": "^(?!unarmed$)[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "bodies": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/body" } }
+  },
+  "required": ["format", "version", "name", "bodies"],
+  "additionalProperties": false,
+  "$defs": {
+    "name": {
+      "description": "1-64 letters, digits, '_' or '-', starting with a letter.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "point": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+    "body": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "slot": { "$ref": "#/$defs/name" },
+        "axis": {
+          "description": "The butt and the tip in the body's own frame.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "$ref": "#/$defs/point" }
+        },
+        "grips": {
+          "oneOf": [
+            { "type": "array", "minItems": 1, "maxItems": 1, "items": { "$ref": "#/$defs/riding-grip" } },
+            { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/free-grip" } }
+          ]
+        }
+      },
+      "required": ["name", "slot", "axis", "grips"],
+      "additionalProperties": false
+    },
+    "riding-grip": {
+      "description": "The one grip of a body that rides its hand: `angle` is the body's rotation relative to the gripping chain's lower bone, in degrees.",
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "chain": { "$ref": "#/$defs/name" },
+        "at": { "$ref": "#/$defs/point" },
+        "angle": { "type": "number" }
+      },
+      "required": ["name", "chain", "at", "angle"],
+      "additionalProperties": false
+    },
+    "free-grip": {
+      "description": "One of a free body's two grips; two hands set its rotation.",
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "chain": { "$ref": "#/$defs/name" },
+        "at": { "$ref": "#/$defs/point" }
+      },
+      "required": ["name", "chain", "at"],
+      "additionalProperties": false
+    }
+  }
+}

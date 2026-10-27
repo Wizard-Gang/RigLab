@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.palette:1",
+  "title": "riglab.palette v1",
+  "description": "An art set's look by class token (src/format/palette.ts, validatePalette). `classes` is in cascade order: a later token overrides an earlier one, as CSS does, so a reader keeps the member order. A `pixel` palette draws whole 2 x 2 cells with crisp edges and no strokes: its styles have no `strokeWidth` or `linecap`, and `stroke` only as `none`. This schema expresses every rule the validator checks.",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.palette" },
+    "version": { "const": 1 },
+    "pixel": { "type": "boolean" },
+    "classes": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "$ref": "#/$defs/class-token" },
+      "additionalProperties": { "$ref": "#/$defs/style" }
+    }
+  },
+  "required": ["format", "version", "classes"],
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": {
+        "pixel": { "const": true },
+        "classes": { "additionalProperties": { "$ref": "#/$defs/pixel-style" } }
+      },
+      "required": ["pixel"]
+    },
+    { "properties": { "pixel": { "const": false } } }
+  ],
+  "$defs": {
+    "class-token": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "color": { "type": "string", "pattern": "^(?:#[0-9a-fA-F]{6}|none)$" },
+    "style": {
+      "type": "object",
+      "properties": {
+        "fill": { "$ref": "#/$defs/color" },
+        "stroke": { "$ref": "#/$defs/color" },
+        "strokeWidth": { "type": "number", "minimum": 0, "maximum": 8 },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "linecap": { "enum": ["butt", "round", "square"] }
+      },
+      "additionalProperties": false
+    },
+    "pixel-style": {
+      "type": "object",
+      "properties": {
+        "fill": { "$ref": "#/$defs/color" },
+        "stroke": { "const": "none" },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

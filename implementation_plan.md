@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-063 — [API] Publish JSON Schemas for every consumer format
-
-- Dependency: RL-062.
-- Why: RenderLab's specification (§3.3) requires independent readers against published schemas. RigLab's formats exist only as TypeScript validators.
-- Scope: Add `schemas/` with one JSON Schema per format: `riglab.export` v2, `riglab.skin` v1, `riglab.rig` v2, `riglab.anim` v3, `riglab.weapon` v1, `riglab.hold` v1, `riglab.palette` v1, `riglab.part` v1 and `riglab.baked` v1. Each is closed, as the validators are. Tests prove that every library and conformance document the validators accept, the schemas accept, and every invalid case is refused by both. Rules a schema cannot express, such as cross-references, key frames and grid widths, are listed in each schema's description.
-- Non-goals: No change to any format. No schema-generated code in `src/`.
-- Acceptance: Validators and schemas agree on every valid and invalid case in CI.
-- Validation: The standard set; one dispatched `verify.yml` run.
-- Authorities: src/format/, src/export/, docs/ARCHITECTURE.md (RigLab formats). MapLab's `schemas/` as the portfolio pattern.
-
 ### RL-064 — [TEST] Commit conformance exports from a dedicated conformance library
 
 - Dependency: RL-063. Owner ruling of 2026-10-27: a dedicated `conformance/library`, not more motion in `placeholder-library/`.
