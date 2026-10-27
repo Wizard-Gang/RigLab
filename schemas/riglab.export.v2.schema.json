@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.export:2",
+  "title": "riglab.export v2",
+  "description": "The `manifest.json` of a `riglab-export/` bundle (src/export/bundle.ts, buildBundle), which pins every other file of the bundle by byte length and SHA-256. The rig file is a `riglab.rig` v2, animations `riglab.anim` v3, weapons `riglab.weapon` v1, holds `riglab.hold` v1 and baked files `riglab.baked` v1. Rules this schema cannot express, which a reader must check against the bundle: each entry's `bytes` and `sha256` match its file, and the bundle holds exactly the manifest and the files it lists; each file path follows from its entry's name (`<rig>.rig.json`, `animations/<name>.anim.json`, `weapons/<name>.weapon.json`, `weapons/<name>.hold.json`, `baked/<name>.baked.json`); names are unique within each list; `weapons` lists exactly the weapons the animations' classes hold, in the library's config order, and is left out when they hold none; a weapon lists a `hold` exactly when it has a free body (one with two grips); `baked`, when present, lists one file per animation, in animation order.",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.export" },
+    "version": { "const": 2 },
+    "generator": { "description": "The RigLab build that wrote the bundle.", "type": "string" },
+    "rig": { "$ref": "#/$defs/rig-entry" },
+    "animations": { "type": "array", "items": { "$ref": "#/$defs/animation-entry" } },
+    "weapons": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/weapon-entry" } },
+    "baked": { "type": "array", "items": { "$ref": "#/$defs/baked-entry" } }
+  },
+  "required": ["format", "version", "generator", "rig", "animations"],
+  "additionalProperties": false,
+  "$defs": {
+    "name": {
+      "description": "1-64 letters, digits, '_' or '-', starting with a letter.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "sha256": { "description": "Lowercase hex SHA-256 of the file's bytes.", "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "bytes": { "description": "The file's length in bytes.", "type": "integer", "minimum": 1 },
+    "rig-entry": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "file": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}\\.rig\\.json$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "$ref": "#/$defs/bytes" }
+      },
+      "required": ["name", "file", "sha256", "bytes"],
+      "additionalProperties": false
+    },
+    "animation-entry": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "file": { "type": "string", "pattern": "^animations/[A-Za-z][A-Za-z0-9_-]{0,63}\\.anim\\.json$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "$ref": "#/$defs/bytes" }
+      },
+      "required": ["name", "file", "sha256", "bytes"],
+      "additionalProperties": false
+    },
+    "weapon-entry": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "file": { "type": "string", "pattern": "^weapons/[A-Za-z][A-Za-z0-9_-]{0,63}\\.weapon\\.json$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "$ref": "#/$defs/bytes" },
+        "hold": { "$ref": "#/$defs/hold-file" }
+      },
+      "required": ["name", "file", "sha256", "bytes"],
+      "additionalProperties": false
+    },
+    "hold-file": {
+      "type": "object",
+      "properties": {
+        "file": { "type": "string", "pattern": "^weapons/[A-Za-z][A-Za-z0-9_-]{0,63}\\.hold\\.json$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "$ref": "#/$defs/bytes" }
+      },
+      "required": ["file", "sha256", "bytes"],
+      "additionalProperties": false
+    },
+    "baked-entry": {
+      "type": "object",
+      "properties": {
+        "animation": { "$ref": "#/$defs/name" },
+        "file": { "type": "string", "pattern": "^baked/[A-Za-z][A-Za-z0-9_-]{0,63}\\.baked\\.json$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "$ref": "#/$defs/bytes" }
+      },
+      "required": ["animation", "file", "sha256", "bytes"],
+      "additionalProperties": false
+    }
+  }
+}

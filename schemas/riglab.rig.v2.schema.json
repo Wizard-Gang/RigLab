@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.rig:2",
+  "title": "riglab.rig v2",
+  "description": "A RigLab rig (src/format/rig.ts, validateRig). Rules this schema cannot express, which a reader must check itself: exactly one bone has a null parent and `root` names it; every parent names a bone of the rig, and no parent chain forms a cycle; bone names are unique; chain names are unique; a chain's `upper` and `lower` name bones, `lower`'s parent is `upper`, `upper` is not the root, `lower` has a non-zero `offset` and a non-zero `tip`, and no bone belongs to two chains; a bone's `limits.min` is at most its `limits.max`; every depth profile side names a bone, and `depthProfiles.byClip` values and `depthProfiles.default` name a profile; `paintOrder.profiles` has exactly the depth profiles' names, and each facing lists every bone exactly once, back to front, as Hexframe's `visualPaintOrder` resolves that profile and facing; `paintOrder.byClip` holds every `depthProfiles.byClip` entry unchanged, and its other values name a profile.",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.rig" },
+    "version": { "const": 2 },
+    "name": { "$ref": "#/$defs/name" },
+    "space": { "$ref": "#/$defs/space" },
+    "root": { "$ref": "#/$defs/name" },
+    "bones": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/bone" } },
+    "chains": { "type": "array", "items": { "$ref": "#/$defs/chain" } },
+    "depthProfiles": { "$ref": "#/$defs/depth-profiles" },
+    "paintOrder": { "$ref": "#/$defs/paint-order" }
+  },
+  "required": ["format", "version", "name", "space", "root", "bones", "chains"],
+  "dependentRequired": { "depthProfiles": ["paintOrder"], "paintOrder": ["depthProfiles"] },
+  "additionalProperties": false,
+  "$defs": {
+    "name": {
+      "description": "1-64 letters, digits, '_' or '-', starting with a letter.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "nullable-name": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/name" }] },
+    "point": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+    "space": {
+      "description": "SVG units, x right, y down, rotation clockwise-positive: the conventions the FK math assumes.",
+      "type": "object",
+      "properties": {
+        "units": { "const": "svg" },
+        "x": { "const": "right" },
+        "y": { "const": "down" },
+        "rotation": { "const": "clockwise-positive" },
+        "height": { "type": "number", "exclusiveMinimum": 0 },
+        "viewBox": {
+          "description": "[x, y, width, height].",
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            { "type": "number" },
+            { "type": "number" },
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "number", "exclusiveMinimum": 0 }
+          ]
+        }
+      },
+      "required": ["units", "x", "y", "rotation", "height", "viewBox"],
+      "additionalProperties": false
+    },
+    "bone": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "parent": { "$ref": "#/$defs/nullable-name" },
+        "offset": { "$ref": "#/$defs/point" },
+        "tip": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/point" }] },
+        "slot": { "$ref": "#/$defs/name" },
+        "artHeight": { "type": "number", "minimum": 0 },
+        "hand": { "$ref": "#/$defs/nullable-name" },
+        "limits": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/limits" }] }
+      },
+      "required": ["name", "parent", "offset", "tip", "slot", "artHeight", "hand", "limits"],
+      "additionalProperties": false
+    },
+    "limits": {
+      "description": "Inclusive bounds on the bone's local rotation, in degrees.",
+      "type": "object",
+      "properties": {
+        "min": { "type": "number", "minimum": -360, "maximum": 360 },
+        "max": { "type": "number", "minimum": -360, "maximum": 360 }
+      },
+      "required": ["min", "max"],
+      "additionalProperties": false
+    },
+    "chain": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "upper": { "$ref": "#/$defs/name" },
+        "lower": { "$ref": "#/$defs/name" },
+        "bend": { "enum": [1, -1] }
+      },
+      "required": ["name", "upper", "lower", "bend"],
+      "additionalProperties": false
+    },
+    "depth-profiles": {
+      "type": "object",
+      "properties": {
+        "profiles": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/depth-profile" } },
+        "sides": {
+          "type": "object",
+          "properties": {
+            "facingRight": { "$ref": "#/$defs/limb-sides" },
+            "facingLeft": { "$ref": "#/$defs/limb-sides" }
+          },
+          "required": ["facingRight", "facingLeft"],
+          "additionalProperties": false
+        },
+        "byClip": { "type": "object", "additionalProperties": { "type": "string" } },
+        "default": { "type": "string" }
+      },
+      "required": ["profiles", "sides", "byClip", "default"],
+      "additionalProperties": false
+    },
+    "depth-profile": {
+      "type": "object",
+      "properties": {
+        "underLowerBody": { "enum": ["far", "near", null] },
+        "behindTorso": { "enum": ["far", "near", null] },
+        "foreground": { "type": "array", "maxItems": 2, "uniqueItems": true, "items": { "enum": ["far", "near"] } },
+        "head": { "enum": ["above-arms", "below-arms"] }
+      },
+      "required": ["underLowerBody", "behindTorso", "foreground", "head"],
+      "additionalProperties": false
+    },
+    "limb-sides": {
+      "type": "object",
+      "properties": {
+        "arms": { "$ref": "#/$defs/side-pair" },
+        "legs": { "$ref": "#/$defs/side-pair" }
+      },
+      "required": ["arms", "legs"],
+      "additionalProperties": false
+    },
+    "side-pair": {
+      "type": "object",
+      "properties": {
+        "far": { "$ref": "#/$defs/name" },
+        "near": { "$ref": "#/$defs/name" }
+      },
+      "required": ["far", "near"],
+      "additionalProperties": false
+    },
+    "paint-order": {
+      "description": "What the depth profiles resolve to, so a consumer draws without resolving anything.",
+      "type": "object",
+      "properties": {
+        "profiles": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/facing-orders" } },
+        "byClip": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/name" },
+          "additionalProperties": { "type": "string" }
+        },
+        "held": {
+          "description": "The held-weapon rule: every body over the whole figure, and the forearms that grip a body over the bodies.",
+          "type": "object",
+          "properties": {
+            "bodies": { "const": "over-figure" },
+            "grippingForearms": { "const": "over-bodies" }
+          },
+          "required": ["bodies", "grippingForearms"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["profiles", "byClip", "held"],
+      "additionalProperties": false
+    },
+    "facing-orders": {
+      "description": "A profile's bones, back to front, for each facing.",
+      "type": "object",
+      "properties": {
+        "right": { "$ref": "#/$defs/bone-order" },
+        "left": { "$ref": "#/$defs/bone-order" }
+      },
+      "required": ["right", "left"],
+      "additionalProperties": false
+    },
+    "bone-order": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/name" } }
+  }
+}

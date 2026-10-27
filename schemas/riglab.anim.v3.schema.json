@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.anim:3",
+  "title": "riglab.anim v3",
+  "description": "A RigLab animation (src/format/animation.ts, validateAnimation): one class's animation of one kind, its keys on Hexframe's 60 Hz engine grid. The kind fixes `length`, `loop`, the number of keys and each key's frame, and the name's `-<kind>` suffix; this schema checks all of them. Rules this schema cannot express, which a reader must check against the rig and the library's weapons: `rig` names the rig; `class` is `unarmed` or the name of a library weapon, and `name` is exactly `<class>-<kind>`; every key's `pose` has exactly one entry per rig bone, with `x`, `y` and `rotation` on the root and `rotation` alone on every other bone; a pin names a chain of the rig, at most once per key, and never a chain the class weapon grips; a key of a class whose weapon has free bodies (two grips) carries `bodies` placing each of them exactly once and no other body, and every other key leaves `bodies` out.",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.anim" },
+    "version": { "const": 3 },
+    "name": { "$ref": "#/$defs/name" },
+    "rig": { "$ref": "#/$defs/name" },
+    "class": { "$ref": "#/$defs/name" },
+    "kind": { "enum": ["idle", "walk", "jump", "attack", "hit"] },
+    "fps": { "description": "Hexframe's fixed clock: one frame is one engine tick.", "const": 60 },
+    "length": { "type": "integer", "minimum": 1 },
+    "loop": { "type": "boolean" },
+    "keys": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/key" } }
+  },
+  "required": ["format", "version", "name", "rig", "class", "kind", "fps", "length", "loop", "keys"],
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": {
+        "kind": { "const": "idle" },
+        "name": { "pattern": "-idle$" },
+        "length": { "const": 60 },
+        "loop": { "const": true },
+        "keys": { "minItems": 4, "maxItems": 4, "prefixItems": [{ "$ref": "#/$defs/at-0" }, { "$ref": "#/$defs/at-15" }, { "$ref": "#/$defs/at-30" }, { "$ref": "#/$defs/at-45" }] }
+      }
+    },
+    {
+      "properties": {
+        "kind": { "const": "walk" },
+        "name": { "pattern": "-walk$" },
+        "length": { "const": 48 },
+        "loop": { "const": true },
+        "keys": { "minItems": 4, "maxItems": 4, "prefixItems": [{ "$ref": "#/$defs/at-0" }, { "$ref": "#/$defs/at-12" }, { "$ref": "#/$defs/at-24" }, { "$ref": "#/$defs/at-36" }] }
+      }
+    },
+    {
+      "properties": {
+        "kind": { "const": "jump" },
+        "name": { "pattern": "-jump$" },
+        "length": { "const": 36 },
+        "loop": { "const": false },
+        "keys": { "minItems": 4, "maxItems": 4, "prefixItems": [{ "$ref": "#/$defs/at-0" }, { "$ref": "#/$defs/at-12" }, { "$ref": "#/$defs/at-24" }, { "$ref": "#/$defs/at-36" }] }
+      }
+    },
+    {
+      "properties": {
+        "kind": { "const": "attack" },
+        "name": { "pattern": "-attack$" },
+        "length": { "const": 24 },
+        "loop": { "const": false },
+        "keys": { "minItems": 4, "maxItems": 4, "prefixItems": [{ "$ref": "#/$defs/at-0" }, { "$ref": "#/$defs/at-8" }, { "$ref": "#/$defs/at-16" }, { "$ref": "#/$defs/at-24" }] }
+      }
+    },
+    {
+      "properties": {
+        "kind": { "const": "hit" },
+        "name": { "pattern": "-hit$" },
+        "length": { "const": 24 },
+        "loop": { "const": false },
+        "keys": { "minItems": 3, "maxItems": 3, "prefixItems": [{ "$ref": "#/$defs/at-0" }, { "$ref": "#/$defs/at-12" }, { "$ref": "#/$defs/at-24" }] }
+      }
+    }
+  ],
+  "$defs": {
+    "name": {
+      "description": "1-64 letters, digits, '_' or '-', starting with a letter.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "at-0": { "properties": { "frame": { "const": 0 } } },
+    "at-8": { "properties": { "frame": { "const": 8 } } },
+    "at-12": { "properties": { "frame": { "const": 12 } } },
+    "at-15": { "properties": { "frame": { "const": 15 } } },
+    "at-16": { "properties": { "frame": { "const": 16 } } },
+    "at-24": { "properties": { "frame": { "const": 24 } } },
+    "at-30": { "properties": { "frame": { "const": 30 } } },
+    "at-36": { "properties": { "frame": { "const": 36 } } },
+    "at-45": { "properties": { "frame": { "const": 45 } } },
+    "key": {
+      "type": "object",
+      "properties": {
+        "frame": { "type": "integer", "minimum": 0 },
+        "interpolation": {
+          "description": "How this key's pose moves to the next key's: `hold` keeps it until the last Hexframe pose before the next key.",
+          "enum": ["hold", "linear", "smoothstep"]
+        },
+        "pose": {
+          "description": "A full Hexframe pose by bone name.",
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "$ref": "#/$defs/name" },
+          "additionalProperties": { "oneOf": [{ "$ref": "#/$defs/rotation" }, { "$ref": "#/$defs/root-channels" }] }
+        },
+        "pins": { "type": "array", "items": { "$ref": "#/$defs/pin" } },
+        "bodies": { "type": "array", "items": { "$ref": "#/$defs/body-placement" } }
+      },
+      "required": ["frame", "interpolation", "pose"],
+      "additionalProperties": false
+    },
+    "rotation": {
+      "type": "object",
+      "properties": { "rotation": { "type": "number" } },
+      "required": ["rotation"],
+      "additionalProperties": false
+    },
+    "root-channels": {
+      "type": "object",
+      "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "rotation": { "type": "number" } },
+      "required": ["x", "y", "rotation"],
+      "additionalProperties": false
+    },
+    "pin": {
+      "description": "A chain end held at a world point while the key is in force.",
+      "type": "object",
+      "properties": { "chain": { "$ref": "#/$defs/name" }, "x": { "type": "number" }, "y": { "type": "number" } },
+      "required": ["chain", "x", "y"],
+      "additionalProperties": false
+    },
+    "body-placement": {
+      "description": "A free weapon body's origin in the world and its rotation in degrees.",
+      "type": "object",
+      "properties": {
+        "body": { "$ref": "#/$defs/name" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "rotation": { "type": "number" }
+      },
+      "required": ["body", "x", "y", "rotation"],
+      "additionalProperties": false
+    }
+  }
+}

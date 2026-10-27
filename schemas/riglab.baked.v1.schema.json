@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.baked:1",
+  "title": "riglab.baked v1",
+  "description": "Every frame's solved world transforms of one animation (src/export/bake.ts, bakeAnimation), for consumers that only draw. A transform is `[x, y, rotation]` in rig space, rotation in degrees. Rules this schema cannot express, which a reader must check against the bundle: `rig` and `animation` name the bundle's rig and an animation of it, whose `fps` and `loop` these equal; `bones` lists the rig's bones in rig order; there is one frame per Hexframe tick, the animation's `length` when it loops and `length + 1` when it does not; each frame has one transform per bone, in `bones` order; `weapons`, when present, has one entry per frame and at least one is not null, each naming the animation's class weapon and giving every one of its bodies' transforms, riding bodies included.",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.baked" },
+    "version": { "const": 1 },
+    "rig": { "$ref": "#/$defs/name" },
+    "animation": { "$ref": "#/$defs/name" },
+    "fps": { "const": 60 },
+    "loop": { "type": "boolean" },
+    "bones": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/name" } },
+    "frames": { "type": "array", "minItems": 1, "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/transform" } } },
+    "weapons": { "type": "array", "minItems": 1, "items": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/weapon" }] } }
+  },
+  "required": ["format", "version", "rig", "animation", "fps", "loop", "bones", "frames"],
+  "additionalProperties": false,
+  "$defs": {
+    "name": {
+      "description": "1-64 letters, digits, '_' or '-', starting with a letter.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "transform": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "number" } },
+    "weapon": {
+      "description": "The held weapon on one frame: each body's world transform by body name.",
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "bodies": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "$ref": "#/$defs/name" },
+          "additionalProperties": { "$ref": "#/$defs/transform" }
+        }
+      },
+      "required": ["name", "bodies"],
+      "additionalProperties": false
+    }
+  }
+}
