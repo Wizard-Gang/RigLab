@@ -3,7 +3,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseReleaseBranch, validateHistory, validatePlan, validatePullRequest } from './change-contract.mjs';
+import { parseReleaseBranch, validateHistory, validatePullRequest, validateQueue } from './change-contract.mjs';
 import { RELEASE_TAG } from './release-contract.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,6 +30,12 @@ function planAt(ref) {
   checkedSha(ref, 'plan endpoint');
   if (!git('ls-tree', '--name-only', ref, '--', 'implementation_plan.md')) return null;
   return git('show', `${ref}:implementation_plan.md`);
+}
+
+// Every queue heading ever added or removed on the first-parent line, so retired IDs are never reused.
+function planLogAt(ref) {
+  checkedSha(ref, 'plan log endpoint');
+  return git('log', '--first-parent', '-p', '--format=', ref, '--', 'implementation_plan.md');
 }
 
 function jsonAt(ref, path) {
@@ -79,8 +85,8 @@ function localBranchOrReleaseTag() {
 
 function validateAccepted(ref) {
   const history = validateHistory(historyAt(ref));
-  const plan = validatePlan(planAt(ref), history.lastId + 1);
-  return { failures: [...history.failures, ...plan.failures], lastId: history.lastId };
+  const plan = validateQueue(planAt(ref), history);
+  return { failures: [...history.failures, ...plan.failures], maxId: history.maxId };
 }
 
 function validateCandidate({ baseSha, headSha, branch, title, targetBranch, prBody }) {
@@ -99,6 +105,8 @@ function validateCandidate({ baseSha, headSha, branch, title, targetBranch, prBo
     baseHistory: historyAt(baseSha),
     basePlan: planAt(baseSha),
     headPlan: planAt(headSha),
+    basePlanLog: planLogAt(baseSha),
+    changedFiles: git('diff', '--name-only', baseSha, headSha).split('\n').filter(Boolean),
     mergeBaseSha: git('merge-base', baseSha, headSha),
     commitRangeCount: Number(git('rev-list', '--count', `${baseSha}..${headSha}`)),
     rangeRecords: git('rev-list', '--first-parent', '--reverse', `${baseSha}..${headSha}`).split('\n').filter(Boolean).map(recordAt),
@@ -181,8 +189,8 @@ try {
     process.exitCode = 1;
   } else {
     console.log(context.kind === 'candidate'
-      ? `Controlled ${result.nextId} candidate at exact head ${context.headSha} passed.`
-      : `Controlled main history through RL-${String(result.lastId).padStart(3, '0')} passed.`);
+      ? `Controlled ${result.change} candidate at exact head ${context.headSha} passed.`
+      : `Controlled main history through RL-${String(result.maxId).padStart(3, '0')} passed.`);
   }
 } catch (error) {
   console.error(`FAIL ${error.message}`);
