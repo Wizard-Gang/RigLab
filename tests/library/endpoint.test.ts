@@ -99,7 +99,7 @@ describe("handling a save", () => {
     }
     expect(JSON.parse(readFileSync(join(dir, "weapons/sword/hold.json"), "utf8"))).toEqual({ format: "riglab.hold", version: 1, ...hold });
     expect(JSON.parse(readFileSync(join(dir, "weapons/sword/weapon.json"), "utf8")).bodies[0].grips[1].at).toEqual([0, 13]);
-    expect(readFileSync(join(dir, "weapons/sword/sword.svg"), "utf8")).toBe(readFileSync(join(PLACEHOLDER, "weapons/sword/sword.svg"), "utf8"));
+    expect(readFileSync(join(dir, "weapons/sword/sword.part.json"), "utf8")).toBe(readFileSync(join(PLACEHOLDER, "weapons/sword/sword.part.json"), "utf8"));
   });
 });
 

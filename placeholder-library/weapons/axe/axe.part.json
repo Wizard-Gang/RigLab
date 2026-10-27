@@ -1,0 +1,40 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "axe",
+  "origin": [-4, -17],
+  "size": [13, 27],
+  "rows": [
+    "ooooooooooooo",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ossssssssssso",
+    "ooooooooooooo"
+  ],
+  "keys": {
+    "o": "part part--steel-dark",
+    "s": "part"
+  }
+}

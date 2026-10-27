@@ -29,6 +29,7 @@
     "check:repository": "node scripts/check-repository.mjs",
     "check:vendor": "node scripts/check-vendor.mjs",
     "check:library": "node scripts/check-library.mjs",
+    "convert:parts": "node scripts/convert-parts.mjs",
     "check:workflow-shell": "node scripts/check-workflow-shell.mjs",
     "vendor:hexframe": "node scripts/vendor-hexframe.mjs",
     "audit:dependencies": "npm audit --audit-level=high",
