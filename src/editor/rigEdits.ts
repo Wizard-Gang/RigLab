@@ -1,7 +1,7 @@
 // Rig setup edits. Each returns a whole new model that passes validateModel, or a reason it was refused.
 import type { DepthProfiles, DepthSides, Pose } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
-import { validateRig } from "../format/rig";
+import { validateRig, withPaintOrder } from "../format/rig";
 import type { AngleLimits, Chain, RigLabBone, RigLabRig } from "../format/rig";
 import { weaponChains } from "../format/weapon";
 import { isValidName, uniqueName } from "./animations";
@@ -59,12 +59,31 @@ function lostGrip(model: LibraryModel): string | null {
 }
 
 /** Accept the edited model only if the whole model still validates; report the first failure. */
-function commit(model: LibraryModel, message: string, select?: string | null): RigEditResult {
-  const lost = lostGrip(model);
+function commit(edited: LibraryModel, message: string, select?: string | null): RigEditResult {
+  const lost = lostGrip(edited);
   if (lost) return refuse(lost);
+  const { rig, droppedDepth } = repaint(edited.rig);
+  const model = { ...edited, rig };
   const result = validateModel(model);
   if (!result.ok) return refuse(result.errors[0]!.replace(/^\$\.rig/, "rig"));
-  return select === undefined ? { ok: true, model, message } : { ok: true, model, message, select };
+  const said = droppedDepth ? `${message}; its depth profiles no longer place every bone and were removed` : message;
+  return select === undefined ? { ok: true, model, message: said } : { ok: true, model, message: said, select };
+}
+
+/**
+ * The edited rig with its paint order resolved afresh. Depth profiles that name a missing bone or no longer paint every
+ * bone exactly once can no longer place the rig; they go rather than block the edit.
+ */
+function repaint(rig: RigLabRig): { rig: RigLabRig; droppedDepth: boolean } {
+  const { depthProfiles, paintOrder: _stale, ...plain } = rig;
+  if (!depthProfiles) return { rig: plain, droppedDepth: false };
+  try {
+    const painted = withPaintOrder(rig);
+    if (validateRig(painted).ok) return { rig: painted, droppedDepth: false };
+  } catch {
+    // A profile that no longer paints every bone, or a tree Hexframe refuses, which validation reports below.
+  }
+  return { rig: plain, droppedDepth: true };
 }
 
 function renameDepth(depth: DepthProfiles, swap: (name: string) => string): DepthProfiles {
@@ -84,21 +103,15 @@ function renameIn(rig: RigLabRig, from: string, to: string): RigLabRig {
   };
 }
 
-function deleteFrom(model: LibraryModel, removed: ReadonlySet<string>): { model: LibraryModel; droppedDepth: boolean } {
-  const { depthProfiles, ...rest } = model.rig;
+function deleteFrom(model: LibraryModel, removed: ReadonlySet<string>): LibraryModel {
   const rig: RigLabRig = {
-    ...rest,
+    ...model.rig,
     bones: model.rig.bones.filter((bone) => !removed.has(bone.name)),
     chains: model.rig.chains.filter((chain) => !removed.has(chain.upper) && !removed.has(chain.lower)),
   };
-  // Layering hints that name a deleted bone can no longer place it; they go rather than block the edit.
-  const keepDepth = depthProfiles !== undefined && validateRig({ ...rig, depthProfiles }).ok;
   const animations = mapPoses(model.animations, (pose) =>
     Object.fromEntries(Object.entries(pose).filter(([bone]) => !removed.has(bone))));
-  return {
-    model: { ...model, rig: keepDepth ? { ...rig, depthProfiles } : rig, animations },
-    droppedDepth: depthProfiles !== undefined && !keepDepth,
-  };
+  return { ...model, rig, animations };
 }
 
 export function applyRigEdit(model: LibraryModel, edit: RigEdit): RigEditResult {
@@ -135,9 +148,8 @@ export function applyRigEdit(model: LibraryModel, edit: RigEdit): RigEditResult 
     case "deleteBone": {
       if (edit.bone === rig.root) return refuse("The root bone cannot be deleted");
       const removed = subtreeOf(rig, edit.bone);
-      const result = deleteFrom(model, removed);
       const count = removed.size === 1 ? edit.bone : `${edit.bone} and ${removed.size - 1} bone${removed.size === 2 ? "" : "s"} below it`;
-      return commit(result.model, `Deleted ${count}${result.droppedDepth ? "; its depth profiles named a deleted bone and were removed" : ""}`, bone!.parent);
+      return commit(deleteFrom(model, removed), `Deleted ${count}`, bone!.parent);
     }
     case "addChain": {
       const children = rig.bones.filter((candidate) => candidate.parent === edit.upper);

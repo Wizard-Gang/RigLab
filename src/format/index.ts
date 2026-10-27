@@ -1,7 +1,9 @@
 export { ANIMATION_FORMAT, ANIMATION_VERSION, classWeapon, INTERPOLATIONS, validateAnimation } from "./animation";
 export { animationName, UNARMED } from "./classes";
 export type { Interpolation, Key, RigLabAnimation } from "./animation";
-export { RIG_FORMAT, RIG_VERSION, boneOf, createRigLabRig, validateRig } from "./rig";
+export { RIG_FORMAT, RIG_VERSION, boneOf, createRigLabRig, validateRig, withPaintOrder } from "./rig";
+export { classProfiles, HELD_PAINT, resolvePaintOrder } from "./paint";
+export type { FacingOrders, PaintOrder } from "./paint";
 export type { AngleLimits, Chain, RigLabBone, RigLabRig } from "./rig";
 export type { BodyPlacement, HeldWeapon, Pin } from "./constraints";
 export { freeBodies, isFree, MAX_BODY_GRIPS, parseWeapon, serializeWeapon, validateWeapon, WEAPON_EXTENSION, WEAPON_FORMAT, WEAPON_VERSION, weaponChains } from "./weapon";

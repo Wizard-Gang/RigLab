@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { withPaintOrder } from "../../src/format";
+import type { RigLabRig } from "../../src/format";
 import { planLibrarySave } from "../../src/library/save";
 import type { SavePlan } from "../../src/library/save";
 import type { LibraryFiles } from "../../src/library/files";
@@ -99,8 +101,9 @@ describe("planning a library save", () => {
 
   it("refuses a save the library could not load, naming the files", () => {
     const bones = rig.bones as Record<string, unknown>[];
-    const tail = { name: "tail", parent: "pelvis", offset: [0, 2], tip: [0, 8], slot: "chibi_tail", artHeight: 6, hand: null, limits: null };
-    const errors = errorsOf({ ...current(), rig: { ...rig, bones: [...bones, tail] } });
+    // Under the head, so the depth profiles still paint it and the rig itself stays valid; its skin has no part for it.
+    const tail = { name: "tail", parent: "head", offset: [0, 2], tip: [0, 8], slot: "chibi_tail", artHeight: 6, hand: null, limits: null };
+    const errors = errorsOf({ ...current(), rig: withPaintOrder({ ...rig, bones: [...bones, tail] } as unknown as RigLabRig) });
     expect(errors.length).toBeGreaterThan(0);
     expect(errors.some((error) => error.startsWith("skins/plain"))).toBe(true);
     expect(errorsOf({ ...current(), rig: { ...rig, name: "imp" } }).join("\n")).toMatch(/rigs\/chibi\.rig\.json: is named 'imp'/);

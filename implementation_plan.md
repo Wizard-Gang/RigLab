@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-061 — [API] Version the export for consumers: rig paint order and file sizes
-
-- Dependency: RL-060. Owner rulings of 2026-10-27: bump the export to version 2 now, before RenderLab writes its reader, and carry the resolved paint order in the rig file.
-- Why: RenderLab must draw in RigLab's paint order for both facings (RLDR-012), but the order exists only as code that resolves Hexframe's depth profiles for facing right. Its manifest reader also notes that RigLab lists no file sizes.
-- Scope: `riglab.rig` version 2 adds `paintOrder`: for every depth profile, the bone order for `right` and `left`, resolved with Hexframe's `visualPaintOrder`, and the clip-to-profile map the export already writes. The validator refuses an order that disagrees with the rig's depth profiles, so the profiles stay the single source. Migrate both libraries' rigs with a script. `riglab.export` version 2 adds `bytes` to every file entry and lists each held weapon's `hold` file. Document the held-weapon rule as data: weapon bodies paint over the whole figure, and the forearms that grip a body paint over it.
-- Non-goals: No facing-left preview in the editor. No change to `riglab.anim` v3 or `riglab.baked` v1. No art in this bundle (RL-062). Version 1 bundles are not written or read.
-- Acceptance: Exported rigs carry a paint order equal to Hexframe's for every profile and facing. Each manifest entry's bytes and SHA-256 match its file. The export tests in `tests/export/written.ts` cover version 2.
-- Validation: The standard set; one dispatched `verify.yml` run.
-- Authorities: docs/ARCHITECTURE.md (RigLab formats; Export bundles; Hexframe consumer adapter and art), src/format/rig.ts, src/export/bundle.ts, src/hexframe/art.ts, vendor/hexframe/src/rig/paint-order.ts.
-
 ### RL-062 — [API] Export pixel skins as riglab.skin bundles
 
 - Dependency: RL-060 and RL-061.
