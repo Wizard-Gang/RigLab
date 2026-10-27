@@ -57,7 +57,7 @@ describe("riglab-export bundles", () => {
       "baked/unarmed-idle.baked.json", "baked/unarmed-walk.baked.json", "baked/unarmed-hit.baked.json",
     ]);
     const manifest = JSON.parse(text(files.get("manifest.json")!));
-    expect(manifest).toMatchObject({ format: "riglab.export", version: 1, generator: GENERATOR, rig: { name: "chibi", file: "chibi.rig.json" } });
+    expect(manifest).toMatchObject({ format: "riglab.export", version: 2, generator: GENERATOR, rig: { name: "chibi", file: "chibi.rig.json", bytes: files.get("chibi.rig.json")!.length } });
     expect(manifest.animations.map((entry: { sha256: string }) => entry.sha256)).toHaveLength(3);
     expect(JSON.parse(text(files.get("animations/unarmed-idle.anim.json")!))).toMatchObject({ version: 3, class: "unarmed", kind: "idle", fps: 60, length: 60, loop: true });
     expect((await buildBundle(authored(), { baked: false, generator: GENERATOR })).has("baked/unarmed-idle.baked.json")).toBe(false);

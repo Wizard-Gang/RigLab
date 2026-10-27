@@ -3,6 +3,7 @@ import { createRig } from "../../vendor/hexframe/src/rig";
 import type { Clip, RigContract } from "../../vendor/hexframe/src/rig";
 import type { RigLabAnimation } from "../format/animation";
 import { UNARMED } from "../format/classes";
+import { classProfiles } from "../format/paint";
 import type { RigLabRig } from "../format/rig";
 import type { RigLabWeapon } from "../format/weapon";
 import { engineOf } from "../solve/engine";
@@ -15,17 +16,6 @@ export type Adapted<T> =
 export interface HexframeClipFile extends Clip {
   readonly key: string;
   readonly note: string;
-}
-
-/**
- * Each animation's clip key mapped to its class's depth profile, where the rig names one for the class and none for the
- * clip, so Hexframe, which looks a clip up by its key alone, paints it as RigLab does.
- */
-function classProfiles(byClip: Readonly<Record<string, string>>, animations: readonly RigLabAnimation[]): Record<string, string> {
-  return Object.fromEntries(animations.flatMap((animation) => {
-    const profile = byClip[animation.class];
-    return profile !== undefined && byClip[animation.name] === undefined ? [[animation.name, profile]] : [];
-  }));
 }
 
 /** Hexframe's rig file shape: no format header, limits or chains, and depth profiles required, with `animations`' clip keys mapped. */

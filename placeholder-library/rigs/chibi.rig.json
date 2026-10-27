@@ -1,6 +1,6 @@
 {
   "format": "riglab.rig",
-  "version": 1,
+  "version": 2,
   "name": "chibi",
   "space": {
     "units": "svg",
@@ -267,5 +267,130 @@
       "axe": "both-front"
     },
     "default": "anatomical"
+  },
+  "paintOrder": {
+    "profiles": {
+      "anatomical": {
+        "right": [
+          "leg-front",
+          "shin-front",
+          "leg-back",
+          "shin-back",
+          "pelvis",
+          "arm-front",
+          "forearm-front",
+          "torso",
+          "arm-back",
+          "forearm-back",
+          "head"
+        ],
+        "left": [
+          "leg-back",
+          "shin-back",
+          "leg-front",
+          "shin-front",
+          "pelvis",
+          "arm-back",
+          "forearm-back",
+          "torso",
+          "arm-front",
+          "forearm-front",
+          "head"
+        ]
+      },
+      "locomotion": {
+        "right": [
+          "arm-front",
+          "forearm-front",
+          "leg-front",
+          "shin-front",
+          "leg-back",
+          "shin-back",
+          "pelvis",
+          "torso",
+          "arm-back",
+          "forearm-back",
+          "head"
+        ],
+        "left": [
+          "arm-back",
+          "forearm-back",
+          "leg-back",
+          "shin-back",
+          "leg-front",
+          "shin-front",
+          "pelvis",
+          "torso",
+          "arm-front",
+          "forearm-front",
+          "head"
+        ]
+      },
+      "both-front": {
+        "right": [
+          "leg-front",
+          "shin-front",
+          "leg-back",
+          "shin-back",
+          "pelvis",
+          "torso",
+          "arm-front",
+          "forearm-front",
+          "arm-back",
+          "forearm-back",
+          "head"
+        ],
+        "left": [
+          "leg-back",
+          "shin-back",
+          "leg-front",
+          "shin-front",
+          "pelvis",
+          "torso",
+          "arm-back",
+          "forearm-back",
+          "arm-front",
+          "forearm-front",
+          "head"
+        ]
+      },
+      "punch": {
+        "right": [
+          "leg-front",
+          "shin-front",
+          "leg-back",
+          "shin-back",
+          "pelvis",
+          "torso",
+          "head",
+          "arm-front",
+          "forearm-front",
+          "arm-back",
+          "forearm-back"
+        ],
+        "left": [
+          "leg-back",
+          "shin-back",
+          "leg-front",
+          "shin-front",
+          "pelvis",
+          "torso",
+          "head",
+          "arm-back",
+          "forearm-back",
+          "arm-front",
+          "forearm-front"
+        ]
+      }
+    },
+    "byClip": {
+      "sword": "both-front",
+      "spear": "both-front",
+      "axe": "both-front"
+    },
+    "held": {
+      "bodies": "over-figure",
+      "grippingForearms": "over-bodies"
+    }
   }
 }

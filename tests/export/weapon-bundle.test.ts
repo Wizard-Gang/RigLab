@@ -27,7 +27,12 @@ describe("export bundles with weapons", () => {
     const manifest = JSON.parse(text(files.get(MANIFEST)!));
     expect(manifest.weapons.map((entry: { file: string }) => entry.file)).toEqual(["weapons/sword.weapon.json", "weapons/daggers.weapon.json"]);
     expect(JSON.parse(text(files.get("weapons/sword.weapon.json")!))).toEqual(held("sword").weapon);
-    expect((await written(files, model)).weapons).toEqual([held("sword").weapon, held("daggers").weapon]);
+    expect(manifest.weapons.map((entry: { hold?: { file: string } }) => entry.hold?.file ?? null)).toEqual(["weapons/sword.hold.json", null]);
+    const bundle = await written(files, model);
+    expect(bundle.weapons).toEqual([held("sword").weapon, held("daggers").weapon]);
+    expect(bundle.holds).toEqual(new Map([["sword", { format: "riglab.hold", version: 1, ...held("sword").hold }]]));
+    expect(bundle.rig.paintOrder!.byClip).toMatchObject({ "sword-attack": "both-front" });
+    expect(bundle.rig.paintOrder!.byClip).not.toHaveProperty("daggers-idle");
   });
 
   it("bake every body's transform on every frame of an armed class, and none for an unarmed one", () => {

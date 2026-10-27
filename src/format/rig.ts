@@ -1,12 +1,16 @@
-// riglab.rig version 1: Hexframe's rig contract plus a format header, angle limits and two-bone chains.
+// riglab.rig version 2: Hexframe's rig contract plus a format header, angle limits, two-bone chains and, with depth
+// profiles, their resolved paint order.
 import { createRig } from "../../vendor/hexframe/src/rig";
 import type { Bone, DepthProfiles, Rig, RigContract, Space } from "../../vendor/hexframe/src/rig";
 import { checkName, closedObject, isFiniteNumber, isObject, isPoint, Issues } from "./validate";
 import type { Validation } from "./validate";
 import { validateDepthProfiles } from "./depth";
+import { resolvePaintOrder, validatePaintOrder } from "./paint";
+import type { PaintOrder } from "./paint";
+import type { RigLabAnimation } from "./animation";
 
 export const RIG_FORMAT = "riglab.rig";
-export const RIG_VERSION = 1;
+export const RIG_VERSION = 2;
 
 /** Inclusive bounds on a bone's local rotation, in degrees. */
 export interface AngleLimits {
@@ -39,6 +43,8 @@ export interface RigLabRig {
   readonly chains: readonly Chain[];
   /** Optional consumer layering hints in Hexframe's shape; never read by placement. */
   readonly depthProfiles?: DepthProfiles;
+  /** Present exactly when `depthProfiles` is: what they resolve to (`src/format/paint.ts`). */
+  readonly paintOrder?: PaintOrder;
 }
 
 const SPACE = { units: "svg", x: "right", y: "down", rotation: "clockwise-positive" } as const;
@@ -128,11 +134,15 @@ function validateChains(issues: Issues, value: unknown, bones: readonly RigLabBo
 
 export function validateRig(value: unknown): Validation<RigLabRig> {
   const issues = new Issues();
-  if (!closedObject(issues, "$", value, ["format", "version", "name", "space", "root", "bones", "chains"], ["depthProfiles"])) {
+  if (!closedObject(issues, "$", value, ["format", "version", "name", "space", "root", "bones", "chains"], ["depthProfiles", "paintOrder"])) {
     return issues.result(value);
   }
   if (value.format !== RIG_FORMAT) issues.add("$.format", `must be '${RIG_FORMAT}'`);
-  if (value.version !== RIG_VERSION) issues.add("$.version", `must be ${RIG_VERSION}`);
+  if (value.version === 1) issues.add("$.version", `must be ${RIG_VERSION}; run npm run migrate:rig -- <library-folder>`);
+  else if (value.version !== RIG_VERSION) issues.add("$.version", `must be ${RIG_VERSION}`);
+  if ((value.depthProfiles === undefined) !== (value.paintOrder === undefined)) {
+    issues.add("$.paintOrder", value.paintOrder === undefined ? "is missing: a rig with depth profiles carries their paint order" : "needs depthProfiles to resolve it");
+  }
   checkName(issues, "$.name", value.name);
   validateSpace(issues, value.space);
   if (!Array.isArray(value.bones) || value.bones.length === 0) {
@@ -152,12 +162,23 @@ export function validateRig(value: unknown): Validation<RigLabRig> {
   if (value.depthProfiles !== undefined) validateDepthProfiles(issues, value.depthProfiles, new Set(bones.map((bone) => bone.name)));
   if (!issues.errors.length) {
     try {
-      createRigLabRig(value as unknown as RigLabRig);
+      const runtime = createRigLabRig(value as unknown as RigLabRig);
+      if (value.depthProfiles !== undefined) validatePaintOrder(issues, value.paintOrder, runtime);
     } catch (error) {
       issues.add("$", (error as Error).message);
     }
   }
   return issues.result(value);
+}
+
+/**
+ * The rig with `paintOrder` resolved afresh from its depth profiles, its `byClip` mapping `animations` to their class's
+ * profile, or without one when it has no depth profiles; throws when a profile does not paint every bone exactly once.
+ */
+export function withPaintOrder(rig: RigLabRig, animations: readonly Pick<RigLabAnimation, "name" | "class">[] = []): RigLabRig {
+  const { depthProfiles, paintOrder: _stale, ...plain } = rig;
+  if (!depthProfiles) return plain;
+  return { ...plain, depthProfiles, paintOrder: resolvePaintOrder(createRigLabRig(rig), animations) };
 }
 
 /** Resolve a valid RigLab rig with Hexframe's own `createRig`, which reads only `root` and `bones`. */
