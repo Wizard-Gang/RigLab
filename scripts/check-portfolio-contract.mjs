@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const expectedHashes = {
-  "AGENTS.md": "073a8ace2b3309655d687624417466b7a79a0a72698e24aaf0e89d64a292d79c",
-  "CONTRIBUTING.md": "01bc4e502917c78e42b030bc9d61fcfb83b2d544cdaff9751220fe464abe9797",
-  "implementation_plan.md": "59cdf5f8622ee928364b5647474b3a83f502c949bde9562d0a53a33291b090d0",
+  "AGENTS.md": "67bcc65223b4f16541ddc9a5d09ac03a40d0f15dfaec2bbf4e59d9a7ee3c981d",
+  "CONTRIBUTING.md": "4837c7379f4480663a11867988fb64af38ee161bbefca2a6cb44f5010c297ac3",
+  "implementation_plan.md": "2d8aed8828aa1645c7fd8d2fb984db43e819bc4a97a7aeed6febbe50e6a4c50f",
 };
 
 export function openTasks(source) {
@@ -43,13 +43,11 @@ export function validatePortfolioContract() {
     assert.ok(plan.includes("## Open tasks\n"), "filled queue must retain the open-task section");
     assert.equal(firstOpenTask(plan)?.id, tasks[0].id);
     const prefix = tasks[0].id.replace(/-\d+$/, "");
-    let previous = -1;
+    // Queued tasks may be reordered, so IDs need only be unique.
     for (const task of tasks) {
       assert.ok(task.id.startsWith(`${prefix}-`), "one repository ID namespace per queue");
-      const number = Number(task.id.split("-").at(-1));
-      assert.ok(number > previous, "queued IDs must be unique and increasing");
-      previous = number;
     }
+    assert.equal(new Set(tasks.map((task) => task.id)).size, tasks.length, "queued IDs must be unique");
   }
   return tasks.length;
 }
