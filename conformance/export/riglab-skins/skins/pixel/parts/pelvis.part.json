@@ -1,0 +1,19 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "pelvis",
+  "origin": [-5, -2],
+  "size": [10, 6],
+  "rows": [
+    "iiiiiiiiii",
+    "iffffffffi",
+    "iffffffffi",
+    "iffffffffi",
+    "iffffffffi",
+    "iiiiiiiiii"
+  ],
+  "keys": {
+    "i": "part part--ink",
+    "f": "part part--fill"
+  }
+}

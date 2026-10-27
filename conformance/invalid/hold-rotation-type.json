@@ -1,0 +1,13 @@
+{
+  "format": "riglab.hold",
+  "version": 1,
+  "name": "sword",
+  "bodies": [
+    {
+      "body": "sword",
+      "x": 10,
+      "y": -35,
+      "rotation": "55"
+    }
+  ]
+}

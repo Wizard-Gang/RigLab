@@ -1,0 +1,204 @@
+{
+  "format": "riglab.anim",
+  "version": 3,
+  "name": "unarmed-attack",
+  "rig": "chibi",
+  "class": "unarmed",
+  "kind": "attack",
+  "fps": 60,
+  "length": 24,
+  "loop": false,
+  "keys": [
+    {
+      "frame": 0,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 0
+        },
+        "arm-front": {
+          "rotation": 0
+        },
+        "forearm-front": {
+          "rotation": 0
+        },
+        "arm-back": {
+          "rotation": 0
+        },
+        "forearm-back": {
+          "rotation": 0
+        },
+        "head": {
+          "rotation": 0
+        }
+      },
+      "pins": [
+        {
+          "chain": "leg-back",
+          "x": -5
+        }
+      ]
+    },
+    {
+      "frame": 8,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": -2,
+          "y": 1.5,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": -10
+        },
+        "shin-front": {
+          "rotation": 12
+        },
+        "leg-back": {
+          "rotation": -25.06
+        },
+        "shin-back": {
+          "rotation": 38.77
+        },
+        "torso": {
+          "rotation": -12
+        },
+        "arm-front": {
+          "rotation": -70
+        },
+        "forearm-front": {
+          "rotation": -40
+        },
+        "arm-back": {
+          "rotation": 20
+        },
+        "forearm-back": {
+          "rotation": 0
+        },
+        "head": {
+          "rotation": 4
+        }
+      },
+      "pins": [
+        {
+          "chain": "leg-back",
+          "x": -5,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "frame": 16,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 5,
+          "y": 3,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 28
+        },
+        "shin-front": {
+          "rotation": 4
+        },
+        "leg-back": {
+          "rotation": -13.83
+        },
+        "shin-back": {
+          "rotation": 51.08
+        },
+        "torso": {
+          "rotation": 14
+        },
+        "arm-front": {
+          "rotation": 85
+        },
+        "forearm-front": {
+          "rotation": -4
+        },
+        "arm-back": {
+          "rotation": -25
+        },
+        "forearm-back": {
+          "rotation": -20
+        },
+        "head": {
+          "rotation": -6
+        }
+      },
+      "pins": [
+        {
+          "chain": "leg-back",
+          "x": -5,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "frame": 24,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 0
+        },
+        "arm-front": {
+          "rotation": 0
+        },
+        "forearm-front": {
+          "rotation": 0
+        },
+        "arm-back": {
+          "rotation": 0
+        },
+        "forearm-back": {
+          "rotation": 0
+        },
+        "head": {
+          "rotation": 0
+        }
+      },
+      "pins": [
+        {
+          "chain": "leg-back",
+          "x": -5,
+          "y": 0
+        }
+      ]
+    }
+  ]
+}

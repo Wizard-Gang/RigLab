@@ -1,0 +1,13 @@
+{
+  "format": "riglab.palette",
+  "version": 1,
+  "pixel": true,
+  "classes": {
+    "part": {
+      "fill": "#c8d0da"
+    },
+    "part--steel-dark": {
+      "fill": "#3a4048"
+    }
+  }
+}

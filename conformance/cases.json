@@ -1,0 +1,667 @@
+{
+  "description": "RL-064 conformance fixtures. library/ is a RigLab library; export/ is its riglab-export bundle and riglab.skin bundles, as export writes them; each invalid/ file is one committed file with exactly one defect, and the {jsonPath, reason} a reader must report.",
+  "generator": "RigLab conformance",
+  "cases": [
+    {
+      "file": "conformance/export/riglab-export/animations/daggers-idle.anim.json",
+      "sha256": "cd7667bf18ac19538afffc84b8435da45ff7b2acc9290b91d1dab3021c0fb2b0",
+      "format": "riglab.anim",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/animations/sword-attack.anim.json",
+      "sha256": "77155cad8cc3ad128138542938824672904b3c9d70d65239a27c86115a291ef3",
+      "format": "riglab.anim",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/animations/unarmed-attack.anim.json",
+      "sha256": "90541c93e904b2b06927a2675915101c064b135bfba99ab9e49abfff5c4e6374",
+      "format": "riglab.anim",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/animations/unarmed-walk.anim.json",
+      "sha256": "4111361cafd53f960bd2b284fb016b50769b2dc50130586cde2f2468de2221ba",
+      "format": "riglab.anim",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/baked/daggers-idle.baked.json",
+      "sha256": "3bc9236f0c4e1a973b79780ef8d129106454511aa54d9569f3ef4c41c1938548",
+      "format": "riglab.baked",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/baked/sword-attack.baked.json",
+      "sha256": "b5f88aa3f37192faaa07c283330cd7d68677be96ff27fd56d46b25bef149c998",
+      "format": "riglab.baked",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/baked/unarmed-attack.baked.json",
+      "sha256": "d4cc5f8a4b0edadf34ea96773058be7915c42ccf4c2dfc553b09dd833dce0924",
+      "format": "riglab.baked",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/baked/unarmed-walk.baked.json",
+      "sha256": "3f19fdb3ce5e4d2211a667ca7af5639a9589b58df1ba199d0d404895ad7df343",
+      "format": "riglab.baked",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/chibi.rig.json",
+      "sha256": "2622043b17a117760677ff05631b196d6351152678fca7e4e3140d7b4c600be4",
+      "format": "riglab.rig",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/manifest.json",
+      "sha256": "24d7d818967e3cbdc299a4a3666f5750a8dd898f5a5de71e0c3338e4bf889f90",
+      "format": "riglab.export",
+      "bundle": "conformance/export/riglab-export",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/weapons/daggers.weapon.json",
+      "sha256": "d7d1da6b0e8b08035db7b7ee32add602bea59bdf4f0d6826a84e2ed5e34d3580",
+      "format": "riglab.weapon",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/weapons/sword.hold.json",
+      "sha256": "3dd9be1c5c631e442b809b88da93fa2178dead02081a6adfdcafac80fbb05b87",
+      "format": "riglab.hold",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-export/weapons/sword.weapon.json",
+      "sha256": "9b166cc121ea7d4ea9af52224518cce870e4630f48dc52402feec22022304243",
+      "format": "riglab.weapon",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/manifest.json",
+      "sha256": "3f92c09dc032f43c49aee7bd53f482d1d2fbbcb0081fd8af2d1f60c89cac9875",
+      "format": "riglab.skin",
+      "bundle": "conformance/export/riglab-skins/skins/pixel",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/palette.json",
+      "sha256": "b3f4676e2e8bbd73e46cea8e4c15e9d5fcd3320b95db5bf0bbbb9cebc98672fb",
+      "format": "riglab.palette",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/arm_lower_l.part.json",
+      "sha256": "7677999ca2ba7636636a0e0b59fef295bf9723f9b4f95126cf6d1f7c38e7e4d8",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/arm_lower_r.part.json",
+      "sha256": "e719fe69a6f8c599163273b7122665656b15e6f0ea0d097ae6b29c4f91adf978",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/arm_upper_l.part.json",
+      "sha256": "933a5217d7378387585ecab8b8683076c7b4527fcd6e0826821c31453fc817c9",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/arm_upper_r.part.json",
+      "sha256": "1309c6476963a6b4521c3d58f1eed10307aef1f7427089d97efcee35ab484c8f",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/head.part.json",
+      "sha256": "4023c6250c538e5987d641d248358de3747a87244e62d28ed0ef0df59f209122",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/leg_lower_l.part.json",
+      "sha256": "a1b26d14783ea4a85478a6a5454eaf80bb588b072890ada92356336be7bcf7d7",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/leg_lower_r.part.json",
+      "sha256": "8d14952804cfa3e829d6d3d3941e997a93f97f360d0bb9bb872c4b337b3fe7c7",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/leg_upper_l.part.json",
+      "sha256": "757ae6801a0e36725325e717d4d7a167d733d09da1d1bd33564bd56a015e3e66",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/leg_upper_r.part.json",
+      "sha256": "5279cb947e4af618fc81d0bb1d1bcda49b2abae3764db4210b0884921fad98c0",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/pelvis.part.json",
+      "sha256": "29978a685934195d8297839ce0cdc5d46dc26e2d82ea75d975a0f5c49dbb740a",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/skins/pixel/parts/torso.part.json",
+      "sha256": "e0cbafa0f2405379f0da15977a9b2183336223ef45264dd94ceabbc108e326f9",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/weapons/daggers/manifest.json",
+      "sha256": "e4c48af45ce6f743c196652a1813502cbd0041e1882bc0128ae963c3df71ef78",
+      "format": "riglab.skin",
+      "bundle": "conformance/export/riglab-skins/weapons/daggers",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/weapons/daggers/palette.json",
+      "sha256": "96ff606b187a270904127e1cec8aa7fa9f3a339a505e78d07191e9532efe665c",
+      "format": "riglab.palette",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/weapons/daggers/parts/dagger.part.json",
+      "sha256": "cde06d9db6629897816687e90b1d7141b3dfb9d5f4d55edd4df55d47c1ee3bfd",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/weapons/sword/manifest.json",
+      "sha256": "12ca74a2a038605add7465d045525a8d24f1d9b89da7211086c3fc9794346def",
+      "format": "riglab.skin",
+      "bundle": "conformance/export/riglab-skins/weapons/sword",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/weapons/sword/palette.json",
+      "sha256": "96ff606b187a270904127e1cec8aa7fa9f3a339a505e78d07191e9532efe665c",
+      "format": "riglab.palette",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/export/riglab-skins/weapons/sword/parts/sword.part.json",
+      "sha256": "bcc42f56f1246d2dcec4ac61d924e2b141a22204a2890f8553b303c7cb7b1e01",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/invalid/anim-fps.json",
+      "sha256": "a296be75930a37ff278b7a9b50ed2d67ceae5c02728dd6e0b26c40e03596ab85",
+      "format": "riglab.anim",
+      "expect": {
+        "jsonPath": "$.fps",
+        "reason": "const"
+      }
+    },
+    {
+      "file": "conformance/invalid/anim-free-body-missing.json",
+      "sha256": "1ca268d5b206ee6271ccb5a4650e39682d9f97dc1cd1fe423ca84f5ea8c0727a",
+      "format": "riglab.anim",
+      "expect": {
+        "jsonPath": "$.keys[2].bodies",
+        "reason": "reference"
+      }
+    },
+    {
+      "file": "conformance/invalid/anim-interpolation.json",
+      "sha256": "d8fcf2e32313e0bab9affade4b267bed05c692c6293676e62c83a584f2a53bb8",
+      "format": "riglab.anim",
+      "expect": {
+        "jsonPath": "$.keys[0].interpolation",
+        "reason": "enum"
+      }
+    },
+    {
+      "file": "conformance/invalid/anim-key-unknown-member.json",
+      "sha256": "9ec0575b1475f9fb56ff6341a53fc9293f64c87be15e23f4fbbff9a28466c63c",
+      "format": "riglab.anim",
+      "expect": {
+        "jsonPath": "$.keys[1].weight",
+        "reason": "additionalProperties"
+      }
+    },
+    {
+      "file": "conformance/invalid/anim-pin-gripped-chain.json",
+      "sha256": "32b6b5c566ebaabf0466487f926339290dfd78f00c1060d35b6f12d99bd8b8e6",
+      "format": "riglab.anim",
+      "expect": {
+        "jsonPath": "$.keys[0].pins[0].chain",
+        "reason": "reference"
+      }
+    },
+    {
+      "file": "conformance/invalid/anim-pin-member.json",
+      "sha256": "20a48ba2b381df210893c62ea1992642f352c70525a48791564d284694884941",
+      "format": "riglab.anim",
+      "expect": {
+        "jsonPath": "$.keys[0].pins[0].y",
+        "reason": "required"
+      }
+    },
+    {
+      "file": "conformance/invalid/anim-riding-body-placed.json",
+      "sha256": "c72d9f2040261b0225b9d14eb2259e4daf14e1a07ec085981f746aaa82e44f2a",
+      "format": "riglab.anim",
+      "expect": {
+        "jsonPath": "$.keys[0].bodies",
+        "reason": "reference"
+      }
+    },
+    {
+      "file": "conformance/invalid/anim-unknown-bone.json",
+      "sha256": "37cd845e7f47c088f82dec07ce9c7256c0c41356750ba23a6efd4b41d4ee1da3",
+      "format": "riglab.anim",
+      "expect": {
+        "jsonPath": "$.keys[0].pose",
+        "reason": "reference"
+      }
+    },
+    {
+      "file": "conformance/invalid/baked-transform.json",
+      "sha256": "d1a158bdcb7ab7292611298551b1156c08c4719f5afffe5f2559eb441d800b49",
+      "format": "riglab.baked",
+      "expect": {
+        "jsonPath": "$.frames[0][0]",
+        "reason": "minItems"
+      }
+    },
+    {
+      "file": "conformance/invalid/export-animation-bytes.json",
+      "sha256": "3b179e76eaf5b97fd6268a7455ca5fb85384306cab9215d7b9b68a75522b0e62",
+      "format": "riglab.export",
+      "bundle": "conformance/export/riglab-export",
+      "expect": {
+        "jsonPath": "$.animations[0].bytes",
+        "reason": "bytes"
+      }
+    },
+    {
+      "file": "conformance/invalid/export-hold-file.json",
+      "sha256": "34c0bdb5a4f13bb9598a64d99fa8373350244827438f1db142374bdb2b9e557f",
+      "format": "riglab.export",
+      "bundle": "conformance/export/riglab-export",
+      "expect": {
+        "jsonPath": "$.weapons[0].hold.file",
+        "reason": "file"
+      }
+    },
+    {
+      "file": "conformance/invalid/export-rig-sha256.json",
+      "sha256": "d97e0a00b5633f4c50c1f9898e97d326e7dbcd5bb812fad78f7ff5cd30beabaf",
+      "format": "riglab.export",
+      "bundle": "conformance/export/riglab-export",
+      "expect": {
+        "jsonPath": "$.rig.sha256",
+        "reason": "sha256"
+      }
+    },
+    {
+      "file": "conformance/invalid/export-unknown-member.json",
+      "sha256": "3098a54e6f65da341dd6e7b87936e3d14abb49dd1ad17b9b3dafd606b6e67290",
+      "format": "riglab.export",
+      "expect": {
+        "jsonPath": "$.extra",
+        "reason": "additionalProperties"
+      }
+    },
+    {
+      "file": "conformance/invalid/export-version.json",
+      "sha256": "8bcaa96ba659482f9e713e31e6bc51ba5248e9b67013e90514825b0e6fa71aad",
+      "format": "riglab.export",
+      "expect": {
+        "jsonPath": "$.version",
+        "reason": "const"
+      }
+    },
+    {
+      "file": "conformance/invalid/hold-rotation-type.json",
+      "sha256": "b40e50c1bf36b70de9df0eb2108eb7395225d7852909b1fe115334d3d2af5290",
+      "format": "riglab.hold",
+      "expect": {
+        "jsonPath": "$.bodies[0].rotation",
+        "reason": "type"
+      }
+    },
+    {
+      "file": "conformance/invalid/palette-format.json",
+      "sha256": "3cca3eed640820e60ca593fbe48030f33d9509d6516708d351b4db8e3602dc06",
+      "format": "riglab.palette",
+      "expect": {
+        "jsonPath": "$.format",
+        "reason": "const"
+      }
+    },
+    {
+      "file": "conformance/invalid/part-version.json",
+      "sha256": "e0ed9b471240983e3cb125d9f24527010ec4c2295b10c0adb893a0e9a5e88d8b",
+      "format": "riglab.part",
+      "expect": {
+        "jsonPath": "$.version",
+        "reason": "const"
+      }
+    },
+    {
+      "file": "conformance/invalid/rig-bone-slot.json",
+      "sha256": "967bd93e028f72f209b32e2f2e2cccaa378b5e3daab2b4e26b29b12316917505",
+      "format": "riglab.rig",
+      "expect": {
+        "jsonPath": "$.bones[0].slot",
+        "reason": "required"
+      }
+    },
+    {
+      "file": "conformance/invalid/skin-palette-pin-member.json",
+      "sha256": "e8b07b23391118179782b0ef90e71bdf7e1444ef58bd3d33d94ae585696f9d1c",
+      "format": "riglab.skin",
+      "expect": {
+        "jsonPath": "$.palette.bytes",
+        "reason": "required"
+      }
+    },
+    {
+      "file": "conformance/invalid/skin-part-sha256.json",
+      "sha256": "e99aafb2a5bc34008c2e032972163e855e094c156f513ca6bc36ca7dbf1c804d",
+      "format": "riglab.skin",
+      "bundle": "conformance/export/riglab-skins/skins/pixel",
+      "expect": {
+        "jsonPath": "$.parts[0].sha256",
+        "reason": "sha256"
+      }
+    },
+    {
+      "file": "conformance/invalid/weapon-grip-chain.json",
+      "sha256": "f1a10e9f7e9cc401ed126c9bb0b3e4affb2e7df826808d4ab6f36da29b0deaa0",
+      "format": "riglab.weapon",
+      "expect": {
+        "jsonPath": "$.bodies[0].grips[0].chain",
+        "reason": "reference"
+      }
+    },
+    {
+      "file": "conformance/invalid/weapon-name-pattern.json",
+      "sha256": "44549425bf7b20f150eafc67a5fa0c7d7418c539d3f7c89da8b0928c6ebb793a",
+      "format": "riglab.weapon",
+      "expect": {
+        "jsonPath": "$.name",
+        "reason": "pattern"
+      }
+    },
+    {
+      "file": "conformance/library/animations/daggers-idle.anim.json",
+      "sha256": "cd7667bf18ac19538afffc84b8435da45ff7b2acc9290b91d1dab3021c0fb2b0",
+      "format": "riglab.anim",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/animations/sword-attack.anim.json",
+      "sha256": "77155cad8cc3ad128138542938824672904b3c9d70d65239a27c86115a291ef3",
+      "format": "riglab.anim",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/animations/unarmed-attack.anim.json",
+      "sha256": "90541c93e904b2b06927a2675915101c064b135bfba99ab9e49abfff5c4e6374",
+      "format": "riglab.anim",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/animations/unarmed-walk.anim.json",
+      "sha256": "4111361cafd53f960bd2b284fb016b50769b2dc50130586cde2f2468de2221ba",
+      "format": "riglab.anim",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/config.txt",
+      "sha256": "7bffc8cf550ce9dc8e6be7070bfbda3c2ccf948ef695141749971817c589d28b",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/rigs/chibi.rig.json",
+      "sha256": "2a07681a88f44b1f0a7c74e3376dc413f99bc8502b0fcb93327d26170f9e58ee",
+      "format": "riglab.rig",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/arm_lower_l.part.json",
+      "sha256": "7677999ca2ba7636636a0e0b59fef295bf9723f9b4f95126cf6d1f7c38e7e4d8",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/arm_lower_r.part.json",
+      "sha256": "e719fe69a6f8c599163273b7122665656b15e6f0ea0d097ae6b29c4f91adf978",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/arm_upper_l.part.json",
+      "sha256": "933a5217d7378387585ecab8b8683076c7b4527fcd6e0826821c31453fc817c9",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/arm_upper_r.part.json",
+      "sha256": "1309c6476963a6b4521c3d58f1eed10307aef1f7427089d97efcee35ab484c8f",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/head.part.json",
+      "sha256": "4023c6250c538e5987d641d248358de3747a87244e62d28ed0ef0df59f209122",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/leg_lower_l.part.json",
+      "sha256": "a1b26d14783ea4a85478a6a5454eaf80bb588b072890ada92356336be7bcf7d7",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/leg_lower_r.part.json",
+      "sha256": "8d14952804cfa3e829d6d3d3941e997a93f97f360d0bb9bb872c4b337b3fe7c7",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/leg_upper_l.part.json",
+      "sha256": "757ae6801a0e36725325e717d4d7a167d733d09da1d1bd33564bd56a015e3e66",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/leg_upper_r.part.json",
+      "sha256": "5279cb947e4af618fc81d0bb1d1bcda49b2abae3764db4210b0884921fad98c0",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/palette.json",
+      "sha256": "b3f4676e2e8bbd73e46cea8e4c15e9d5fcd3320b95db5bf0bbbb9cebc98672fb",
+      "format": "riglab.palette",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/pelvis.part.json",
+      "sha256": "29978a685934195d8297839ce0cdc5d46dc26e2d82ea75d975a0f5c49dbb740a",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/skins/pixel/torso.part.json",
+      "sha256": "e0cbafa0f2405379f0da15977a9b2183336223ef45264dd94ceabbc108e326f9",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/weapons/daggers/dagger.part.json",
+      "sha256": "cde06d9db6629897816687e90b1d7141b3dfb9d5f4d55edd4df55d47c1ee3bfd",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/weapons/daggers/palette.json",
+      "sha256": "96ff606b187a270904127e1cec8aa7fa9f3a339a505e78d07191e9532efe665c",
+      "format": "riglab.palette",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/weapons/daggers/weapon.json",
+      "sha256": "d7d1da6b0e8b08035db7b7ee32add602bea59bdf4f0d6826a84e2ed5e34d3580",
+      "format": "riglab.weapon",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/weapons/sword/hold.json",
+      "sha256": "3dd9be1c5c631e442b809b88da93fa2178dead02081a6adfdcafac80fbb05b87",
+      "format": "riglab.hold",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/weapons/sword/palette.json",
+      "sha256": "96ff606b187a270904127e1cec8aa7fa9f3a339a505e78d07191e9532efe665c",
+      "format": "riglab.palette",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/weapons/sword/sword.part.json",
+      "sha256": "bcc42f56f1246d2dcec4ac61d924e2b141a22204a2890f8553b303c7cb7b1e01",
+      "format": "riglab.part",
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "file": "conformance/library/weapons/sword/weapon.json",
+      "sha256": "9b166cc121ea7d4ea9af52224518cce870e4630f48dc52402feec22022304243",
+      "format": "riglab.weapon",
+      "expect": {
+        "valid": true
+      }
+    }
+  ]
+}

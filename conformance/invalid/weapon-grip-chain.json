@@ -1,0 +1,39 @@
+{
+  "format": "riglab.weapon",
+  "version": 1,
+  "name": "sword",
+  "bodies": [
+    {
+      "name": "sword",
+      "slot": "weapon_sword",
+      "axis": [
+        [
+          0,
+          19.7
+        ],
+        [
+          0,
+          -31.5
+        ]
+      ],
+      "grips": [
+        {
+          "name": "upper",
+          "chain": "tail",
+          "at": [
+            0,
+            5
+          ]
+        },
+        {
+          "name": "lower",
+          "chain": "arm-back",
+          "at": [
+            0,
+            12
+          ]
+        }
+      ]
+    }
+  ]
+}

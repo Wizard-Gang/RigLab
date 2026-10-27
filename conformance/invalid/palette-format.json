@@ -1,0 +1,14 @@
+{
+  "format": "riglab.colors",
+  "version": 1,
+  "pixel": true,
+  "classes": {
+    "part": {},
+    "part--ink": {
+      "fill": "#2b2f3a"
+    },
+    "part--fill": {
+      "fill": "#7fbf8f"
+    }
+  }
+}
