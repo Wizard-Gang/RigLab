@@ -10,9 +10,10 @@ This file is the only required reading. Every other doc is a reference: look up 
 
 ## Work queue
 
-- `implementation_plan.md` is a permanent, current-only queue. Work its first open task and keep later tasks and their order unless the owner changes priority. A delivery removes only its own task; history lives in Git, PRs, CI, tags and Releases, never in the queue.
+- `implementation_plan.md` is a permanent, current-only queue. Work its first open task. A delivery removes its own task; history lives in Git, PRs, CI, tags and Releases, never in the queue.
 - "Do needful" authorizes delivering the first open task through merge and post-merge verification. It never authorizes inventing work for an empty queue.
-- An empty queue selects no task; the next instruction fills it with a plan-only change to `implementation_plan.md` that takes the next unassigned ID without stealing a reserved one. An owner-directed plan change may append future tasks while other work is open, keeping existing IDs and order and delivering nothing.
+- The plan is free to change: any PR may add, edit, reorder or remove queued tasks at any time, whatever the queue holds. A plan-only PR is titled `[PLAN] Imperative summary` on a `plan-imperative-summary` branch, changes only `implementation_plan.md`, takes no ID and is not in a release's `tasks`.
+- IDs are unique and never recycled. A new task takes an RL ID above every ID ever used in history or the queue; a removed queued ID is retired, so IDs need not be contiguous.
 
 ## Lookups
 
@@ -23,7 +24,7 @@ This file is the only required reading. Every other doc is a reference: look up 
 
 ## Controlled delivery
 
-- Tasks after RL-058 land on the open `release/rNNN` branch. If none is open, cut the next from main's tip with `git push origin main:refs/heads/release/rNNN`. Branch `rl-NNN-imperative-summary` from its exact tip and implement only the task's scope in one controlled commit. That commit appends the ID to `config/release.json` `tasks`; a release's first task rewrites the file as `{id, branch, tasks}` and appends the previous release to `docs/releases.json`. Open one PR into the release branch with the same title; its body must equal the commit body exactly.
+- Tasks after RL-058 land on the open `release/rNNN` branch. If none is open, cut the next from main's tip with `git push origin main:refs/heads/release/rNNN`. Branch `rl-NNN-imperative-summary` (or `plan-…` for a plan-only change) from its exact tip and implement only the task's scope in one controlled commit. A task commit appends its ID to `config/release.json` `tasks`; a release's first task rewrites the file as `{id, branch, tasks}` and appends the previous release to `docs/releases.json`. Open one PR into the release branch with the same title; its body must equal the commit body exactly.
 - Agents do not run tests or `npm run check` locally (vitest, `node --test`, `npm test`, `npm run test:*`); CI runs them. Validate with pinned `npm ci`, `npm run check:gate`, `check:change`, `audit:dependencies`, `git diff --check` and `check:patch`. When a task changes test or runtime code, dispatch the full suite once with `gh workflow run verify.yml --ref <branch>` and one blocking `gh run watch --exit-status`.
 - Required checks are `gate` and `change-id` into `release/*`, and `verify`, `change-id` and `security` into `main`. Before merging, re-fetch the PR and its base: every required check must be green on the exact current head and mergeability confirmed; reconcile and revalidate a moved base or head. Squash only that head into the release branch with the controlled subject and body, then confirm one controlled commit there and the task branch deleted. If a gate cannot pass, leave the branch and PR recoverable and report the exact blocker.
 - Only on the owner's "release", open `release/rNNN` into `main` titled `[RELEASE] rNNN: RL-0xx..RL-0yy`, wait once for the full suite, and rebase-merge that exact head so main gains one commit per task. Confirm Release Cutter's tree proof and the release branch deleted. Fix a red release forward with a task PR into the release branch.
