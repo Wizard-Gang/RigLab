@@ -8,7 +8,7 @@ import type { RigLabRig } from "../format/rig";
 import type { Validation } from "../format/validate";
 import { freeBodies, validateWeapon } from "../format/weapon";
 import type { RigLabWeapon } from "../format/weapon";
-import { readArtSet } from "./art";
+import { partFile, readArtSet } from "./art";
 import type { ArtSet } from "./art";
 import { CONFIG_FILE, parseConfig } from "./config";
 import type { ConfigEntry } from "./config";
@@ -86,7 +86,7 @@ function checkSlots(errors: LibraryErrors, rig: RigLabRig, weapons: readonly (re
   for (const [entry, weapon] of weapons) {
     for (const slot of Object.keys(weapon.parts)) {
       const taken = owner.get(slot);
-      if (taken) errors.add(`${entry.path}/${slotStem(slot)}.svg`, `slot '${slot}' is already drawn by ${taken}`);
+      if (taken) errors.add(`${entry.path}/${partFile(slotStem(slot), weapon.palette.pixel === true)}`, `slot '${slot}' is already drawn by ${taken}`);
       else owner.set(slot, `weapon '${weapon.name}'`);
     }
   }

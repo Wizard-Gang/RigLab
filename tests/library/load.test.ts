@@ -64,7 +64,7 @@ describe("library loading", () => {
     expect(errorsOf(withChanges({ [hold]: edited(hold, (value) => ({ ...value, name: "axe" })) }))).toEqual([`${hold}: $.name: must be 'spear'`]);
     const axe = "weapons/axe/weapon.json";
     const clash = edited(axe, (value) => ({ ...value, bodies: (value.bodies as object[]).map((body) => ({ ...body, slot: "weapon_sword" })) }));
-    expect(errorsOf(withChanges({ [axe]: clash, "weapons/axe/axe.svg": null, "weapons/axe/sword.svg": original["weapons/sword/sword.svg"]! }))).toEqual(["weapons/axe/sword.svg: slot 'weapon_sword' is already drawn by weapon 'sword'"]);
+    expect(errorsOf(withChanges({ [axe]: clash, "weapons/axe/axe.part.json": null, "weapons/axe/sword.part.json": original["weapons/sword/sword.part.json"]! }))).toEqual(["weapons/axe/sword.part.json: slot 'weapon_sword' is already drawn by weapon 'sword'"]);
   });
 
   it("refuses an animation for another rig, under another name or of another version", () => {
