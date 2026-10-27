@@ -1,6 +1,6 @@
 // The published schemas, and the documents they are held to: every library folder's files with the validator verdict
 // each gets, and every file export writes for the placeholder library, armed and unarmed.
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { libraryModel } from "../../src/editor/model";
 import type { LibraryModel } from "../../src/editor/model";
@@ -11,31 +11,11 @@ import type { RigLabRig, RigLabWeapon, Validation } from "../../src/format";
 import { LIBRARY } from "../../src/library/active";
 import { heldAnimation } from "../format/weapon-fixtures";
 import { readFolder } from "../library/placeholder";
-import { compile } from "./evaluate";
-import type { Compiled } from "./evaluate";
+import { ROOT, SCHEMAS } from "./formats";
+import type { Format } from "./formats";
 
-export const ROOT = join(import.meta.dirname, "../..");
-export const SCHEMAS = join(ROOT, "schemas");
-
-/** Every consumer format and its published version. */
-export const FORMATS = {
-  "riglab.export": 2,
-  "riglab.skin": 1,
-  "riglab.rig": 2,
-  "riglab.anim": 3,
-  "riglab.weapon": 1,
-  "riglab.hold": 1,
-  "riglab.palette": 1,
-  "riglab.part": 1,
-  "riglab.baked": 1,
-} as const;
-export type Format = keyof typeof FORMATS;
-
-export const schemaFile = (format: Format): string => `${format}.v${FORMATS[format]}.schema.json`;
-export const readSchema = (format: Format): Record<string, any> => JSON.parse(readFileSync(join(SCHEMAS, schemaFile(format)), "utf8"));
-export const SCHEMA: Readonly<Record<Format, Compiled>> = Object.fromEntries(
-  (Object.keys(FORMATS) as Format[]).map((format) => [format, compile(readSchema(format), format)]),
-) as Record<Format, Compiled>;
+export { FORMATS, readSchema, ROOT, SCHEMA, SCHEMAS, schemaFile, writtenFormat } from "./formats";
+export type { Format } from "./formats";
 
 /** Library folders whose documents the schemas must accept: the placeholder, and the conformance library once it exists. */
 export const LIBRARIES = ["placeholder-library", "conformance/library"].filter((folder) => existsSync(join(ROOT, folder)));
@@ -80,24 +60,6 @@ export function exportModels(): readonly LibraryModel[] {
   const daggers = heldAnimation(LIBRARY.rig, held("daggers").weapon, held("daggers").hold, "idle");
   const sword = heldAnimation(LIBRARY.rig, held("sword").weapon, held("sword").hold, "attack");
   return [model, { ...model, animations: [...model.animations, daggers, sword] }];
-}
-
-/** The format of a file export writes, by its path under `riglab-export/` or `riglab-skins/`. */
-export function writtenFormat(path: string): Format {
-  const rules: readonly (readonly [RegExp, Format])[] = [
-    [/^manifest\.json$/, "riglab.export"],
-    [/^[^/]+\.rig\.json$/, "riglab.rig"],
-    [/^animations\/[^/]+\.anim\.json$/, "riglab.anim"],
-    [/^weapons\/[^/]+\.weapon\.json$/, "riglab.weapon"],
-    [/^weapons\/[^/]+\.hold\.json$/, "riglab.hold"],
-    [/^baked\/[^/]+\.baked\.json$/, "riglab.baked"],
-    [/^(?:skins|weapons)\/[^/]+\/manifest\.json$/, "riglab.skin"],
-    [/^(?:skins|weapons)\/[^/]+\/palette\.json$/, "riglab.palette"],
-    [/^(?:skins|weapons)\/[^/]+\/parts\/[^/]+\.part\.json$/, "riglab.part"],
-  ];
-  const rule = rules.find(([pattern]) => pattern.test(path));
-  if (!rule) throw new Error(`export wrote '${path}', which no schema covers`);
-  return rule[1];
 }
 
 const decoder = new TextDecoder("utf-8", { fatal: true });

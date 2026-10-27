@@ -1,0 +1,38 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "sword",
+  "origin": [-5, -16],
+  "size": [10, 25],
+  "rows": [
+    "oooooooooo",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "osssssssso",
+    "oooooooooo"
+  ],
+  "keys": {
+    "o": "part part--steel-dark",
+    "s": "part"
+  }
+}

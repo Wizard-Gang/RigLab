@@ -1,0 +1,24 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "dagger",
+  "origin": [-3, -3],
+  "size": [6, 11],
+  "rows": [
+    "oooooo",
+    "osssso",
+    "osssso",
+    "osssso",
+    "osssso",
+    "osssso",
+    "osssso",
+    "osssso",
+    "osssso",
+    "osssso",
+    "oooooo"
+  ],
+  "keys": {
+    "o": "part part--steel-dark",
+    "s": "part"
+  }
+}

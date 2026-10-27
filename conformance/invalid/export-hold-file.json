@@ -1,0 +1,82 @@
+{
+  "format": "riglab.export",
+  "version": 2,
+  "generator": "RigLab conformance",
+  "rig": {
+    "name": "chibi",
+    "file": "chibi.rig.json",
+    "sha256": "2622043b17a117760677ff05631b196d6351152678fca7e4e3140d7b4c600be4",
+    "bytes": 7400
+  },
+  "animations": [
+    {
+      "name": "unarmed-walk",
+      "file": "animations/unarmed-walk.anim.json",
+      "sha256": "4111361cafd53f960bd2b284fb016b50769b2dc50130586cde2f2468de2221ba",
+      "bytes": 3270
+    },
+    {
+      "name": "unarmed-attack",
+      "file": "animations/unarmed-attack.anim.json",
+      "sha256": "90541c93e904b2b06927a2675915101c064b135bfba99ab9e49abfff5c4e6374",
+      "bytes": 3722
+    },
+    {
+      "name": "sword-attack",
+      "file": "animations/sword-attack.anim.json",
+      "sha256": "77155cad8cc3ad128138542938824672904b3c9d70d65239a27c86115a291ef3",
+      "bytes": 3866
+    },
+    {
+      "name": "daggers-idle",
+      "file": "animations/daggers-idle.anim.json",
+      "sha256": "cd7667bf18ac19538afffc84b8435da45ff7b2acc9290b91d1dab3021c0fb2b0",
+      "bytes": 3265
+    }
+  ],
+  "weapons": [
+    {
+      "name": "sword",
+      "file": "weapons/sword.weapon.json",
+      "sha256": "9b166cc121ea7d4ea9af52224518cce870e4630f48dc52402feec22022304243",
+      "bytes": 576,
+      "hold": {
+        "file": "weapons/spear.hold.json",
+        "sha256": "3dd9be1c5c631e442b809b88da93fa2178dead02081a6adfdcafac80fbb05b87",
+        "bytes": 171
+      }
+    },
+    {
+      "name": "daggers",
+      "file": "weapons/daggers.weapon.json",
+      "sha256": "d7d1da6b0e8b08035db7b7ee32add602bea59bdf4f0d6826a84e2ed5e34d3580",
+      "bytes": 855
+    }
+  ],
+  "baked": [
+    {
+      "animation": "unarmed-walk",
+      "file": "baked/unarmed-walk.baked.json",
+      "sha256": "3f19fdb3ce5e4d2211a667ca7af5639a9589b58df1ba199d0d404895ad7df343",
+      "bytes": 37024
+    },
+    {
+      "animation": "unarmed-attack",
+      "file": "baked/unarmed-attack.baked.json",
+      "sha256": "d4cc5f8a4b0edadf34ea96773058be7915c42ccf4c2dfc553b09dd833dce0924",
+      "bytes": 19370
+    },
+    {
+      "animation": "sword-attack",
+      "file": "baked/sword-attack.baked.json",
+      "sha256": "b5f88aa3f37192faaa07c283330cd7d68677be96ff27fd56d46b25bef149c998",
+      "bytes": 22866
+    },
+    {
+      "animation": "daggers-idle",
+      "file": "baked/daggers-idle.baked.json",
+      "sha256": "3bc9236f0c4e1a973b79780ef8d129106454511aa54d9569f3ef4c41c1938548",
+      "bytes": 60020
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "format": "riglab.skin",
+  "version": 1,
+  "generator": "RigLab conformance",
+  "rig": "chibi",
+  "kind": "weapon",
+  "name": "daggers",
+  "palette": {
+    "file": "palette.json",
+    "sha256": "96ff606b187a270904127e1cec8aa7fa9f3a339a505e78d07191e9532efe665c",
+    "bytes": 187
+  },
+  "parts": [
+    {
+      "body": "dagger-front",
+      "slot": "weapon_dagger",
+      "file": "parts/dagger.part.json",
+      "sha256": "cde06d9db6629897816687e90b1d7141b3dfb9d5f4d55edd4df55d47c1ee3bfd",
+      "bytes": 344
+    },
+    {
+      "body": "dagger-back",
+      "slot": "weapon_dagger",
+      "file": "parts/dagger.part.json",
+      "sha256": "cde06d9db6629897816687e90b1d7141b3dfb9d5f4d55edd4df55d47c1ee3bfd",
+      "bytes": 344
+    }
+  ]
+}

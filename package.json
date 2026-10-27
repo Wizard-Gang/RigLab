@@ -31,6 +31,7 @@
     "check:library": "node scripts/check-library.mjs",
     "convert:parts": "node scripts/convert-parts.mjs",
     "migrate:rig": "node scripts/migrate-rig.mjs",
+    "export:conformance": "node scripts/export-conformance.mjs",
     "check:workflow-shell": "node scripts/check-workflow-shell.mjs",
     "vendor:hexframe": "node scripts/vendor-hexframe.mjs",
     "audit:dependencies": "npm audit --audit-level=high",

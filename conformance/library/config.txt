@@ -1,0 +1,14 @@
+# RigLab conformance library: the chibi rig, the pixel skin, a free-body weapon (sword) and riding daggers, with motion.
+# One line per thing: <kind> <name> = <path>, relative to this folder. Line order is list order.
+
+rig chibi = rigs/chibi.rig.json
+
+skin pixel = skins/pixel
+
+weapon sword = weapons/sword
+weapon daggers = weapons/daggers
+
+animation unarmed-walk = animations/unarmed-walk.anim.json
+animation unarmed-attack = animations/unarmed-attack.anim.json
+animation sword-attack = animations/sword-attack.anim.json
+animation daggers-idle = animations/daggers-idle.anim.json

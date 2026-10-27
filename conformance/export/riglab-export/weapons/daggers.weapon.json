@@ -1,0 +1,57 @@
+{
+  "format": "riglab.weapon",
+  "version": 1,
+  "name": "daggers",
+  "bodies": [
+    {
+      "name": "dagger-front",
+      "slot": "weapon_dagger",
+      "axis": [
+        [
+          0,
+          -6.6
+        ],
+        [
+          0,
+          14.6
+        ]
+      ],
+      "grips": [
+        {
+          "name": "fist",
+          "chain": "arm-front",
+          "at": [
+            -2.8,
+            0
+          ],
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "name": "dagger-back",
+      "slot": "weapon_dagger",
+      "axis": [
+        [
+          0,
+          -6.6
+        ],
+        [
+          0,
+          14.6
+        ]
+      ],
+      "grips": [
+        {
+          "name": "fist",
+          "chain": "arm-back",
+          "at": [
+            -2.8,
+            0
+          ],
+          "angle": 180
+        }
+      ]
+    }
+  ]
+}

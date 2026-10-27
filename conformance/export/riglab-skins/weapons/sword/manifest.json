@@ -1,0 +1,22 @@
+{
+  "format": "riglab.skin",
+  "version": 1,
+  "generator": "RigLab conformance",
+  "rig": "chibi",
+  "kind": "weapon",
+  "name": "sword",
+  "palette": {
+    "file": "palette.json",
+    "sha256": "96ff606b187a270904127e1cec8aa7fa9f3a339a505e78d07191e9532efe665c",
+    "bytes": 187
+  },
+  "parts": [
+    {
+      "body": "sword",
+      "slot": "weapon_sword",
+      "file": "parts/sword.part.json",
+      "sha256": "bcc42f56f1246d2dcec4ac61d924e2b141a22204a2890f8553b303c7cb7b1e01",
+      "bytes": 641
+    }
+  ]
+}

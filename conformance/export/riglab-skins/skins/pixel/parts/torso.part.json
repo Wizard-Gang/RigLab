@@ -1,0 +1,26 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "torso",
+  "origin": [-6, -11],
+  "size": [12, 13],
+  "rows": [
+    "iiiiiiiiiiii",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iffffffffffi",
+    "iiiiiiiiiiii"
+  ],
+  "keys": {
+    "i": "part part--ink",
+    "f": "part part--fill"
+  }
+}

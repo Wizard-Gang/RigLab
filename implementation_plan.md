@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-064 — [TEST] Commit conformance exports from a dedicated conformance library
-
-- Dependency: RL-063. Owner ruling of 2026-10-27: a dedicated `conformance/library`, not more motion in `placeholder-library/`.
-- Why: RenderLab fakes RigLab bundles in test helpers because RigLab commits no export, and the placeholder animations stand still, so they cannot prove pins, weapon bodies or one-shot timing.
-- Scope: Add `conformance/library/`: the chibi rig, the pixel skin, a free-body weapon and the daggers, and a few animations with real motion covering a loop, a one-shot, a planted-foot pin, a two-handed grip and riding daggers. Commit its `riglab-export/` and `riglab.skin` bundles under `conformance/export/`, plus `conformance/invalid/` cases, each with exactly one defect and its expected `{jsonPath, reason}`, indexed by SHA-256 as MapLab's `conformance/` is. A test proves the committed bundles equal a fresh export byte for byte.
-- Non-goals: No change to the owner's library or `placeholder-library/`. No format change.
-- Acceptance: CI regenerates both bundles identically. Every invalid case fails with its expected path and reason. The conformance library passes `check:library`.
-- Validation: The standard set; one dispatched `verify.yml` run.
-- Authorities: docs/ARCHITECTURE.md (Engine timing; Posing and constraints; Export bundles), tests/export/written.ts, MapLab's `conformance/README.md`.
-
 ### RL-065 — [DOCS] Write the consumer contract and versioning policy
 
 - Dependency: RL-064.
