@@ -1,0 +1,185 @@
+{
+  "format": "riglab.anim",
+  "version": 3,
+  "name": "daggers-idle",
+  "rig": "chibi",
+  "class": "daggers",
+  "kind": "idle",
+  "fps": 60,
+  "length": 60,
+  "loop": true,
+  "keys": [
+    {
+      "frame": 0,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 2
+        },
+        "arm-front": {
+          "rotation": -25
+        },
+        "forearm-front": {
+          "rotation": -70
+        },
+        "arm-back": {
+          "rotation": 20
+        },
+        "forearm-back": {
+          "rotation": -60
+        },
+        "head": {
+          "rotation": 0
+        }
+      },
+      "bodies": [
+        {
+          "body": "dagger-front",
+          "x": 0,
+          "y": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "frame": 15,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 0.8,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 4
+        },
+        "arm-front": {
+          "rotation": -30
+        },
+        "forearm-front": {
+          "rotation": -80
+        },
+        "arm-back": {
+          "rotation": 26
+        },
+        "forearm-back": {
+          "rotation": -66
+        },
+        "head": {
+          "rotation": 2
+        }
+      }
+    },
+    {
+      "frame": 30,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 1.2,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 3
+        },
+        "arm-front": {
+          "rotation": -22
+        },
+        "forearm-front": {
+          "rotation": -66
+        },
+        "arm-back": {
+          "rotation": 18
+        },
+        "forearm-back": {
+          "rotation": -56
+        },
+        "head": {
+          "rotation": 1
+        }
+      }
+    },
+    {
+      "frame": 45,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 0.6,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 1
+        },
+        "arm-front": {
+          "rotation": -28
+        },
+        "forearm-front": {
+          "rotation": -76
+        },
+        "arm-back": {
+          "rotation": 24
+        },
+        "forearm-back": {
+          "rotation": -64
+        },
+        "head": {
+          "rotation": -1
+        }
+      }
+    }
+  ]
+}

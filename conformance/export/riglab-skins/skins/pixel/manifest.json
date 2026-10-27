@@ -1,0 +1,81 @@
+{
+  "format": "riglab.skin",
+  "version": 1,
+  "generator": "RigLab conformance",
+  "rig": "chibi",
+  "kind": "skin",
+  "name": "pixel",
+  "palette": {
+    "file": "palette.json",
+    "sha256": "b3f4676e2e8bbd73e46cea8e4c15e9d5fcd3320b95db5bf0bbbb9cebc98672fb",
+    "bytes": 202
+  },
+  "parts": [
+    {
+      "slot": "chibi_pelvis",
+      "file": "parts/pelvis.part.json",
+      "sha256": "29978a685934195d8297839ce0cdc5d46dc26e2d82ea75d975a0f5c49dbb740a",
+      "bytes": 302
+    },
+    {
+      "slot": "chibi_leg_upper_r",
+      "file": "parts/leg_upper_r.part.json",
+      "sha256": "5279cb947e4af618fc81d0bb1d1bcda49b2abae3764db4210b0884921fad98c0",
+      "bytes": 292
+    },
+    {
+      "slot": "chibi_leg_lower_r",
+      "file": "parts/leg_lower_r.part.json",
+      "sha256": "8d14952804cfa3e829d6d3d3941e997a93f97f360d0bb9bb872c4b337b3fe7c7",
+      "bytes": 333
+    },
+    {
+      "slot": "chibi_leg_upper_l",
+      "file": "parts/leg_upper_l.part.json",
+      "sha256": "757ae6801a0e36725325e717d4d7a167d733d09da1d1bd33564bd56a015e3e66",
+      "bytes": 291
+    },
+    {
+      "slot": "chibi_leg_lower_l",
+      "file": "parts/leg_lower_l.part.json",
+      "sha256": "a1b26d14783ea4a85478a6a5454eaf80bb588b072890ada92356336be7bcf7d7",
+      "bytes": 332
+    },
+    {
+      "slot": "chibi_torso",
+      "file": "parts/torso.part.json",
+      "sha256": "e0cbafa0f2405379f0da15977a9b2183336223ef45264dd94ceabbc108e326f9",
+      "bytes": 455
+    },
+    {
+      "slot": "chibi_arm_upper_r",
+      "file": "parts/arm_upper_r.part.json",
+      "sha256": "1309c6476963a6b4521c3d58f1eed10307aef1f7427089d97efcee35ab484c8f",
+      "bytes": 322
+    },
+    {
+      "slot": "chibi_arm_lower_r",
+      "file": "parts/arm_lower_r.part.json",
+      "sha256": "e719fe69a6f8c599163273b7122665656b15e6f0ea0d097ae6b29c4f91adf978",
+      "bytes": 260
+    },
+    {
+      "slot": "chibi_arm_upper_l",
+      "file": "parts/arm_upper_l.part.json",
+      "sha256": "933a5217d7378387585ecab8b8683076c7b4527fcd6e0826821c31453fc817c9",
+      "bytes": 321
+    },
+    {
+      "slot": "chibi_arm_lower_l",
+      "file": "parts/arm_lower_l.part.json",
+      "sha256": "7677999ca2ba7636636a0e0b59fef295bf9723f9b4f95126cf6d1f7c38e7e4d8",
+      "bytes": 259
+    },
+    {
+      "slot": "chibi_head",
+      "file": "parts/head.part.json",
+      "sha256": "4023c6250c538e5987d641d248358de3747a87244e62d28ed0ef0df59f209122",
+      "bytes": 931
+    }
+  ]
+}

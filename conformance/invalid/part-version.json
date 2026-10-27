@@ -1,0 +1,42 @@
+{
+  "format": "riglab.part",
+  "version": 2,
+  "bone": "head",
+  "origin": [
+    -13,
+    -24
+  ],
+  "size": [
+    24,
+    23
+  ],
+  "rows": [
+    "iiiiiiiiiiiiiiiiiiiiiiii",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iffffffffffffffffffffffi",
+    "iiiiiiiiiiiiiiiiiiiiiiii"
+  ],
+  "keys": {
+    "i": "part part--ink",
+    "f": "part part--fill"
+  }
+}

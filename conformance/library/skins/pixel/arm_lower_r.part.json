@@ -1,0 +1,18 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "forearm-front",
+  "origin": [-2, -1],
+  "size": [4, 5],
+  "rows": [
+    "iiii",
+    "iffi",
+    "iffi",
+    "iffi",
+    "iiii"
+  ],
+  "keys": {
+    "i": "part part--ink",
+    "f": "part part--fill"
+  }
+}

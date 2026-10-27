@@ -1,0 +1,396 @@
+{
+  "format": "riglab.rig",
+  "version": 2,
+  "name": "chibi",
+  "space": {
+    "units": "svg",
+    "x": "right",
+    "y": "down",
+    "rotation": "clockwise-positive",
+    "height": 92,
+    "viewBox": [
+      -50,
+      -100,
+      100,
+      105
+    ]
+  },
+  "root": "pelvis",
+  "bones": [
+    {
+      "name": "pelvis",
+      "parent": null,
+      "offset": [
+        0,
+        -25
+      ],
+      "tip": null,
+      "artHeight": 11,
+      "hand": null,
+      "limits": null
+    },
+    {
+      "name": "leg-front",
+      "parent": "pelvis",
+      "offset": [
+        5,
+        0
+      ],
+      "tip": null,
+      "slot": "chibi_leg_upper_r",
+      "artHeight": 15,
+      "hand": null,
+      "limits": null
+    },
+    {
+      "name": "shin-front",
+      "parent": "leg-front",
+      "offset": [
+        0,
+        12
+      ],
+      "tip": [
+        0,
+        13
+      ],
+      "slot": "chibi_leg_lower_r",
+      "artHeight": 14,
+      "hand": null,
+      "limits": null
+    },
+    {
+      "name": "leg-back",
+      "parent": "pelvis",
+      "offset": [
+        -5,
+        0
+      ],
+      "tip": null,
+      "slot": "chibi_leg_upper_l",
+      "artHeight": 15,
+      "hand": null,
+      "limits": null
+    },
+    {
+      "name": "shin-back",
+      "parent": "leg-back",
+      "offset": [
+        0,
+        12
+      ],
+      "tip": [
+        0,
+        13
+      ],
+      "slot": "chibi_leg_lower_l",
+      "artHeight": 14,
+      "hand": null,
+      "limits": null
+    },
+    {
+      "name": "torso",
+      "parent": "pelvis",
+      "offset": [
+        0,
+        -4
+      ],
+      "tip": null,
+      "slot": "chibi_torso",
+      "artHeight": 22,
+      "hand": null,
+      "limits": null
+    },
+    {
+      "name": "arm-front",
+      "parent": "torso",
+      "offset": [
+        9,
+        -16
+      ],
+      "tip": null,
+      "slot": "chibi_arm_upper_r",
+      "artHeight": 13,
+      "hand": null,
+      "limits": null
+    },
+    {
+      "name": "forearm-front",
+      "parent": "arm-front",
+      "offset": [
+        0,
+        10
+      ],
+      "tip": [
+        0,
+        11
+      ],
+      "slot": "chibi_arm_lower_r",
+      "artHeight": 15,
+      "hand": "hand_r",
+      "limits": null
+    },
+    {
+      "name": "arm-back",
+      "parent": "torso",
+      "offset": [
+        -9,
+        -16
+      ],
+      "tip": null,
+      "slot": "chibi_arm_upper_l",
+      "artHeight": 13,
+      "hand": null,
+      "limits": null
+    },
+    {
+      "name": "forearm-back",
+      "parent": "arm-back",
+      "offset": [
+        0,
+        10
+      ],
+      "tip": [
+        0,
+        11
+      ],
+      "slot": "chibi_arm_lower_l",
+      "artHeight": 15,
+      "hand": "hand_l",
+      "limits": null
+    },
+    {
+      "name": "head",
+      "parent": "torso",
+      "offset": [
+        0,
+        -18
+      ],
+      "tip": [
+        0,
+        -44
+      ],
+      "slot": "chibi_head",
+      "artHeight": 46,
+      "hand": null,
+      "limits": null
+    }
+  ],
+  "chains": [
+    {
+      "name": "leg-front",
+      "upper": "leg-front",
+      "lower": "shin-front",
+      "bend": 1
+    },
+    {
+      "name": "leg-back",
+      "upper": "leg-back",
+      "lower": "shin-back",
+      "bend": 1
+    },
+    {
+      "name": "arm-front",
+      "upper": "arm-front",
+      "lower": "forearm-front",
+      "bend": 1
+    },
+    {
+      "name": "arm-back",
+      "upper": "arm-back",
+      "lower": "forearm-back",
+      "bend": -1
+    }
+  ],
+  "depthProfiles": {
+    "profiles": {
+      "anatomical": {
+        "underLowerBody": null,
+        "behindTorso": "far",
+        "foreground": [
+          "near"
+        ],
+        "head": "above-arms"
+      },
+      "locomotion": {
+        "underLowerBody": "far",
+        "behindTorso": null,
+        "foreground": [
+          "near"
+        ],
+        "head": "above-arms"
+      },
+      "both-front": {
+        "underLowerBody": null,
+        "behindTorso": null,
+        "foreground": [
+          "far",
+          "near"
+        ],
+        "head": "above-arms"
+      },
+      "punch": {
+        "underLowerBody": null,
+        "behindTorso": null,
+        "foreground": [
+          "far",
+          "near"
+        ],
+        "head": "below-arms"
+      }
+    },
+    "sides": {
+      "facingRight": {
+        "arms": {
+          "far": "arm-front",
+          "near": "arm-back"
+        },
+        "legs": {
+          "far": "leg-front",
+          "near": "leg-back"
+        }
+      },
+      "facingLeft": {
+        "arms": {
+          "far": "arm-back",
+          "near": "arm-front"
+        },
+        "legs": {
+          "far": "leg-back",
+          "near": "leg-front"
+        }
+      }
+    },
+    "byClip": {
+      "sword": "both-front",
+      "spear": "both-front",
+      "axe": "both-front"
+    },
+    "default": "anatomical"
+  },
+  "paintOrder": {
+    "profiles": {
+      "anatomical": {
+        "right": [
+          "leg-front",
+          "shin-front",
+          "leg-back",
+          "shin-back",
+          "pelvis",
+          "arm-front",
+          "forearm-front",
+          "torso",
+          "arm-back",
+          "forearm-back",
+          "head"
+        ],
+        "left": [
+          "leg-back",
+          "shin-back",
+          "leg-front",
+          "shin-front",
+          "pelvis",
+          "arm-back",
+          "forearm-back",
+          "torso",
+          "arm-front",
+          "forearm-front",
+          "head"
+        ]
+      },
+      "locomotion": {
+        "right": [
+          "arm-front",
+          "forearm-front",
+          "leg-front",
+          "shin-front",
+          "leg-back",
+          "shin-back",
+          "pelvis",
+          "torso",
+          "arm-back",
+          "forearm-back",
+          "head"
+        ],
+        "left": [
+          "arm-back",
+          "forearm-back",
+          "leg-back",
+          "shin-back",
+          "leg-front",
+          "shin-front",
+          "pelvis",
+          "torso",
+          "arm-front",
+          "forearm-front",
+          "head"
+        ]
+      },
+      "both-front": {
+        "right": [
+          "leg-front",
+          "shin-front",
+          "leg-back",
+          "shin-back",
+          "pelvis",
+          "torso",
+          "arm-front",
+          "forearm-front",
+          "arm-back",
+          "forearm-back",
+          "head"
+        ],
+        "left": [
+          "leg-back",
+          "shin-back",
+          "leg-front",
+          "shin-front",
+          "pelvis",
+          "torso",
+          "arm-back",
+          "forearm-back",
+          "arm-front",
+          "forearm-front",
+          "head"
+        ]
+      },
+      "punch": {
+        "right": [
+          "leg-front",
+          "shin-front",
+          "leg-back",
+          "shin-back",
+          "pelvis",
+          "torso",
+          "head",
+          "arm-front",
+          "forearm-front",
+          "arm-back",
+          "forearm-back"
+        ],
+        "left": [
+          "leg-back",
+          "shin-back",
+          "leg-front",
+          "shin-front",
+          "pelvis",
+          "torso",
+          "head",
+          "arm-back",
+          "forearm-back",
+          "arm-front",
+          "forearm-front"
+        ]
+      }
+    },
+    "byClip": {
+      "sword": "both-front",
+      "spear": "both-front",
+      "axe": "both-front",
+      "sword-attack": "both-front"
+    },
+    "held": {
+      "bodies": "over-figure",
+      "grippingForearms": "over-bodies"
+    }
+  }
+}

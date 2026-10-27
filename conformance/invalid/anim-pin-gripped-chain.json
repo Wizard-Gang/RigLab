@@ -1,0 +1,216 @@
+{
+  "format": "riglab.anim",
+  "version": 3,
+  "name": "sword-attack",
+  "rig": "chibi",
+  "class": "sword",
+  "kind": "attack",
+  "fps": 60,
+  "length": 24,
+  "loop": false,
+  "keys": [
+    {
+      "frame": 0,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 0
+        },
+        "arm-front": {
+          "rotation": -40.85
+        },
+        "forearm-front": {
+          "rotation": 102.02
+        },
+        "arm-back": {
+          "rotation": -3.46
+        },
+        "forearm-back": {
+          "rotation": -47.68
+        },
+        "head": {
+          "rotation": 0
+        }
+      },
+      "bodies": [
+        {
+          "body": "sword",
+          "x": 10,
+          "y": -35,
+          "rotation": 55
+        }
+      ],
+      "pins": [
+        {
+          "chain": "arm-front",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "frame": 8,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": -1,
+          "y": 1,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": -8
+        },
+        "arm-front": {
+          "rotation": -57.44
+        },
+        "forearm-front": {
+          "rotation": 119.4
+        },
+        "arm-back": {
+          "rotation": -31.98
+        },
+        "forearm-back": {
+          "rotation": -11.81
+        },
+        "head": {
+          "rotation": 3
+        }
+      },
+      "bodies": [
+        {
+          "body": "sword",
+          "x": 8,
+          "y": -39,
+          "rotation": 25
+        }
+      ]
+    },
+    {
+      "frame": 16,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 3,
+          "y": 2.5,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 18
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 10
+        },
+        "arm-front": {
+          "rotation": -45.58
+        },
+        "forearm-front": {
+          "rotation": 123.24
+        },
+        "arm-back": {
+          "rotation": 18.63
+        },
+        "forearm-back": {
+          "rotation": -118.78
+        },
+        "head": {
+          "rotation": -4
+        }
+      },
+      "bodies": [
+        {
+          "body": "sword",
+          "x": 14,
+          "y": -30,
+          "rotation": 115
+        }
+      ]
+    },
+    {
+      "frame": 24,
+      "interpolation": "smoothstep",
+      "pose": {
+        "pelvis": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0
+        },
+        "leg-front": {
+          "rotation": 0
+        },
+        "shin-front": {
+          "rotation": 0
+        },
+        "leg-back": {
+          "rotation": 0
+        },
+        "shin-back": {
+          "rotation": 0
+        },
+        "torso": {
+          "rotation": 0
+        },
+        "arm-front": {
+          "rotation": -40.85
+        },
+        "forearm-front": {
+          "rotation": 102.02
+        },
+        "arm-back": {
+          "rotation": -3.46
+        },
+        "forearm-back": {
+          "rotation": -47.68
+        },
+        "head": {
+          "rotation": 0
+        }
+      },
+      "bodies": [
+        {
+          "body": "sword",
+          "x": 10,
+          "y": -35,
+          "rotation": 55
+        }
+      ]
+    }
+  ]
+}

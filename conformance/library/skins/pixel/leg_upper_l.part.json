@@ -1,0 +1,21 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "leg-back",
+  "origin": [-2, -1],
+  "size": [4, 8],
+  "rows": [
+    "iiii",
+    "iffi",
+    "iffi",
+    "iffi",
+    "iffi",
+    "iffi",
+    "iffi",
+    "iiii"
+  ],
+  "keys": {
+    "i": "part part--ink",
+    "f": "part part--fill"
+  }
+}
