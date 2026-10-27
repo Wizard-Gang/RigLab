@@ -1,0 +1,21 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "shin-front",
+  "origin": [-3, -1],
+  "size": [9, 8],
+  "rows": [
+    "iiiiiiiii",
+    "ifffffffi",
+    "ifffffffi",
+    "ifffffffi",
+    "ifffffffi",
+    "ifffffffi",
+    "ifffffffi",
+    "iiiiiiiii"
+  ],
+  "keys": {
+    "i": "part part--ink",
+    "f": "part part--fill"
+  }
+}

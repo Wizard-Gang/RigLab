@@ -163,7 +163,7 @@ describe("saving the library's weapons", () => {
 
   it("refuses a weapon the library could not load, such as a body slot with no part", () => {
     const errors = errorsOf({ ...current(), weapons: changed("sword", (item) => ({ ...item, weapon: { ...item.weapon, bodies: sword(item).bodies.map((body) => ({ ...body, slot: "weapon_saber" })) } })) });
-    expect(errors).toContain("weapons/sword/saber.svg: is missing; it draws slot 'weapon_saber'");
+    expect(errors).toContain("weapons/sword/saber.part.json: is missing; it draws slot 'weapon_saber'");
     const invalid = errorsOf({ ...current(), weapons: changed("axe", (item) => ({ ...item, weapon: { ...item.weapon, bodies: [] } })) });
     expect(invalid).toEqual(["$.weapons[2].weapon.bodies: must be a non-empty array"]);
   });

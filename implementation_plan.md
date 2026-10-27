@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-060 — [FEAT] Store pixel parts as riglab.part pixel grids
-
-- Dependency: RL-059 queued this task. Owner rulings of 2026-10-27: adopt the `riglab.part` pixel-grid format, export pixel parts only, and keep the vector chibi skin editor-only.
-- Why: Pixel skins are bitmaps stored as one SVG square per pixel. RenderLab's `prepareSvg` refuses them (no width, height or viewBox, and no origin to place them by), their colors live only in CSS, browser rasterizing makes their pixels engine-dependent, and no JSON Schema or pixel-art tool can read them.
-- Scope: Add `riglab.part` version 1 (`src/format/part.ts`), a closed validator: `bone`, `origin` (the top-left pixel relative to the bone, in pixels of 2 rig units), `size`, `rows` of equal-length strings, and `keys` mapping each row character to a class token of the skin's `riglab.palette`, with `.` as the only transparent character. Pixel skins and pixel weapon bodies hold `<slot>.part.json` files instead of SVG; the loader refuses SVG cell art in a pixel set with a message naming the converter. Add `npm run convert:parts -- <library-folder>`, which rewrites a pixel skin's SVG cells as grids losslessly and refuses any cell off the grid. Convert `placeholder-library/skins/pixel` and give the placeholder weapons pixel boxes. The editor, wardrobe and art layer draw grids at the same positions and colors the cells had. Vector parts (the `chibi` skin and the owner's four weapons) stay SVG and editor-only.
-- Non-goals: No export or bundle change (RL-061, RL-062). No redrawing of the owner's vector weapons as pixel art; that is owner art work. No change to the rig, slots, proportions or animations. The owner runs the converter on `~/Documents/RigLab/`.
-- Acceptance: The converted placeholder pixel skin draws pixel-for-pixel as before. Every malformed grid fails at its JSON path. `npm run check:library` passes on the placeholder library and names the converter for an unconverted pixel skin.
-- Validation: Pinned npm ci, typecheck, placeholder build, check:gate, check:library, check:change, audit:dependencies and check:patch locally; one dispatched `verify.yml` run for the format, loader and converter tests.
-- Authorities: docs/SVGPIXELART.md (replaced by the grid contract), docs/ARCHITECTURE.md (RigLab formats; Hexframe consumer adapter and art; Library folders), src/hexframe/parts.ts, src/library/parts.ts, src/format/palette.ts.
-
 ### RL-061 — [API] Version the export for consumers: rig paint order and file sizes
 
 - Dependency: RL-060. Owner rulings of 2026-10-27: bump the export to version 2 now, before RenderLab writes its reader, and carry the resolved paint order in the rig file.

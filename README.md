@@ -69,6 +69,7 @@ Save writes the editor's rig, weapon rigs and holds, and animations into that fo
 | Release-branch gate | `npm run check:gate` | The non-test checks CI's `gate` runs: plan queue, workflow shell, vendor pin, repository contract, types and build |
 | Rig and editor tests | `npm test` | Vitest, node environment, against `placeholder-library/` |
 | Validate a library folder | `npm run check:library [folder]` | Local only; defaults to the folder `npm start` reads |
+| Convert pixel SVG art to grids | `npm run convert:parts -- <folder>` | Local only; rewrites every pixel set's SVG cell parts as `riglab.part` grids, or changes nothing |
 | Dependency advisory gate | `npm run audit:dependencies` | Network-backed npm registry query; fails on high or critical advisories |
 | Committed patch whitespace | `npm run check:patch` | Needs `PATCH_BASE_SHA` and `PATCH_HEAD_SHA` |
 | Re-vendor Hexframe | `npm run vendor:hexframe -- <checkout> <commit>` | Copies the pinned paths from a Hexframe commit's Git objects and rewrites the lock |

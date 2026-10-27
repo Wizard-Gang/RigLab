@@ -15,3 +15,5 @@ export { HOLD_FILE, HOLD_FORMAT, HOLD_VERSION, validateHold } from "./hold";
 export type { RigLabHold } from "./hold";
 export { CLASS_TOKEN, LINECAPS, PALETTE_FILE, PALETTE_FORMAT, PALETTE_VERSION, paletteCss, validatePalette } from "./palette";
 export type { Linecap, PaletteStyle, RigLabPalette } from "./palette";
+export { MAX_PART_ORIGIN, MAX_PART_PIXELS, PART_EXTENSION, PART_FORMAT, PART_VERSION, partPixels, PIXEL_UNITS, serializePart, TRANSPARENT, validatePart } from "./part";
+export type { RigLabPart } from "./part";

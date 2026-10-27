@@ -1,0 +1,19 @@
+{
+  "format": "riglab.part",
+  "version": 1,
+  "bone": "spear",
+  "origin": [-14, -3],
+  "size": [36, 6],
+  "rows": [
+    "oooooooooooooooooooooooooooooooooooo",
+    "osssssssssssssssssssssssssssssssssso",
+    "osssssssssssssssssssssssssssssssssso",
+    "osssssssssssssssssssssssssssssssssso",
+    "osssssssssssssssssssssssssssssssssso",
+    "oooooooooooooooooooooooooooooooooooo"
+  ],
+  "keys": {
+    "o": "part part--steel-dark",
+    "s": "part"
+  }
+}
