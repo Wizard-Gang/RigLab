@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.skin:1",
+  "title": "riglab.skin v1",
+  "description": "The `manifest.json` of one pixel art set's bundle under `riglab-skins/` (src/export/skin.ts, buildSkinBundle): a skin or a weapon's art, the rig whose slots it draws, and its palette and parts pinned by byte length and SHA-256. The palette file is a `riglab.palette` v1 and every part file a `riglab.part` v1. Rules this schema cannot express, which a reader must check against the bundle and the export: each entry's `bytes` and `sha256` match its file, and the bundle holds exactly the manifest and the files it lists, each once; `rig` names the exported rig; a skin lists one part per rig bone, in bone order, each with that bone's slot; a weapon lists one part per body of the weapon named `name`, in body order, each with the body's name and slot; a part's file is `parts/<slot stem>.part.json`, the stem being the slot after its first `_`, so bodies that share a slot share a file.",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.skin" },
+    "version": { "const": 1 },
+    "generator": { "description": "The RigLab build that wrote the bundle.", "type": "string" },
+    "rig": { "$ref": "#/$defs/name" },
+    "kind": { "enum": ["skin", "weapon"] },
+    "name": { "$ref": "#/$defs/name" },
+    "palette": {
+      "type": "object",
+      "properties": {
+        "file": { "const": "palette.json" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "$ref": "#/$defs/bytes" }
+      },
+      "required": ["file", "sha256", "bytes"],
+      "additionalProperties": false
+    },
+    "parts": { "type": "array", "minItems": 1 }
+  },
+  "required": ["format", "version", "generator", "rig", "kind", "name", "palette", "parts"],
+  "additionalProperties": false,
+  "oneOf": [
+    { "properties": { "kind": { "const": "skin" }, "parts": { "items": { "$ref": "#/$defs/skin-part" } } } },
+    { "properties": { "kind": { "const": "weapon" }, "parts": { "items": { "$ref": "#/$defs/weapon-part" } } } }
+  ],
+  "$defs": {
+    "name": {
+      "description": "1-64 letters, digits, '_' or '-', starting with a letter.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "sha256": { "description": "Lowercase hex SHA-256 of the file's bytes.", "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "bytes": { "description": "The file's length in bytes.", "type": "integer", "minimum": 1 },
+    "part-file": { "type": "string", "pattern": "^parts/[A-Za-z0-9_-]*\\.part\\.json$" },
+    "skin-part": {
+      "description": "A skin's part on one rig slot.",
+      "type": "object",
+      "properties": {
+        "slot": { "$ref": "#/$defs/name" },
+        "file": { "$ref": "#/$defs/part-file" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "$ref": "#/$defs/bytes" }
+      },
+      "required": ["slot", "file", "sha256", "bytes"],
+      "additionalProperties": false
+    },
+    "weapon-part": {
+      "description": "A weapon body's part on the body's slot.",
+      "type": "object",
+      "properties": {
+        "body": { "$ref": "#/$defs/name" },
+        "slot": { "$ref": "#/$defs/name" },
+        "file": { "$ref": "#/$defs/part-file" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "$ref": "#/$defs/bytes" }
+      },
+      "required": ["body", "slot", "file", "sha256", "bytes"],
+      "additionalProperties": false
+    }
+  }
+}

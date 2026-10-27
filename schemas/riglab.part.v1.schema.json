@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riglab:schema:riglab.part:1",
+  "title": "riglab.part v1",
+  "description": "One pixel-art part as a grid of palette keys (src/format/part.ts, validatePart), placed on its bone by the top-left pixel. Each pixel is a 2 x 2 cell in rig units; `.` draws nothing. Rules this schema cannot express, which a reader must check itself: there are exactly `size[1]` rows and each is exactly `size[0]` characters; every row character is `.` or a key of `keys`; every key is used at least once, so the part draws at least one pixel; a key's class tokens are distinct. Class tokens refer to the set's `riglab.palette` classes.",
+  "type": "object",
+  "properties": {
+    "format": { "const": "riglab.part" },
+    "version": { "const": 1 },
+    "bone": { "$ref": "#/$defs/name" },
+    "origin": {
+      "description": "The top-left pixel's position in the bone's frame, in pixels.",
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "integer", "minimum": -1024, "maximum": 1024 }
+    },
+    "size": {
+      "description": "Width and height in pixels.",
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "integer", "minimum": 1, "maximum": 256 }
+    },
+    "rows": {
+      "description": "One string per pixel row, top to bottom.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": { "type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[!-~]*$" }
+    },
+    "keys": {
+      "description": "Each row character's class tokens in the palette's cascade order, separated by single spaces.",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "type": "string", "pattern": "^[!-\\-/-~]$" },
+      "additionalProperties": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*$" }
+    }
+  },
+  "required": ["format", "version", "bone", "origin", "size", "rows", "keys"],
+  "additionalProperties": false,
+  "$defs": {
+    "name": {
+      "description": "1-64 letters, digits, '_' or '-', starting with a letter.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    }
+  }
+}
