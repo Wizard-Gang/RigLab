@@ -3,6 +3,9 @@ import { version } from "../../package.json";
 import type { RigLabAnimation } from "../format/animation";
 import { clipNotes, toHexframeClip, toHexframeRig } from "../hexframe/adapter";
 import { buildBundle, EXPORT_ROOT } from "../export/bundle";
+import { buildSkinBundles, SKINS_ROOT } from "../export/skin";
+import type { SkinBundles } from "../export/skin";
+import { LIBRARY } from "../library/active";
 import { canUseFolders, downloadJson, downloadZip, writeFolder } from "../editor/bundleFiles";
 import { weaponRigs } from "../editor/model";
 import type { LibraryModel } from "../editor/model";
@@ -38,6 +41,7 @@ function BundlePath({ path }: { readonly path: string }) {
 export function ExportPanel({ model, active, onStatus }: ExportPanelProps) {
   const [baked, setBaked] = useState(true);
   const [files, setFiles] = useState<ReadonlyMap<string, Uint8Array> | null>(null);
+  const [skins, setSkins] = useState<SkinBundles | null>(null);
   const folders = canUseFolders();
 
   useEffect(() => {
@@ -50,6 +54,17 @@ export function ExportPanel({ model, active, onStatus }: ExportPanelProps) {
       current = false;
     };
   }, [model, baked]);
+
+  // Art comes only from the library folder, so its skin bundles are built once.
+  useEffect(() => {
+    let current = true;
+    void buildSkinBundles(LIBRARY, GENERATOR).then((built) => {
+      if (current) setSkins(built);
+    });
+    return () => {
+      current = false;
+    };
+  }, []);
 
   const run = async (what: string, task: () => Promise<string | null>): Promise<void> => {
     try {
@@ -86,6 +101,32 @@ export function ExportPanel({ model, active, onStatus }: ExportPanelProps) {
         ) : null}
         <button type="button" className="tool" disabled={!files} onClick={() => files && run("Export", async () => `Downloaded ${downloadZip(files)}`)}>
           Download zip
+        </button>
+      </div>
+      <h3 className="panel__title panel__title--section">Skins</h3>
+      <p className="panel__note">
+        A <code>{SKINS_ROOT}/</code> folder of <code>riglab.skin</code> bundles, one per pixel skin and pixel weapon: a manifest
+        naming the rig, the palette and every part grid, each pinned by SHA-256. Vector art stays in the editor.
+      </p>
+      <ul className="bundle" aria-label="Skin bundle files">
+        {skins
+          ? [
+            ...[...skins.files].map(([path, bytes]) => (
+              <li key={path}><BundlePath path={path} /><span className="list__meta">{size(bytes.length)}</span></li>
+            )),
+            ...skins.refused.map((reason) => <li key={reason} className="panel__note">{reason}</li>),
+          ]
+          : <li className="panel__note">Building…</li>}
+      </ul>
+      <div className="setup__actions">
+        {folders ? (
+          <button type="button" className="tool" disabled={!skins?.files.size} onClick={() => skins && run("Skin export", async () => {
+            const where = await writeFolder(skins.files, SKINS_ROOT);
+            return where ? `Exported ${skins.files.size} files to ${where}` : null;
+          })}>Export skins to folder…</button>
+        ) : null}
+        <button type="button" className="tool" disabled={!skins?.files.size} onClick={() => skins && run("Skin export", async () => `Downloaded ${downloadZip(skins.files, SKINS_ROOT)}`)}>
+          Download skins zip
         </button>
       </div>
       <h3 className="panel__title panel__title--section">Hexframe</h3>
