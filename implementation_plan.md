@@ -2,16 +2,6 @@
 
 ## Open tasks
 
-### RL-062 — [API] Export pixel skins as riglab.skin bundles
-
-- Dependency: RL-060 and RL-061.
-- Why: RenderLab binds art imported separately from the animation export (RLDR-013), and RigLab exports no art today.
-- Scope: Add a `riglab.skin` version 1 bundle, written by Export mode beside `riglab-export/`: a manifest naming the rig it fits, the skin or weapon art set, its `riglab.palette` and one `riglab.part` per slot (or per weapon body), each with bytes and SHA-256. Only pixel sets export; a vector set is refused with its name. Folder and ZIP output use the existing deterministic writer.
-- Non-goals: No vector or SVG export. No change to the animation bundle. No equipment layering beyond slots and weapon bodies.
-- Acceptance: The placeholder pixel skin and pixel weapons export, and the written-bundle tests read them back and match the library's grids exactly.
-- Validation: The standard set; one dispatched `verify.yml` run.
-- Authorities: docs/ARCHITECTURE.md (Export bundles; Weapons; Library folders), src/export/bundle.ts, src/export/zip.ts.
-
 ### RL-063 — [API] Publish JSON Schemas for every consumer format
 
 - Dependency: RL-062.
