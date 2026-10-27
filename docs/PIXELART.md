@@ -3,7 +3,8 @@
 RigLab's pixel art is stored as pixels: each part is a `riglab.part` grid of palette keys (`src/format/part.ts`),
 not SVG, a CSS filter or a sprite sheet. This document defines how to make or edit a pixel skin or pixel weapon. The
 loader (`src/library/art.ts`) enforces it on every set whose palette is `pixel`. Vector art, such as the `chibi` skin
-and the owner's four weapons, stays SVG in Hexframe's part format, and RigLab never exports it.
+and the owner's four weapons, stays SVG in Hexframe's part format, and RigLab never exports it. Export mode writes every
+pixel set as a `riglab.skin` bundle of its palette and grids ([architecture](ARCHITECTURE.md), Export bundles).
 
 ## One shared grid
 

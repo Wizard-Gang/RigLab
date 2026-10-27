@@ -2,6 +2,7 @@
 import { PALETTE_FILE, validatePalette } from "../format/palette";
 import { PART_EXTENSION, validatePart } from "../format/part";
 import type { RigLabPalette } from "../format/palette";
+import type { RigLabPart } from "../format/part";
 import { parsePart } from "../hexframe/parts";
 import type { Part } from "../hexframe/parts";
 import { listDirectory, readJson, slotStem } from "./files";
@@ -14,6 +15,8 @@ export interface ArtSet {
   readonly name: string;
   readonly parts: Readonly<Record<string, Part>>;
   readonly palette: RigLabPalette;
+  /** A pixel set's riglab.part grids by slot, as its files hold them, which skin bundles export; null in a vector set. */
+  readonly grids: Readonly<Record<string, RigLabPart>> | null;
 }
 
 /** A slot the directory must draw, and the `data-bone` its part has to name. */
@@ -35,16 +38,16 @@ export function readPalette(files: LibraryFiles, dir: string, errors: LibraryErr
 export const partFile = (stem: string, pixel: boolean): string => `${stem}${pixel ? PART_EXTENSION : ".svg"}`;
 
 /** The part in `path`, through the strict part parser or the grid validator, or null after recording why not. */
-function readPart(files: LibraryFiles, path: string, set: string, pixel: boolean, errors: LibraryErrors): Part | null {
+function readPart(files: LibraryFiles, path: string, set: string, pixel: boolean, errors: LibraryErrors): { part: Part; grid: RigLabPart | null } | null {
   if (pixel) {
     const value = readJson(files, path, errors);
     if (value === undefined) return null;
     const result = validatePart(value);
     errors.nested(path, result);
-    return result.ok ? gridPart(result.value, set) : null;
+    return result.ok ? { part: gridPart(result.value, set), grid: result.value } : null;
   }
   try {
-    return parsePart(files[path]!, set);
+    return { part: parsePart(files[path]!, set), grid: null };
   } catch (error) {
     errors.add(path, (error as Error).message);
     return null;
@@ -80,6 +83,7 @@ export function readArtSet(
     } else if (file.endsWith(".json") && file !== PALETTE_FILE && !data.includes(file)) errors.add(at, "is not a file this directory takes");
   }
   const parts: Record<string, Part> = {};
+  const grids: Record<string, RigLabPart> = {};
   for (const [stem, { slot, bone }] of byStem) {
     const path = `${dir}/${partFile(stem, pixel)}`;
     if (files[path] === undefined) {
@@ -87,14 +91,17 @@ export function readArtSet(
       if (!(pixel && files[`${dir}/${stem}.svg`] !== undefined)) errors.add(path, `is missing; it draws slot '${slot}'`);
       continue;
     }
-    const part = readPart(files, path, name, pixel, errors);
-    if (!part) continue;
+    const read = readPart(files, path, name, pixel, errors);
+    if (!read) continue;
+    const { part, grid } = read;
     if (part.bone !== bone) errors.add(path, `${pixel ? "bone" : "data-bone"} '${part.bone}' must be '${bone}'`);
     const tokens = new Set(part.paths.flatMap((item) => item.className.split(" ")));
     for (const token of tokens) {
       if (palette && !Object.hasOwn(palette.classes, token)) errors.add(path, `class '${token}' is not defined in ${dir}/${PALETTE_FILE}`);
     }
     parts[slot] = part;
+    if (grid) grids[slot] = grid;
   }
-  return errors.errors.length === before && palette ? { name, parts: Object.freeze(parts), palette } : null;
+  if (errors.errors.length !== before || !palette) return null;
+  return { name, parts: Object.freeze(parts), palette, grids: pixel ? Object.freeze(grids) : null };
 }

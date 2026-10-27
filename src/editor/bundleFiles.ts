@@ -1,4 +1,4 @@
-// Browser access for export bundles: write a folder through the File System Access API, or download a zip.
+// Browser access for export and skin bundles: write a folder through the File System Access API, or download a zip.
 import { EXPORT_ROOT } from "../export/bundle";
 import { zip } from "../export/zip";
 import type { Files } from "../export/zip";
@@ -25,8 +25,8 @@ const cancelled = (error: unknown): boolean => error instanceof DOMException && 
 
 export const canUseFolders = (): boolean => typeof folderPicker() === "function";
 
-/** Write the bundle into a riglab-export folder inside the folder the author picks; null when cancelled. */
-export async function writeFolder(files: Files): Promise<string | null> {
+/** Write the files into a `root` folder (riglab-export by default) inside the folder the author picks; null when cancelled. */
+export async function writeFolder(files: Files, root: string = EXPORT_ROOT): Promise<string | null> {
   const pick = folderPicker();
   if (!pick) throw new Error("This browser cannot write folders; download a zip instead");
   let parent: FolderHandle;
@@ -36,16 +36,16 @@ export async function writeFolder(files: Files): Promise<string | null> {
     if (cancelled(error)) return null;
     throw error;
   }
-  const root = await parent.getDirectoryHandle(EXPORT_ROOT, { create: true });
+  const top = await parent.getDirectoryHandle(root, { create: true });
   for (const [path, bytes] of files) {
     const parts = path.split("/");
-    let folder = root;
+    let folder = top;
     for (const part of parts.slice(0, -1)) folder = await folder.getDirectoryHandle(part, { create: true });
     const writable = await (await folder.getFileHandle(parts.at(-1)!, { create: true })).createWritable();
     await writable.write(bytes as BufferSource);
     await writable.close();
   }
-  return `${parent.name}/${EXPORT_ROOT}`;
+  return `${parent.name}/${root}`;
 }
 
 function downloadBlob(blob: Blob, name: string): void {
@@ -57,10 +57,10 @@ function downloadBlob(blob: Blob, name: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-/** Download the bundle as riglab-export.zip, with every file under riglab-export/. */
-export function downloadZip(files: Files): string {
-  const name = `${EXPORT_ROOT}.zip`;
-  const archive = zip(new Map([...files].map(([path, bytes]) => [`${EXPORT_ROOT}/${path}`, bytes])));
+/** Download the files as `<root>.zip` (riglab-export.zip by default), with every file under `<root>/`. */
+export function downloadZip(files: Files, root: string = EXPORT_ROOT): string {
+  const name = `${root}.zip`;
+  const archive = zip(new Map([...files].map(([path, bytes]) => [`${root}/${path}`, bytes])));
   downloadBlob(new Blob([archive as BlobPart], { type: "application/zip" }), name);
   return name;
 }
