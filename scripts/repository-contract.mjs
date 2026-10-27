@@ -120,7 +120,6 @@ function validateDeliveryCommands({ verify, gate, change }, failures) {
   if (/vitest|--test|\bnpm (?:run )?test\b|npm run check$/m.test(gateJob ?? '')) failures.push('gate must not run tests');
   const changeJob = block(change, 'change-id', 2);
   requireMatch(failures, 'change-id must validate exact PR identity', changeJob, /run: npm run check:change/);
-  requireMatch(failures, 'change-id must fetch merged PR heads for the release ledger', changeJob, /git fetch [^\n]*refs\/pull\/\*\/head/);
 }
 
 function validateRelease(release, failures) {
@@ -235,7 +234,7 @@ export const REQUIRED_AUTHORITIES = Object.freeze([
   'README.md', 'AGENTS.md', 'CONTRIBUTING.md', 'LICENSE', 'SECURITY.md', 'implementation_plan.md',
   'docs/ARCHITECTURE.md', 'docs/CHANGE-MANAGEMENT.md', 'docs/RELEASE-MANAGEMENT.md',
   '.node-version', '.npmrc', 'package.json', 'package-lock.json', '.github/pull_request_template.md',
-  'config/github-repository-settings.json', 'docs/releases.json', 'vendor/hexframe/lock.json',
+  'config/github-repository-settings.json', 'vendor/hexframe/lock.json',
   ...WORKFLOWS.map((file) => `.github/workflows/${file}`),
 ]);
 

@@ -163,7 +163,7 @@ test('any PR may add, edit, reorder or remove queued tasks, and new IDs exceed e
 const r001 = (...tasks) => ({ id: 'r001', branch: 'release/r001', tasks });
 const intoRelease = (overrides = {}) => candidate({
   targetBranch: 'release/r001', baseRelease: null, headRelease: r001('RL-002'),
-  baseReleases: [], headReleases: [], treeOf: () => null, ...overrides,
+  ...overrides,
 });
 
 test('a task PR into the open release branch extends config/release.json', () => {
@@ -174,7 +174,6 @@ test('a task PR into the open release branch extends config/release.json', () =>
   assert.match(validatePullRequest(intoRelease({ headRelease: null })).failures.join(' '), /must be an \{id, branch, tasks\} object/);
   assert.match(validatePullRequest(intoRelease({ headRelease: { ...r001('RL-002'), id: 'r002' } })).failures.join(' '), /branch must be release\/r002/);
   assert.match(validatePullRequest(intoRelease({ targetBranch: 'release/r1' })).failures.join(' '), /must target main or a release\/rNNN branch/);
-  assert.match(validatePullRequest(intoRelease({ headReleases: [{}] })).failures.join(' '), /changes only in the first task of a release that follows another/);
   assert.match(validatePullRequest(intoRelease({ baseRelease: r001('RL-002'), headRelease: r001('RL-002', 'RL-002') })).failures.join(' '), /unique canonical RL IDs/);
 });
 
@@ -234,35 +233,6 @@ test('a release PR carries exactly one commit per listed task under a derived ti
   assert.match(release({ rangeRecords: [first, { ...second, body: '' }] }), /exactly one Change:/);
 });
 
-test('the first task of the next release records the last one with tree-equality evidence', () => {
-  const mainSha = '1'.repeat(40);
-  const tested = 'a'.repeat(40);
-  const entry = {
-    id: 'r001', pr: 7, testedHead: tested, mainHead: mainSha, tasks: ['RL-001'],
-    ci: { conclusion: 'success', url: 'https://github.com/Wizard-Gang/RigLab/actions/runs/1' },
-  };
-  const next = (headReleases, trees = { [mainSha]: 'tree', [tested]: 'tree' }) => validatePullRequest(candidate({
-    baseSha: mainSha, mergeBaseSha: mainSha, baseHistory: [{ ...record(1), sha: mainSha }],
-    head: { ...record(2), parents: [mainSha] }, targetBranch: 'release/r002',
-    baseRelease: r001('RL-001'), headRelease: { id: 'r002', branch: 'release/r002', tasks: ['RL-002'] },
-    baseReleases: [], headReleases, treeOf: (sha) => trees[sha] ?? null,
-  })).failures.join(' ');
-  assert.equal(next([entry]), '');
-  assert.match(next([]), /must keep its entries and append r001/);
-  assert.match(next([{ ...entry, ci: { ...entry.ci, conclusion: 'failure' } }]), /successful verify run/);
-  assert.match(next([entry], { [mainSha]: 'tree', [tested]: 'other' }), /mainHead tree must equal the tested head tree/);
-  assert.match(next([entry], { [mainSha]: 'tree' }), /fetch refs\/pull\/7\/head/);
-  assert.match(next([{ ...entry, mainHead: '2'.repeat(40) }]), /mainHead must be the RL-001 commit/);
-  const tip = '3'.repeat(40);
-  const afterPlan = validatePullRequest(candidate({
-    baseSha: tip, mergeBaseSha: tip, head: { ...record(2), parents: [tip] }, targetBranch: 'release/r002',
-    baseHistory: [{ ...record(1), sha: mainSha }, { ...record(0, mainSha), sha: tip, subject: '[PLAN] Queue more' }],
-    baseRelease: r001('RL-001'), headRelease: { id: 'r002', branch: 'release/r002', tasks: ['RL-002'] },
-    baseReleases: [], headReleases: [{ ...entry, mainHead: tip }], treeOf: (sha) => ({ [tip]: 'tree', [tested]: 'tree' })[sha] ?? null,
-  })).failures;
-  assert.deepEqual(afterPlan, []);
-  assert.match(next([{ ...entry, tasks: [] }]), /tasks must be RL-001/);
-});
 
 function command(cwd, program, args, env = {}) {
   const childEnv = { ...process.env };
@@ -363,7 +333,6 @@ test('CLI checks a task PR and a [PLAN] PR into the release branch, and a local 
   git(root, 'config', 'user.email', 'riglab@example.invalid');
   writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'riglab', version: '0.1.0', private: true }) + '\n');
   writeFileSync(join(root, 'implementation_plan.md'), plan(2, 3));
-  writeFileSync(join(root, 'docs/releases.json'), '[]\n');
   const mainSha = commit(root, '[RL-001] [INIT] Establish riglab', body());
   git(root, 'branch', 'release/r001');
 
